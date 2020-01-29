@@ -3,6 +3,8 @@
 #Functions to consult for beef model
 
 import numpy as np
+dx = 0.1
+K = 1e-17  # Permeability [m²] - in range 1e-17 to 1e-19
 
 
 # Elasticity modulus
@@ -48,6 +50,5 @@ def C_eq(T: np.array) -> np.array:
 
 # Fluid velocity
 def u_w(T: np.array, C: np.array) -> np.array:
-	K = 1e-17 #Permeability [m²] - in range 1e-17 to 1e-19
-	return -K * E(T) / mu_w(T) * np.gradient(C - C_eq(T))
+	return -K * E(T) / mu_w(T) * np.gradient(C - C_eq(T), dx)
 
