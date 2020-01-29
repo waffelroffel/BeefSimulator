@@ -49,4 +49,5 @@ def C_eq(T: np.array) -> np.array:
 # Fluid velocity
 def u_w(T: np.array, C: np.array) -> np.array:
 	K = 1e-17 #Permeability [m²] - in range 1e-17 to 1e-19
-	return -K * E(T) / mu_w(T) * ..... #TODO: finish implementation
+	return -K * E(T) / mu_w(T) * np.gradient(C - C_eq(T))
+
