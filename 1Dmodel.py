@@ -5,11 +5,11 @@
 import numpy as np
 import auxillary_functions as func
 import constants as co
+from scipy import ndimage as sn
 
 
 def T_next(T_prev: np.array, C_prev: np.array) -> np.array:
-	#TODO: Laplace
-	return 1/(co.rho_m*co.cp_m) * (co.k_m*np.gradient(T_prev, co.dx)**2 - co.rho_w*co.cp_w*func.u_w(T_prev, C_prev)*np.gradient(T_prev, co.dx) )
+	return 1/(co.rho_m*co.cp_m) * (co.k_m*sn.filters.laplace(T_prev)/co.dx**2 - co.rho_w*co.cp_w*func.u_w(T_prev, C_prev)*np.gradient(T_prev, co.dx) )
 
 def C_next(T_prev: np.array, C_prev: np.array) -> np.array:
 	return co.D*np.gradient(C_prev, co.dx)**2 - np.gradient(C_prev * func.u_w(T_prev, C_prev), co.dx)
