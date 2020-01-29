@@ -8,7 +8,8 @@ import constants as co
 
 
 def T_next(T_prev: np.array, C_prev: np.array) -> np.array:
-	#TODO: Laplace
+	#TODO: Bytt ut (grad T)**2 med grad**2(T) !!!
+	
 	return 1/(co.rho_m*co.cp_m) * (co.k_m*np.gradient(T_prev, co.dx)**2 - co.rho_w*co.cp_w*func.u_w(T_prev, C_prev)*np.gradient(T_prev, co.dx) )
 
 def C_next(T_prev: np.array, C_prev: np.array) -> np.array:
