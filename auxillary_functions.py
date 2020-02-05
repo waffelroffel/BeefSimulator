@@ -37,5 +37,5 @@ def C_eq(T: np.array) -> np.array:
 
 # Fluid velocity
 def u_w(T: np.array, C: np.array) -> np.array:
-	return -co.K * E(T) / mu_w(T) * np.gradient(C - C_eq(T), co.dx)
+	return -co.K * E(T) / mu_w(T) * np.array(np.gradient(C - C_eq(T), co.dx))
 
