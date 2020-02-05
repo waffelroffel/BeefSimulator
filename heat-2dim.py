@@ -12,7 +12,6 @@ plt.rcParams['axes.grid'] = True
 
 # Forward difference
 
-
 def diff_forward(f, x, y, hx=0.1, hy=0.1):
     pass
 
