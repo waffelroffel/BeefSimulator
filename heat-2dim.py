@@ -103,8 +103,6 @@ def heat_equation2D():
     x = np.linspace(x_start, x_len-x_start, x_steps,dtype=np.int)
     y = np.linspace(y_start, y_len-y_start, y_steps,dtype=np.int)
     t = np.linspace(t_start, t_len-t_start, t_steps)
-    print(dt)
-    print(t)
 
     # Array to store the solution
     U = np.zeros((x_steps, y_steps, t_steps))
@@ -122,7 +120,7 @@ def heat_equation2D():
     """
     #print(U[:,:,0])
     for i,kk in enumerate(t[:-1]):
-        print(i)
+        #print(i)
         U[1:-1, 1:-1, i + 1] = U[ 1:-1, 1:-1, i] \
                               + dt*alpha*(U[ 1:-1, 0:-2, i]
                               + U[ 0:-2, 1:-1, i]
