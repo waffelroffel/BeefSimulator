@@ -2,6 +2,8 @@ import numpy as np
 import scipy.sparse
 import scipy.sparse.linalg
 import matplotlib.pyplot as plt
+from mpl_toolkits.mplot3d import Axes3D
+from matplotlib import cm
 from matplotlib.animation import FuncAnimation, ImageMagickWriter
 
 def Theta_Scheme(theta, D, N, U_old):
@@ -22,13 +24,14 @@ def Theta_Scheme(theta, D, N, U_old):
 
     A = scipy.sparse.diags([subDiag, mainDiag, superDiag], [-1, 0, 1], format='csc')
     U_new[1:-1] = scipy.sparse.linalg.spsolve(A, RHS)
+    U_new[-1] = U_new[-2]
     return U_new
 
 
 if __name__ == '__main__':
     T_L = 50
     T_R = 10
-    N = 101
+    N = 501
     x = np.linspace(0, 1, N)
     dx = x[1] - x[0]
     t_final = 15
@@ -46,14 +49,12 @@ if __name__ == '__main__':
     for i in range(len(t)-1):
         T0 = Theta_Scheme(1, D = dt/dx**2, N = N, U_old = T0)
         Ts[i+1] = T0
-    '''
     plt.plot(x, Ts[0])
     plt.plot(x, Ts[1])
     plt.plot(x, Ts[6])
     plt.plot(x, Ts[int(3*M/4)])
     plt.plot(x, Ts[-1])
     plt.show()
-    '''
     fig, ax = plt.subplots()
     xdata, ydata = [], []
     ln, = ax.plot([], [])
@@ -67,7 +68,22 @@ if __name__ == '__main__':
         ln.set_data(x, Ts[frame])
         return ln,
 
-    ani = FuncAnimation(fig, update, repeat=True, init_func=init, frames=M+1)
-    ani.save('backward_euler.mp4', fps=fps)
+    #ni = FuncAnimation(fig, update, repeat=True, init_func=init, frames=M+1)
+    #ani.save('backward_euler.mp4', fps=fps)
+    '''
+    plt.imshow(Ts.T)
+    plt.ylabel('x [m]')
+    plt.show()
 
+
+    print(len(x), len(t))
+    fig = plt.figure()
+    ax = fig.gca(projection='3d')
+    x, t = np.meshgrid(x, t)
+    surf = ax.plot_surface(x, t, Ts, cmap=cm.RdYlBu)
+    ax.set_xlabel('x [m]')
+    ax.set_ylabel('t [s]')
+    ax.set_zlabel(r'T [$^oC$]')
+    plt.show()
+    '''
 
