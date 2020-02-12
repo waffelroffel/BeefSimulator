@@ -39,3 +39,10 @@ def C_eq(T: np.array) -> np.array:
 def u_w(T: np.array, C: np.array) -> np.array:
 	return -co.K * E(T) / mu_w(T) * np.array(np.gradient(C - C_eq(T), co.dx))
 
+#Shorthand function for divergence
+def div(A: np.array, dr: float = 1) -> np.array:
+	return np.sum(np.gradient(A,dr), 0)
+
+#Shorthand for dotting ND arrays along 0-th axis
+def dotND(A: np.array, B: np.array):
+	return np.sum(A*B, 0)
