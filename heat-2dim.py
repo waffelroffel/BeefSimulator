@@ -97,7 +97,7 @@ def heat_equation2D():
     dt = h**2/(4*alpha)
     t_start = 0
     t_len= 100
-    t_steps = int((t_len-t_start)/dt)
+    t_steps = int((t_len)/dt) + 1
 
     x = np.linspace(x_start, x_len-x_start, x_steps,dtype=np.int)
     y = np.linspace(y_start, y_len-y_start, y_steps,dtype=np.int)
@@ -118,14 +118,23 @@ def heat_equation2D():
     t -> k
     """
     #print(U[:,:,0])
-    for kk in t:
-        k = np.where(t==kk)[0][0]
-        print(k)
+    for i,kk in enumerate(t[:-1]):
+        #print(i)
+        U[1:-1, 1:-1, i + 1] = U[ 1:-1, 1:-1, i] \
+                              + dt*alpha*(U[ 1:-1, 0:-2, i]
+                              + U[ 0:-2, 1:-1, i]
+                              - 4*U[ 1:-1, 1:-1, i]
+                              + U[ 2:, 1:-1, i]
+                              + U[ 1:-1, 2:, i])/h**2
+
+        '''
         for j in y[1:-1]:
             for i in x[1:-1]:
                 U[i,j,k+1] = U[i,j,k] + dt*alpha*(U[i,j-1,k]+U[i-1,j,k]-4*U[i,j,k]+U[i+1,j,k]+U[i,j+1,k])/h**2 #(dx=dy)
-        if k % 20 == 0:
-            plt.imshow(U[:,:,k])
+        '''
+
+        if i % 20 == 0:
+            plt.imshow(U[:,:,i])
             plt.show()
 
 heat_equation2D()
