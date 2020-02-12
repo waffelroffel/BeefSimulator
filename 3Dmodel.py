@@ -1,6 +1,7 @@
 #3Dmodel.py
 #
 #Quick and dirty way to solve the stationary part of equations
+#TODO: Boundary conditions not implemented
 
 import numpy as np
 import auxillary_functions as func
@@ -10,19 +11,18 @@ from scipy import ndimage as sn
 
 #3D solution of stationary equation yielding dT/dt = Rn = T(n+1)-T(n) / delta(t)
 def Rn(Tn: np.array, Cn: np.array) -> np.array:
-	lap = sn.filters.laplace(Tn)
+	lap = sn.filters.laplace(Tn) / (co.dx**2)
 	watervel = func.u_w(Tn, Cn)
 	gradT = np.array(np.gradient(Tn, co.dx))
-	stationary = -co.k_m*lap + co.rho_w*co.cp_w*sum(watervel[i] * gradT[i] for i in range(3))
+	stationary = -co.k_m*lap + co.rho_w*co.cp_w * func.dotND(watervel, gradT)
 	return -stationary / (co.rho_m*co.cp_m)
 
 
 #3D solution of stationary equation yielding dC/dt = Sn = C(n+1)-C(n) / delta(t)
 def Sn(Tn: np.array, Cn: np.array) -> np.array:
-	lap = sn.filters.laplace(Cn)
+	lap = sn.filters.laplace(Cn) / (co.dx**2)
 	v = Cn * func.u_w(Tn, Cn)
-	gradT = np.array(np.gradient(Tn, co.dx))
-	return co.D * lap - sum(np.gradient(v[i], co.dx)[i] for i in range(3))
+	return co.D * lap - func.div(v, co.dx)
 
 
 def Jacobi(T0: np.array, C0: np.array, steps: int) -> (np.array, np.array):
