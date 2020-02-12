@@ -42,7 +42,7 @@ def u_w(T: np.array, C: np.array) -> np.array:
 	'''
 	return -co.K * E(T) / mu_w(T) * np.array(np.gradient(C - C_eq(T), co.dx))
 
-#Shorthand function for divergence
+
 def div(A: np.array, dr: float = 1) -> np.array:
 	'''
 	Shorthand function for calculating divergence along first (0-th) axis
