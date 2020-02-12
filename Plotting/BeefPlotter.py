@@ -4,27 +4,34 @@ from mpl_toolkits.mplot3d import Axes3D     # For 3-d plott
 from matplotlib import cm
 import matplotlib.animation as animation
 
-class Snapshot:
-    def __init__(self, part):
-        self.part = part
-        self.filename = "untitled"
-        self.save_fig = False
+class Plotter:
+    def __init__(self, system, filename = 'untitled', save_fig = False):
+        self.system = system
+        self.filename = filename
+        self.save_fig = save_fig
+        self.n = system.t / self.system.dt
 
-    def show_heat_map(self):
-        plt.figure()
-        #plt.plot(self.part.x, self.part.rhoArr, label=r"Prob density, $\rho$", color="b")
-        plt.xlim(left=0, right = self.part.L)
-        plt.ylim(bottom=0, top = 1)
+        self.xv, self.yv = np.meshgrid(system.x, system.y)
+
+    def show_heat_map(self, t):
+
+        fig, ax = plt.subplots()
+
+        cs1 = [ax.contourf(self.xv, self.yv, self.system.U[:,:,self.n], 65, cmap = cm.magma)]
+        cbar1 = fig.colorbar(cs1[0], ax=ax, shrink=0.9)
+        cbar1.ax.set_ylabel(r'$U(x,y)$', fontsize=14)
+        plt.xlabel(r"$x$", fontsize=16)
+        plt.ylabel(r"$y$", fontsize=16)
+        plt.tight_layout()
         plt.legend()
-        plt.grid()
         if self.save_fig:
             plt.savefig(self.filename + "_heatmap.pdf")
         plt.show()
 
     def show_boundary_cond(self):
         plt.figure()
-        #plt.plot(self.part.x, self.part.reArrEven, label=r"$\Psi_R$", color="g", linewidth=0.75)
-        #plt.plot(self.part.x, self.part.imArrEven, label=r"$\Psi_I$", color="m", linewidth=0.75)
+        #plt.plot(self.system.x, self.system.reArrEven, label=r"$\Psi_R$", color="g", linewidth=0.75)
+        #plt.plot(self.system.x, self.system.imArrEven, label=r"$\Psi_I$", color="m", linewidth=0.75)
         plt.xlabel(r"$x$", fontsize=16)
         plt.ylabel(r"$y$", fontsize=16)
         plt.legend()
@@ -34,12 +41,12 @@ class Snapshot:
         plt.show()
 
 class Animation:
-    def __init__(self, part, duration_irl, duration, fps):
-        self.part = part
+    def __init__(self, system, duration_irl, duration, fps):
+        self.system = system
         self.duration_irl = duration_irl
         self.duration = duration
         self.fps = fps
-        self.cut_n = int(duration/part.dt/duration_irl/fps)
+        self.cut_n = int(duration/system.dt/duration_irl/fps)
 
         # Set up the figure and axes
         self.fig, self.ax1 = plt.subplots()
@@ -51,8 +58,8 @@ class Animation:
         self.line4, = self.ax1.plot([], [], lw=1.0, color='k', label=r"$V(x)$")
         self.lines = [self.line1, self.line2, self.line3]
         #   Plots potential (NOT in the same units at all)
-        if self.part.hasPotential:
-            self.line4.set_data(self.part.x, self.part.V/(1.5*self.part.E))
+        if self.system.hasPotential:
+            self.line4.set_data(self.system.x, self.system.V/(1.5*self.system.E))
             self.lines.append(self.line4)
 
         # Set limits and labels for the axes
@@ -63,19 +70,19 @@ class Animation:
         # Actually do the animation
         self.anim = animation.FuncAnimation(self.fig, self.animate, repeat=False, frames=int(self.fps * self.duration_irl),
                                             interval=1000 / self.fps, blit=False)
-        self.filename = "qm_particle_xs=" + str(self.part.xs) + "_sigma=" + str(self.part.sigmax) + "_pot=" + str(self.part.hasPotential) + ".mp4"
+        self.filename = "default.mp4"
 
     def animate(self, i):
         print(i, "out of", self.fps * self.duration_irl)
         # Math that gets recalculated each iteration
         if (i != 0):
             for j in range(self.cut_n):
-                self.part.calc_next()
+                self.system.calc_next()
 
         # Assigning the line object a set of values
-        self.lines[0].set_data(self.part.x, self.part.reArrEven)
-        self.lines[1].set_data(self.part.x, self.part.imArrEven)
-        self.lines[2].set_data(self.part.x, self.part.rhoArr)
+        self.lines[0].set_data(self.system.x, self.system.reArrEven)
+        self.lines[1].set_data(self.system.x, self.system.imArrEven)
+        self.lines[2].set_data(self.system.x, self.system.rhoArr)
 
         # Uncomment the following line to save a hi-res version of each frame (mind the filenames though, they'll overwrite each other)
         # plt.savefig('test.png',format='png',dpi=600)
