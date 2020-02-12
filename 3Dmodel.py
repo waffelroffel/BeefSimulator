@@ -1,6 +1,7 @@
 #3Dmodel.py
 #
 #Quick and dirty way to solve the stationary part of equations
+#TODO: Boundary conditions not implemented
 
 import numpy as np
 import auxillary_functions as func
