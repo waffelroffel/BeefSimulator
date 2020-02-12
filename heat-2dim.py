@@ -119,12 +119,22 @@ def heat_equation2D():
     t -> k
     """
     #print(U[:,:,0])
-    for kk in t:
+    for kk in t[:-1]:
         k = np.where(t==kk)[0][0]
         print(k)
+        U[1:-1, 1:-1, k + 1] = U[ 1:-1, 1:-1, k] \
+                              + dt*alpha*(U[ 1:-1, 0:-2, k]
+                              + U[ 0:-2, 1:-1, k]
+                              - 4*U[ 1:-1, 1:-1, k]
+                              + U[ 2:, 1:-1, k]
+                              + U[ 1:-1, 2:, k])/h**2
+
+        '''
         for j in y[1:-1]:
             for i in x[1:-1]:
                 U[i,j,k+1] = U[i,j,k] + dt*alpha*(U[i,j-1,k]+U[i-1,j,k]-4*U[i,j,k]+U[i+1,j,k]+U[i,j+1,k])/h**2 #(dx=dy)
+        '''
+
         if k % 20 == 0:
             plt.imshow(U[:,:,k])
             plt.show()
