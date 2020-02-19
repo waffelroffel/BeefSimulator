@@ -20,7 +20,7 @@ for i in range(A.shape[0]):  # pylint: disable=E1136
 x = np.zeros_like(b)
 for it_count in range(1, ITERATION_LIMIT):
     x_new = np.zeros_like(x)
-    print("Iteration {0}: {1}".format(it_count, x))
+    #print("Iteration {0}: {1}".format(it_count, x))
     for i in range(A.shape[0]):  # pylint: disable=E1136
         s1 = np.dot(A[i, :i], x_new[:i])
         s2 = np.dot(A[i, i + 1:], x[i + 1:])
