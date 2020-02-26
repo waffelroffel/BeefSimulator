@@ -75,9 +75,11 @@ def Jacobi(T0: np.array, C0: np.array, steps: int) -> (np.array, np.array):
 # (ingen grensebetingelser er påført noe sted)#
 
 
-T0 = np.ones((5, 5, 5))*25
-C0 = np.ones_like(T0)*3
-steps = 5
+T0 = np.ones((5, 5, 5))*25	#uniformly 25⁰C
+T0[:,:,0] = 200 #Set z-boundary to oven temp
+C0 = np.ones_like(T0)*3 #uniformly equal 3
+C0[0,:,:] = 1
+steps = 1000
 T, C = Jacobi(T0, C0, steps)
 print(T[0][2])
 print(T[-1][2])

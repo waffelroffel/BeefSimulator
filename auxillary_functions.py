@@ -50,7 +50,7 @@ def div(A: np.array, dr: float = 1) -> np.array:
     :param dr: float: Distance between discrete points in A
     :return: np.array: N-dim - has been divergenced
     '''
-	return np.sum(np.gradient(A, dr), 0)
+	return np.sum([np.gradient(A, dr)[i][i] for i in range(len(A))], 0)
 
 
 def dotND(A: np.array, B: np.array):
