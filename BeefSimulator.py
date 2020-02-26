@@ -1,6 +1,7 @@
 import Plotting.BeefPlotter as BP
 import numpy as np
 import matplotlib.pyplot as plt
+from Beef import Beef
 
 
 class BeefSimulator:
@@ -13,6 +14,7 @@ class BeefSimulator:
         """
 
         self.plotter = plotter
+		self.beef = Beef(dims, h)
 
         assert len(dims) != 0, "No dimensions found"
 
