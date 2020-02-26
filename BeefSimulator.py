@@ -14,7 +14,7 @@ class BeefSimulator:
         """
 
         self.plotter = plotter
-		self.beef = Beef(dims, h)
+        self.beef = Beef(dims, h)
 
         assert len(dims) != 0, "No dimensions found"
 

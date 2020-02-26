@@ -97,7 +97,7 @@ def heat_equation2D():
     print("Animating...")
     anim = animation.FuncAnimation(fig, animate, repeat=False, frames=int(t_steps),
                                    interval=1000 / fps, blit=False)
-    filename = "2D-heateq.mp4"
+    filename = "../2D-heateq.mp4"
     print("Done!")
     anim.save(filename, fps=fps, extra_args=[
               '-vcodec', 'libx264'], dpi=200, bitrate=-1)
