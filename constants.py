@@ -27,7 +27,7 @@ T_0=13             #C          Initial temperature
 C_0=0.75           #kg/kg      Initial moisture concentration 
 D=4e-10            #m^2/s      Diffusion coefficient
 K = 1e-17          #m^2        Permeability - in range 1e-17 to 1e-19
-f = 0.2            #-          Fraction of energy used for evaporation
+f = 0.9            #-          Fraction of energy used for evaporation
 '''Composite constants'''
 cp_m = (1.6*y_c+2*y_p+2*y_f+4.2*y_w)*1e3
 rho_m = 1 / (y_c/rho_c + y_p/rho_p + y_f/rho_f + y_w/rho_w)

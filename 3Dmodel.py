@@ -46,6 +46,7 @@ def Rn(Tn: np.array, Cn: np.array, dims: int = 3) -> np.array:
 		# Enforce the calculated boundary condition
 		T[tuple(a)] = R_boundary(0,i)
 		T[tuple(b)] = R_boundary(-1,i)
+		print('xD')
 	
 	return T
 
@@ -64,8 +65,8 @@ def Jacobi(T0: np.array, C0: np.array, steps: int) -> (np.array, np.array):
 	T[0] = T0
 	C[0] = C0
 	for i in range(steps):
-		R = Rn(T[i], C[i], 3)
-		S = Sn(T[i], C[i], 3)
+		R = Rn(T[i], C[i])
+		S = Sn(T[i], C[i])
 		T[i+1] = T[i] + co.dt*R
 		C[i+1] = C[i] + co.dt*S
 	return T,C
@@ -73,14 +74,12 @@ def Jacobi(T0: np.array, C0: np.array, steps: int) -> (np.array, np.array):
 ### TEST ###
 #(ingen grensebetingelser er påført noe sted)#
 
-T0 = np.zeros((5,5,5))
-T0[:,0] = 10
+T0 = np.ones((5,5,5)) * 25
 C0 = np.ones_like(T0) * 3
-C0[0,:] = 0
-steps = 1000
+steps = 5
 T,C = Jacobi(T0, C0, steps)
-print(T[0])
-print(T[-1])
-print(C[0])
-print(C[-1])
+print(T[0][2])
+print(T[-1][2])
+print(C[0][2])
+print(C[-1][2])
 # Ved å betrakte matrisene ser man at diffusjonen er veldig sakte i forhold til antall tidssteg

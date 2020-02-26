@@ -46,11 +46,12 @@ def u_w(T: np.array, C: np.array) -> np.array:
 def div(A: np.array, dr: float = 1) -> np.array:
 	'''
 	Shorthand function for calculating divergence along first (0-th) axis
-	:param A: np.array: N-dim - to be divergenced
+	:param A: np.array: mxN-dim - to be divergenced
 	:param dr: float: Distance between discrete points in A
 	:return: np.array: N-dim - has been divergenced
 	'''
-	return np.sum(np.gradient(A,dr), 0)
+	dims = len(A)
+	return sum(np.gradient(A,dr)[i][i] for i in range(dims))
 
 
 def dotND(A: np.array, B: np.array):
