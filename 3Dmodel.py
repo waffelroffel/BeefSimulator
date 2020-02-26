@@ -1,7 +1,7 @@
-#3Dmodel.py
+# 3Dmodel.py
 #
-#Quick and dirty way to solve the stationary part of equations
-#TODO: Boundary conditions not implemented
+# Quick and dirty way to solve the stationary part of equations
+# TODO: Boundary conditions not implemented
 
 import numpy as np
 import auxillary_functions as func
@@ -51,11 +51,11 @@ def Rn(Tn: np.array, Cn: np.array, dims: int = 3) -> np.array:
 	return T
 
 
-#3D solution of stationary equation yielding dC/dt = Sn = C(n+1)-C(n) / delta(t)
+# 3D solution of stationary equation yielding dC/dt = Sn = C(n+1)-C(n) / delta(t)
 def Sn(Tn: np.array, Cn: np.array) -> np.array:
-	lap = sn.filters.laplace(Cn) / (co.dx**2)
-	v = Cn * func.u_w(Tn, Cn)
-	return co.D * lap - func.div(v, co.dx)
+    lap = sn.filters.laplace(Cn) / (co.dx**2)
+    v = Cn * func.u_w(Tn, Cn)
+    return co.D * lap - func.div(v, co.dx)
 
 
 def Jacobi(T0: np.array, C0: np.array, steps: int) -> (np.array, np.array):
@@ -74,6 +74,7 @@ def Jacobi(T0: np.array, C0: np.array, steps: int) -> (np.array, np.array):
 ### TEST ###
 #(ingen grensebetingelser er påført noe sted)#
 
+
 T0 = np.ones((5,5,5)) * 25
 C0 = np.ones_like(T0) * 3
 steps = 5
@@ -82,4 +83,5 @@ print(T[0][2])
 print(T[-1][2])
 print(C[0][2])
 print(C[-1][2])
+
 # Ved å betrakte matrisene ser man at diffusjonen er veldig sakte i forhold til antall tidssteg

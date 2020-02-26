@@ -40,6 +40,7 @@ class Plotter:
             plt.savefig(self.filename + "_BC.pdf")
         plt.show()
 
+
 class Animation:
     def __init__(self, system, duration_irl, duration, fps):
         self.system = system
@@ -52,9 +53,12 @@ class Animation:
         self.fig, self.ax1 = plt.subplots()
 
         # Initialize the line object
-        self.line1, = self.ax1.plot([], [], lw=1.0, color='g', label=r"$\Psi_R$")
-        self.line2, = self.ax1.plot([], [], lw=1.0, color='m', label=r"$\Psi_I$")
-        self.line3, = self.ax1.plot([], [], lw=1.0, color='b', label=r"$|\Psi|^2$")
+        self.line1, = self.ax1.plot(
+            [], [], lw=1.0, color='g', label=r"$\Psi_R$")
+        self.line2, = self.ax1.plot(
+            [], [], lw=1.0, color='m', label=r"$\Psi_I$")
+        self.line3, = self.ax1.plot(
+            [], [], lw=1.0, color='b', label=r"$|\Psi|^2$")
         self.line4, = self.ax1.plot([], [], lw=1.0, color='k', label=r"$V(x)$")
         self.lines = [self.line1, self.line2, self.line3]
         #   Plots potential (NOT in the same units at all)
@@ -63,7 +67,7 @@ class Animation:
             self.lines.append(self.line4)
 
         # Set limits and labels for the axes
-        self.ax1.set_xlim(left=0, right= part.L)
+        self.ax1.set_xlim(left=0, right=part.L)
         self.ax1.set_ylim(bottom=-1, top=1)
         self.ax1.grid()
 
@@ -90,4 +94,5 @@ class Animation:
         return self.lines
 
     def run_no_threading(self):
-        self.anim.save(self.filename, fps=self.fps, extra_args=['-vcodec', 'libx264'], dpi=200, bitrate=-1)
+        self.anim.save(self.filename, fps=self.fps, extra_args=[
+                       '-vcodec', 'libx264'], dpi=200, bitrate=-1)
