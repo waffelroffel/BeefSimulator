@@ -4,64 +4,63 @@ from mpl_toolkits.mplot3d import Axes3D
 from matplotlib import cm
 import matplotlib.animation as animation
 
-from Samplebeef import Beef
-
 class Plotter:
-    def __init__(self, beef, name = 'untitled', save_fig = False):
+    def __init__(self, beefsim, name = 'untitled', save_fig = False):
         """
-        beef: A Beef object with data that one would want to plot.
-        name: Filename for saved plots. Default: 'Untitled'
-        save_fig: Determines whether the plots will be saved. Defauld: 'False'
+        beefsim: A BeefSimulator object with axis and stepping data for plotting.
+        name: Filename for saved plots. Default: 'untitled'
+        save_fig: Determines whether the plots will be saved. Default: 'False'
         """
-        self.U = beef.U
-        self.C = beef.C
-        
-        self.t = beef.t
-        self.x = beef.x
-        self.y = beef.y
-        self.z = beef.z
+        self.t = beefsim.t
+        self.x = beefsim.x
+        self.y = beefsim.y
+        self.z = beefsim.z
 
-        self.dt = beef.dt
-        self.h = beef.h
+        self.dt = beefsim.dt
+        self.h = beefsim.h
 
-        self.filename = filename
+        self.name = name
         self.save_fig = save_fig
         
 
-    def show_heat_map(self, t, x = None, y = None, z = None):
+    def show_heat_map(self, U_name, t, x = None, y = None, z = None):
+        U = np.load(U_name, mmap_mode='r')
         if isinstance(t, list):
             pass
         else:
             n = int(t // self.dt)
             
             fig, ax = plt.subplots()
-            plt.title(f'$t =$ {t:.2f}')
             cs = []
             cbarlab = ''
             
             if x is not None:
+                plt.title(f'X-section @ $x={x:.2f}$ and $t =$ {t:.2f}')
                 i = int(x // self.h)
                 yz, zy = np.meshgrid(self.y, self.z, indexing = 'ij')
-                cs = [ax.contourf(yz, zy, self.U[n,i,:,:], cmap = cm.get_cmap('magma'))]
+                cs = [ax.contourf(yz, zy, U[n,i,:,:], 200, cmap = cm.get_cmap('magma'))]
                 plt.xlabel(r"$y$", fontsize=16)
                 plt.ylabel(r"$z$", fontsize=16)
                 cbarlab = r'$U(y,z)$'
             elif y is not None:
+                plt.title(f'X-section @ $y={y:.2f}$ and $t =$ {t:.2f}')
                 j = int(y // self.h)
                 xz, zx = np.meshgrid(self.x, self.z, indexing = 'ij')
-                cs = [ax.contourf(xz, zx, self.U[n,:,j,:], 200, cmap = cm.get_cmap('magma'))]
+                cs = [ax.contourf(xz, zx, U[n,:,j,:], 200, cmap = cm.get_cmap('magma'))]
                 plt.xlabel(r"$x$", fontsize=16)
                 plt.ylabel(r"$z$", fontsize=16)
                 cbarlab = r'$U(x,z)$'
             elif z is not None:
+                plt.title(f'X-section @ $z={z:.2f}$ and $t =$ {t:.2f}')
                 k = int(z // self.h)
                 xy, yx = np.meshgrid(self.x, self.y, indexing = 'ij')
-                cs = [ax.contourf(xy, yx, self.U[n,:,:,k], 200, cmap = cm.get_cmap('magma'))]
+                cs = [ax.contourf(xy, yx, U[n,:,:,k], 200, cmap = cm.get_cmap('magma'))]
                 plt.xlabel(r"$x$", fontsize=16)
                 plt.ylabel(r"$y$", fontsize=16)
                 cbarlab = r'$U(x,y)$'
             else:
                 raise Exception("No crossection coordinate given.")
+            
             
             cbar1 = fig.colorbar(cs[0], ax=ax, shrink=0.9)
             cbar1.ax.set_ylabel(cbarlab, fontsize=14)
@@ -77,7 +76,7 @@ class Plotter:
         plt.legend()
         plt.grid()
         if self.save_fig:
-            plt.savefig(self.filename + "_BC.pdf")
+            plt.savefig(self.name + "_BC.pdf")
         plt.show()
 
 '''
@@ -126,31 +125,3 @@ class Animation:
         self.anim.save(self.filename, fps=self.fps, extra_args=[
                        '-vcodec', 'libx264'], dpi=200, bitrate=-1)
 '''
-
-if (__name__ == '__main__'):
-    h = 0.25
-    dt = 0.1
-
-    t = np.arange(0, 10.1, dt)
-    x = np.arange(0, 5.25, h)
-    y = np.arange(0, 4.25, h)
-    z = np.arange(0, 3.25, h)
-
-    d_shape = (len(t), len(x), len(y), len(z))
-    U = np.random.random(d_shape)
-    U[:,:,:, 0] = 0.00
-    U[:,:, 0,:] = 0.25
-    U[:,:,:, -1] = 0.50
-    U[:,:, -1,:] = 0.75
-    U[:, 0,:,:] = 1.00
-    U[:, -1,:,:] = 1.25
-
-    C = np.zeros(d_shape)
-
-    bf = Beef(U, C, t, x, y, z)
-    pl = Plotter(bf, save_fig=False)
-
-    pl.show_heat_map(5, x = 2.50)
-    pl.show_heat_map(5, y = 3.50)
-    pl.show_heat_map(6, z = 2.0)
-
