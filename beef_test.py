@@ -24,9 +24,9 @@ def t0(x, y):
     return 0  # np.sin(x)**2+np.cos(y)**2
 
 
-dims = [[0, 50], [50, 100], [0, 40]]
+dims = [[0, 9], [0, 3], [0, 4], [0, 9]]
 conds = [t0, x0, x1, y0, y1]
-bf = BeefSimulator(dims, 0.5, 1, conds)
-bf.apply_conditions()
-bf.solve_all()
-bf.plot()
+bs = BeefSimulator(dims=dims, a=1, b=0, c=1, alpha=1, beta=1,
+                   gamma=1, dh=1, dt=1, initial=1)
+bs.solve_next()
+print(bs.T1)
