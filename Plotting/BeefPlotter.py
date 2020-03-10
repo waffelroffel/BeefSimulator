@@ -1,34 +1,77 @@
 import numpy as np
 import matplotlib.pyplot as plt
-from mpl_toolkits.mplot3d import Axes3D     # For 3-d plott
+from mpl_toolkits.mplot3d import Axes3D
 from matplotlib import cm
 import matplotlib.animation as animation
 
+from Samplebeef import Beef
+
 class Plotter:
-    def __init__(self, beef, filename = 'untitled', save_fig = False):
-        self.beef = beef
+    def __init__(self, beef, name = 'untitled', save_fig = False):
+        """
+        beef: A Beef object with data that one would want to plot.
+        name: Filename for saved plots. Default: 'Untitled'
+        save_fig: Determines whether the plots will be saved. Defauld: 'False'
+        """
+        self.U = beef.U
+        self.C = beef.C
+        
+        self.t = beef.t
+        self.x = beef.x
+        self.y = beef.y
+        self.z = beef.z
+
+        self.dt = beef.dt
+        self.h = beef.h
+
         self.filename = filename
         self.save_fig = save_fig
-        self.n = beef.t / self.beef.dt
+        
 
-    def show_heat_map(self, t):
-        fig, ax = plt.subplots()
-
-        cs1 = [ax.contourf(self.xv, self.yv, self.beef.U[:,:,self.n], 65, cmap = cm.magma)]
-        cbar1 = fig.colorbar(cs1[0], ax=ax, shrink=0.9)
-        cbar1.ax.set_ylabel(r'$U(x,y)$', fontsize=14)
-        plt.xlabel(r"$x$", fontsize=16)
-        plt.ylabel(r"$y$", fontsize=16)
-        plt.tight_layout()
-        plt.legend()
-        if self.save_fig:
-            plt.savefig(self.filename + "_heatmap.pdf")
-        plt.show()
+    def show_heat_map(self, t, x = None, y = None, z = None):
+        if isinstance(t, list):
+            pass
+        else:
+            n = int(t // self.dt)
+            
+            fig, ax = plt.subplots()
+            plt.title(f'$t =$ {t:.2f}')
+            cs = []
+            cbarlab = ''
+            
+            if x is not None:
+                i = int(x // self.h)
+                yz, zy = np.meshgrid(self.y, self.z, indexing = 'ij')
+                cs = [ax.contourf(yz, zy, self.U[n,i,:,:], cmap = cm.get_cmap('magma'))]
+                plt.xlabel(r"$y$", fontsize=16)
+                plt.ylabel(r"$z$", fontsize=16)
+                cbarlab = r'$U(y,z)$'
+            elif y is not None:
+                j = int(y // self.h)
+                xz, zx = np.meshgrid(self.x, self.z, indexing = 'ij')
+                cs = [ax.contourf(xz, zx, self.U[n,:,j,:], 200, cmap = cm.get_cmap('magma'))]
+                plt.xlabel(r"$x$", fontsize=16)
+                plt.ylabel(r"$z$", fontsize=16)
+                cbarlab = r'$U(x,z)$'
+            elif z is not None:
+                k = int(z // self.h)
+                xy, yx = np.meshgrid(self.x, self.y, indexing = 'ij')
+                cs = [ax.contourf(xy, yx, self.U[n,:,:,k], 200, cmap = cm.get_cmap('magma'))]
+                plt.xlabel(r"$x$", fontsize=16)
+                plt.ylabel(r"$y$", fontsize=16)
+                cbarlab = r'$U(x,y)$'
+            else:
+                raise Exception("No crossection coordinate given.")
+            
+            cbar1 = fig.colorbar(cs[0], ax=ax, shrink=0.9)
+            cbar1.ax.set_ylabel(cbarlab, fontsize=14)
+            
+            if self.save_fig:
+                plt.savefig(self.name + f"_heatmap_t={t:.2f}.pdf")
+            plt.show()
 
     def show_boundary_cond(self):
         plt.figure()
-        #plt.plot(self.system.x, self.system.reArrEven, label=r"$\Psi_R$", color="g", linewidth=0.75)
-        #plt.plot(self.system.x, self.system.imArrEven, label=r"$\Psi_I$", color="m", linewidth=0.75)
         plt.xlabel(r"$x$", fontsize=16)
         plt.ylabel(r"$y$", fontsize=16)
         plt.legend()
@@ -37,7 +80,7 @@ class Plotter:
             plt.savefig(self.filename + "_BC.pdf")
         plt.show()
 
-
+'''
 class Animation:
     def __init__(self, system, duration_irl, duration, fps):
         self.system = system
@@ -82,3 +125,32 @@ class Animation:
     def run_no_threading(self):
         self.anim.save(self.filename, fps=self.fps, extra_args=[
                        '-vcodec', 'libx264'], dpi=200, bitrate=-1)
+'''
+
+if (__name__ == '__main__'):
+    h = 0.25
+    dt = 0.1
+
+    t = np.arange(0, 10.1, dt)
+    x = np.arange(0, 5.25, h)
+    y = np.arange(0, 4.25, h)
+    z = np.arange(0, 3.25, h)
+
+    d_shape = (len(t), len(x), len(y), len(z))
+    U = np.random.random(d_shape)
+    U[:,:,:, 0] = 0.00
+    U[:,:, 0,:] = 0.25
+    U[:,:,:, -1] = 0.50
+    U[:,:, -1,:] = 0.75
+    U[:, 0,:,:] = 1.00
+    U[:, -1,:,:] = 1.25
+
+    C = np.zeros(d_shape)
+
+    bf = Beef(U, C, t, x, y, z)
+    pl = Plotter(bf, save_fig=False)
+
+    pl.show_heat_map(5, x = 2.50)
+    pl.show_heat_map(5, y = 3.50)
+    pl.show_heat_map(6, z = 2.0)
+
