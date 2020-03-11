@@ -1,3 +1,6 @@
 .vscode/
 .idea/
 __pycache__/
+2D-heateq.mp4
+data/test_cons_dist.npy
+data/test_temp_dist.npy
