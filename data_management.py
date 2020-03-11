@@ -6,16 +6,24 @@ import numpy as np
 import pandas as pd
 
 
-def write_csv(arr: np.array, filename: str):
-    pd.DataFrame(arr).to_csv('data/'+filename+'.csv', sep=';')
+# Overwrite = False, Write = True
+def write_csv(arr: np.array, filename: str, wO: bool):
+    wO = wO * 'a' + (1 - wO) * 'w'
+
+    arr = np.hstack(arr[:, ...])
+    pd.DataFrame(arr).to_csv('data/'+filename+'.csv', mode=wO, sep=';',  header=False)
 
 
-def read_csv(filename: str):
-    df = pd.read_csv('data/'+filename+'.csv', sep=';', dtype=np.float)
-    return df.to_numpy()
+# dim = [x-len, y-len, z-len, t-len]
+# t-len = (t_start, t_end)
+# return Beef in timeslots determined by t-len
+def read_csv(filename: str, dim: np.array):
+    df = pd.read_csv('data/'+filename+'.csv', sep=';', dtype=np.float, skiprows=0)
+    Q = df.to_numpy()[:, 1:, ...]
+    B = np.vsplit(Q, len(dim[3]))
+    # Liker ikke loopen
+    for i in dim[3]:
+        B[i] = np.hsplit(B[i], dim[1])
+    return B
 
 
-# test
-a = read_csv('testdata')
-print(a)
-print(type(a[0, 0]))
