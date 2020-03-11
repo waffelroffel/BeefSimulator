@@ -1,7 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy.sparse import diags
-# import Plotting.BeefPlotter as BP
+import Plotting.BeefPlotter as BP
 
 
 class BeefSimulator:
@@ -9,7 +9,8 @@ class BeefSimulator:
         """
         dims: [ [x_start, x_len], [y_start, y_len], ... , [t_start, t_len] ]
 
-        pde: a*dT_dt = b*T_nabla + c*T_gradient \n
+        pde: a*dT_dt = b*T_nabla + c*T_gradient
+
         boundary: alpha*T_gradient + beta*T = gamma
 
         dh: stepsize in each dim
@@ -19,15 +20,24 @@ class BeefSimulator:
 
         logging:
          - 0: nothing
-         - 1: only initial setup
+         - 1: only initial setup and end state
          - 2: time steps
          - 3: A and b
          - 4: everything
         """
-
-        # self.plotter = BP.Plotter(self)
-        self.filename = filename
-        self.logging = logging
+        """
+        TODO:
+        - [X] change 3D cordinates to 1D indexing: T1 = T0 + ( A @ T0 + b )
+        - [X] contruct A and b
+        - [ ] make it work with only direchet boundary: alpha = 0
+        - [ ] change a, b, c, alpha, beta, gamma to functions
+        - [ ] validate with manufactored solution
+        - [ ] implement C (concentration)
+        - [ ] T and C coupled
+        - [ ] add plotter
+        - [ ] add data management
+        - [ ] add another logg level between 1 and 2 for linspaces and initial state
+        """
 
         self.a = a
         self.b = b
@@ -39,7 +49,7 @@ class BeefSimulator:
         self.dh = dh
         self.dt = dt
 
-        steps = [(s, s+l, l//dh+1) for s, l in dims]
+        steps = [(s, s+l, int(l/dh+1)) for s, l in dims]
 
         self.x = np.linspace(*steps[0])
         self.y = np.linspace(*steps[1])
@@ -64,6 +74,11 @@ class BeefSimulator:
         self.save([])  # header
         self.save(self.T0)
 
+        self.plotter = BP.Plotter(self)
+        self.filename = filename
+        self.logging = logging
+
+        self.logg(1, f'SETUP FINISHED. LOGGING...')
         self.logg(1, f'Logging level:       {self.logging}')
         self.logg(1, f'Shape of Prism:      {self.shape}')
         self.logg(1, f'Total nodes:         {self.n}')
@@ -73,10 +88,10 @@ class BeefSimulator:
         self.logg(1, f'x linspace:          {self.x}')
         self.logg(1, f'y linspace:          {self.y}')
         self.logg(1, f'z linspace:          {self.z}')
-        self.logg(1, f'Initial condition:   {self.T0}')
-        self.logg(1, "  T1   + (    A      @   T0   +    b  )")
+        self.logg(1, f'Initial state:   {self.T0}')
+        self.logg(1, "  T1   =   T0   + (    A      @   T0   +    b  )")
         self.logg(
-            1, f'{self.T0.shape} + ({(self.n,self.n)} @ {self.T0.shape} + {(self.n,)})')
+            1, f'{self.T1.shape} = {self.T0.shape} + ({(self.n,self.n)} @ {self.T0.shape} + {(self.n,)})')
 
     def logg(self, lvl, txt, logger=print):
         """
@@ -90,11 +105,15 @@ class BeefSimulator:
         if self.logging >= lvl:
             logger(txt)
 
+    def plot(self):
+        # TODO
+        ...
+
     def solve_next(self, method="cd"):
         if method == "cd":
             A, b = self.make_Ab()
             # transpose A ?
-            self.T1 = self.T0 + (self.dt/self.a) * (A @ self.T0 + b)
+            self.T1[...] = self.T0 + (self.dt/self.a) * (A @ self.T0 + b)
 
     def solve_all(self, method="cd"):
         self.logg(2, "Iterating",)
@@ -102,10 +121,12 @@ class BeefSimulator:
             self.logg(2, f'{t=}')
             self.solve_next(method)
             self.save(self.T1)
-            self.T0, self.T1 = self.T1, np.zeros(self.shape)
+            self.T0, self.T1 = self.T1, np.zeros(self.n)
         self.logg(2, "Finished",)
+        self.logg(1, self.T0)
 
     def save(self, array):
+        # TODO
         ...
 
     def make_Ab(self):
@@ -137,37 +158,44 @@ class BeefSimulator:
         # see project report
         # TODO:
         # [X] set C1-C2
-        # [ ] set 0
+        # [X] set 0
+        # not sure if implemented correctly, need to validate with manufactored solutions
 
         d0[self.bis[:, 0]] -= (self.bis[:, 1]*C2 +
                                self.bis[:, 1]*C1)*C4*self.beta
 
         i1 = self.diag_indicies(1)
+        i2 = self.diag_indicies(2)
+        i3 = self.diag_indicies(3)
+        i4 = self.diag_indicies(4)
+        i5 = self.diag_indicies(5)
+        i6 = self.diag_indicies(6)
+
         d1[i1] = C1-C2
-        # d1[i1-1] = 0
+        d1[i1+k4] = 0.0
         d1 = d1[k1:]
 
-        i2 = self.diag_indicies(2)
         d2[i2] = C1-C2
+        d2[i2+k5] = 0
+        d2 = d2[k2:]
 
-        i3 = self.diag_indicies(3)
         d3[i3] = C1-C2
+        d3[i3+k6] = 0.0
+        d3 = d3[k3:]
 
-        i4 = self.diag_indicies(4)
-        d4[i4] = C1-C2
-        d4[i1-1] = 0
+        d4[i4+k4] = C1-C2
+        d4[i1+k4] = 0.0
+        d4 = d4[:k4]
 
-        i5 = self.diag_indicies(5)
-        d5[i5] = C1-C2
+        d5[i5+k5] = C1-C2
+        d5[i2+k5] = 0.0
+        d5 = d5[:k5]
 
-        i6 = self.diag_indicies(6)
-        d6[i6] = C1-C2
-
+        d6[i6+k6] = C1-C2
+        d6[i3+k6] = 0.0
+        d6 = d6[:k6]
         # -----------------------------------------------------
-        # print(d1)
-        # print(d4)
-        A = diags(ds, ks).todense()
-        # print(len(np.diag(A, k1)))
+        A = diags(ds, ks)  # .todense()
 
         b = np.zeros(self.n)
         b[self.bis[:, 0]] = (self.bis[:, 1]*C2 +
