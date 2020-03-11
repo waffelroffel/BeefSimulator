@@ -4,8 +4,9 @@ from mpl_toolkits.mplot3d import Axes3D
 from matplotlib import cm
 import matplotlib.animation as animation
 
+
 class Plotter:
-    def __init__(self, beefsim, name = 'untitled', save_fig = False):
+    def __init__(self, beefsim, name='untitled', save_fig=False):
         """
         beefsim: A BeefSimulator object with axis and stepping data for plotting.
         name: Filename for saved plots. Default: 'untitled'
@@ -17,54 +18,55 @@ class Plotter:
         self.z = beefsim.z
 
         self.dt = beefsim.dt
-        self.h = beefsim.h
+        self.h = beefsim.dh
 
         self.name = name
         self.save_fig = save_fig
-        
 
-    def show_heat_map(self, U_name, t, x = None, y = None, z = None):
+    def show_heat_map(self, U_name, t, x=None, y=None, z=None):
         U = np.load(U_name, mmap_mode='r')
         if isinstance(t, list):
             pass
         else:
             n = int(t // self.dt)
-            
+
             fig, ax = plt.subplots()
             cs = []
             cbarlab = ''
-            
+
             if x is not None:
                 plt.title(f'X-section @ $x={x:.2f}$ and $t =$ {t:.2f}')
                 i = int(x // self.h)
-                yz, zy = np.meshgrid(self.y, self.z, indexing = 'ij')
-                cs = [ax.contourf(yz, zy, U[n,i,:,:], 200, cmap = cm.get_cmap('magma'))]
+                yz, zy = np.meshgrid(self.y, self.z, indexing='ij')
+                cs = [ax.contourf(yz, zy, U[n, i, :, :], 200,
+                                  cmap=cm.get_cmap('magma'))]
                 plt.xlabel(r"$y$", fontsize=16)
                 plt.ylabel(r"$z$", fontsize=16)
                 cbarlab = r'$U(y,z)$'
             elif y is not None:
                 plt.title(f'X-section @ $y={y:.2f}$ and $t =$ {t:.2f}')
                 j = int(y // self.h)
-                xz, zx = np.meshgrid(self.x, self.z, indexing = 'ij')
-                cs = [ax.contourf(xz, zx, U[n,:,j,:], 200, cmap = cm.get_cmap('magma'))]
+                xz, zx = np.meshgrid(self.x, self.z, indexing='ij')
+                cs = [ax.contourf(xz, zx, U[n, :, j, :], 200,
+                                  cmap=cm.get_cmap('magma'))]
                 plt.xlabel(r"$x$", fontsize=16)
                 plt.ylabel(r"$z$", fontsize=16)
                 cbarlab = r'$U(x,z)$'
             elif z is not None:
                 plt.title(f'X-section @ $z={z:.2f}$ and $t =$ {t:.2f}')
                 k = int(z // self.h)
-                xy, yx = np.meshgrid(self.x, self.y, indexing = 'ij')
-                cs = [ax.contourf(xy, yx, U[n,:,:,k], 200, cmap = cm.get_cmap('magma'))]
+                xy, yx = np.meshgrid(self.x, self.y, indexing='ij')
+                cs = [ax.contourf(xy, yx, U[n, :, :, k], 200,
+                                  cmap=cm.get_cmap('magma'))]
                 plt.xlabel(r"$x$", fontsize=16)
                 plt.ylabel(r"$y$", fontsize=16)
                 cbarlab = r'$U(x,y)$'
             else:
                 raise Exception("No crossection coordinate given.")
-            
-            
+
             cbar1 = fig.colorbar(cs[0], ax=ax, shrink=0.9)
             cbar1.ax.set_ylabel(cbarlab, fontsize=14)
-            
+
             if self.save_fig:
                 plt.savefig(self.name + f"_heatmap_t={t:.2f}.pdf")
             plt.show()
@@ -78,6 +80,7 @@ class Plotter:
         if self.save_fig:
             plt.savefig(self.name + "_BC.pdf")
         plt.show()
+
 
 '''
 class Animation:
