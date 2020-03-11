@@ -27,6 +27,6 @@ def t0(x, y):
 dims = [[0, 9], [0, 3], [0, 4], [0, 9]]
 conds = [t0, x0, x1, y0, y1]
 bs = BeefSimulator(dims=dims, a=1, b=0, c=1, alpha=1, beta=1,
-                   gamma=1, dh=1, dt=1, initial=1)
+                   gamma=1, initial=0, dh=1, dt=1, logging=1)
 bs.solve_next()
 print(bs.T1)

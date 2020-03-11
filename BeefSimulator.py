@@ -1,11 +1,11 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy.sparse import diags
-#import Plotting.BeefPlotter as BP
+# import Plotting.BeefPlotter as BP
 
 
 class BeefSimulator:
-    def __init__(self, dims, a, b, c, alpha, beta, gamma, dh=0.01, dt=0.1, initial=0, filename="data.csv"):
+    def __init__(self, dims, a, b, c, alpha, beta, gamma, initial, dh=0.01, dt=0.1, filename="data.csv", logging=1):
         """
         dims: [ [x_start, x_len], [y_start, y_len], ... , [t_start, t_len] ]
 
@@ -16,9 +16,18 @@ class BeefSimulator:
         dt: time step
 
         initial: scalar or function with parameter (x,y,z,t)
+
+        logging:
+         - 0: nothing
+         - 1: only initial setup
+         - 2: time steps
+         - 3: A and b
+         - 4: everything
         """
-        #self.plotter = BP.Plotter(self)
+
+        # self.plotter = BP.Plotter(self)
         self.filename = filename
+        self.logging = logging
 
         self.a = a
         self.b = b
@@ -40,6 +49,11 @@ class BeefSimulator:
         self.shape = (self.x.size, self.y.size, self.z.size)
         self.I, self.J, self.K = self.shape
         self.n = self.I * self.J * self.K
+        self.inner = (self.I-2) * (self.J-2) * (self.K-2)
+        self.border = self.n-self.inner
+
+        # rename: the 1D indicies for all the boundary points
+        self.bis = self.find_border_indicies()
 
         # send it through self.index_of before use
         xx, yy, zz = np.meshgrid(self.x, self.y, self.z)
@@ -50,63 +64,64 @@ class BeefSimulator:
         self.save([])  # header
         self.save(self.T0)
 
-        print(f'Shape of Prism: {self.shape}')
-        print(f'Time steps: {len(self.t)}')
-        print(f'x linspace: {self.x}')
-        print(f'y linspace: {self.y}')
-        print(f'z linspace: {self.z}')
-        # print(f'Initial condition: {self.T0}')
+        self.logg(1, f'Logging level:       {self.logging}')
+        self.logg(1, f'Shape of Prism:      {self.shape}')
+        self.logg(1, f'Total nodes:         {self.n}')
+        self.logg(1, f'Inner nodes:         {self.inner}')
+        self.logg(1, f'Boundary nodes:      {self.border}')
+        self.logg(1, f'Time steps:          {len(self.t)}')
+        self.logg(1, f'x linspace:          {self.x}')
+        self.logg(1, f'y linspace:          {self.y}')
+        self.logg(1, f'z linspace:          {self.z}')
+        self.logg(1, f'Initial condition:   {self.T0}')
+        self.logg(1, "  T1   + (    A      @   T0   +    b  )")
+        self.logg(
+            1, f'{self.T0.shape} + ({(self.n,self.n)} @ {self.T0.shape} + {(self.n,)})')
+
+    def logg(self, lvl, txt, logger=print):
+        """
+        Logg when lvl >= self.logging
+         - 0: nothing
+         - 1: only initial setup
+         - 2: time steps
+         - 3: A and b
+         - 4: everything
+        """
+        if self.logging >= lvl:
+            logger(txt)
 
     def solve_next(self, method="cd"):
         if method == "cd":
             A, b = self.make_Ab()
-            print(f'T0 + (A @ T0 + b)')
-            print(
-                f'{self.T0.shape} + ({A.shape} @ {self.T0.shape} + {b.shape})')
             # transpose A ?
             self.T1 = self.T0 + (self.dt/self.a) * (A @ self.T0 + b)
 
     def solve_all(self, method="cd"):
-        print("Iterating")
+        self.logg(2, "Iterating",)
         for t in self.t:
-            print(f'{t=}')
+            self.logg(2, f'{t=}')
             self.solve_next(method)
             self.save(self.T1)
             self.T0, self.T1 = self.T1, np.zeros(self.shape)
-        print("Finished")
+        self.logg(2, "Finished",)
 
     def save(self, array):
         ...
 
     def make_Ab(self):
-        I, J, K = self.shape
-        n = I*J*K
-        print(f'Total nodes:    {I*J*K}')
-        print(f'Inner nodes:    {(I-2)*(J-2)*(K-2)}')
-        print(f'Boundary nodes: {I*J*K-(I-2)*(J-2)*(K-2)}')
-        bis = self.find_border_indicies()
-
-        # shorter variables
-        b = self.b
-        c = self.c
-        alpha = self.alpha
-        beta = self.beta
-        gamma = self.gamma
-
-        dh = self.dh
-
         # diagonal indicies
         [k0, k1, k2, k3, k4, k5, k6] = self.get_ks()
         ks = [k0, k1, k2, k3, k4, k5, k6]
 
         # ------- contruct all diagonals -------
-        d = np.ones(n)
+        d = np.ones(self.n)
 
-        C0 = -6*b/dh**2
-        C1 = b/dh**2 + c/(2*dh)
-        C2 = b/dh**2 - c/(2*dh)
+        C1 = self.b/self.dh**2 + self.c/(2*self.dh)
+        C2 = self.b/self.dh**2 - self.c/(2*self.dh)
+        C3 = 6*self.b/self.dh**2
+        C4 = 2*self.dh/self.alpha
 
-        d0 = C0*d.copy()
+        d0 = -C3*d.copy()
 
         d1 = C1*d.copy()
         d2 = C1*d.copy()
@@ -118,13 +133,14 @@ class BeefSimulator:
 
         ds = [d0, d1, d2, d3, d4, d5, d6]
 
-        # modify the boundaries
+        # --------------- modify the boundaries ---------------
         # see project report
         # TODO:
         # [X] set C1-C2
         # [ ] set 0
 
-        d0[bis[:, 0]] -= (bis[:, 1]*C2 + bis[:, 1]*C1)*2*dh*beta/alpha
+        d0[self.bis[:, 0]] -= (self.bis[:, 1]*C2 +
+                               self.bis[:, 1]*C1)*C4*self.beta
 
         i1 = self.diag_indicies(1)
         d1[i1] = C1-C2
@@ -147,23 +163,31 @@ class BeefSimulator:
         i6 = self.diag_indicies(6)
         d6[i6] = C1-C2
 
-        # --------------------------------------
+        # -----------------------------------------------------
         # print(d1)
         # print(d4)
         A = diags(ds, ks).todense()
-        #print(len(np.diag(A, k1)))
+        # print(len(np.diag(A, k1)))
 
-        b = np.zeros(n)
-        b[bis[:, 0]] = (bis[:, 1]*C2 + bis[:, 2]*C1)*2*dh*gamma/alpha
+        b = np.zeros(self.n)
+        b[self.bis[:, 0]] = (self.bis[:, 1]*C2 +
+                             self.bis[:, 2]*C1)*C4*self.gamma
 
-        # print(f'{A=}')
-        # print(f'{b=}')
+        self.logg(3, f'{A=}')
+        self.logg(3, f'{b=}')
         return A, b
+    # --------------- Helper methods for make_Ab ---------------
 
     def index_of(self, i, j, k):
+        """
+        Returns the 1D index from 3D cordinates
+        """
         return i + self.I*j + self.I*self.J*k
 
     def get_ks(self):
+        """
+        Get the ks to use in diags(ds,ks) in self.make_Ab
+        """
         k0 = 0
         k1 = self.index_of(1, 0, 0)
         k2 = self.index_of(0, 1, 0)
@@ -173,19 +197,18 @@ class BeefSimulator:
         k6 = self.index_of(0, 0, -1)
         return k0, k1, k2, k3, k4, k5, k6
 
-    def diag_indicies(self, boundary):
-        indicies = []
-        kk = [
-            self.K-1] if boundary == 6 else [0] if boundary == 3 else range(self.K)
-        jj = [
-            self.J-1] if boundary == 5 else [0] if boundary == 2 else range(self.J)
-        ii = [
-            self.I-1] if boundary == 4 else [0] if boundary == 1 else range(self.I)
-        for k in kk:
-            for j in jj:
-                for i in ii:
-                    indicies.append(self.index_of(i, j, k))
-        return np.array(indicies)
+    def diag_indicies(self, bnd):
+        """
+        Used to index the diagonals
+
+        May only be run one time for each diagonal
+        """
+
+        i = (bnd == 4 and [self.I-1]) or (bnd == 1 and [0]) or range(self.I)
+        j = (bnd == 5 and [self.J-1]) or (bnd == 2 and [0]) or range(self.J)
+        k = (bnd == 6 and [self.K-1]) or (bnd == 3 and [0]) or range(self.K)
+        # just ignore sort? it doesn't break without it
+        return np.sort(np.array(self.index_of(*np.meshgrid(i, j, k))).T.reshape(-1))
 
     def find_border_indicies(self):
         """
@@ -195,8 +218,7 @@ class BeefSimulator:
 
         only need to be run one time
         """
-        indicies = np.zeros((self.I*self.J*self.K-(self.I-2)
-                             * (self.J-2)*(self.K-2), 3), dtype=np.int16)
+        indicies = np.zeros((self.border, 3), dtype=np.int16)
         tmp = 0
         for k in range(self.K):
             for j in range(self.J):
@@ -216,10 +238,10 @@ class BeefSimulator:
         (0,0,Z) -> [2,1] \n
         (0,4,Z) -> [1,1]
         """
-        boundaries = ((i == 0 and "start") or (i == (self.I-1) and "end"),
-                      (j == 0 and "start") or (
-            j == (self.J-1) and "end"),
-            (k == 0 and "start") or (k == (self.K-1) and "end"))
+        # pretend you didn't see the this
+        boundaries = ((i == 0 and "start") or (i == self.I-1 and "end"),
+                      (j == 0 and "start") or (j == self.J-1 and "end"),
+                      (k == 0 and "start") or (k == self.K-1 and "end"))
 
         start = 0
         end = 0
@@ -227,3 +249,5 @@ class BeefSimulator:
             start += 1 if boundary == "start" else 0
             end += 1 if boundary == "end" else 0
         return start, end
+
+    # ----------------------------------------------------------
