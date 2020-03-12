@@ -118,7 +118,7 @@ class BeefSimulator:
     def solve_all(self, method="cd"):
         self.logg(2, "Iterating",)
         for t in self.t:
-            self.logg(2, f'{t=}')
+            self.logg(2, f't = {t}')
             self.solve_next(method)
             self.save(self.T1)
             self.T0, self.T1 = self.T1, np.zeros(self.n)
@@ -201,8 +201,8 @@ class BeefSimulator:
         b[self.bis[:, 0]] = (self.bis[:, 1]*C2 +
                              self.bis[:, 2]*C1)*C4*self.gamma
 
-        self.logg(3, f'{A=}')
-        self.logg(3, f'{b=}')
+        self.logg(3, f'A = {A}')
+        self.logg(3, f'b = {b}')
         return A, b
     # --------------- Helper methods for make_Ab ---------------
 
