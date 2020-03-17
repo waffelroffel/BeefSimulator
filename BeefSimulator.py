@@ -14,6 +14,7 @@ class BeefSimulator:
         boundary: alpha*T_gradient + beta*T = gamma
 
         dh: stepsize in each dim
+
         dt: time step
 
         initial: scalar or function with parameter (x,y,z,t)
@@ -39,6 +40,7 @@ class BeefSimulator:
         - [ ] add another logg level between 1 and 2 for linspaces and initial state
         """
 
+        # Defines the PDEs and boundary conditions
         self.a = a
         self.b = b
         self.c = c
@@ -49,12 +51,13 @@ class BeefSimulator:
         self.dh = dh
         self.dt = dt
 
-        steps = [(s, s+l, int(l/dh+1)) for s, l in dims]
+        xyz_steps = [(s, s+l, int(l/dh+1)) for s, l in dims[:-1]]
+        t_steps = (dims[-1][0], dims[-1][0]+dims[-1][1], int(dims[-1][1]/dt+1))
 
-        self.x = np.linspace(*steps[0])
-        self.y = np.linspace(*steps[1])
-        self.z = np.linspace(*steps[2])
-        self.t = np.linspace(*steps[3])
+        self.x = np.linspace(*xyz_steps[0])
+        self.y = np.linspace(*xyz_steps[1])
+        self.z = np.linspace(*xyz_steps[2])
+        self.t = np.linspace(*t_steps)
 
         self.shape = (self.x.size, self.y.size, self.z.size)
         self.I, self.J, self.K = self.shape
@@ -70,28 +73,37 @@ class BeefSimulator:
 
         self.T1 = np.zeros(self.n)
         self.T0 = np.zeros(self.n)
-        self.T0[...] = initial(xx, yy, zz) if callable(initial) else initial
-        self.save([])  # header
+        self.T0[...] = initial(xx, yy, zz) if callable(
+            initial) else initial  # currently does't support function
+
+        self.filename = filename
+        self.save([])  # save header data: dims, time steps, ...
         self.save(self.T0)
 
         self.plotter = BP.Plotter(self)
-        self.filename = filename
+
         self.logging = logging
 
         self.logg(1, f'SETUP FINISHED. LOGGING...')
+        self.logg(1, f'----------------------------------------------')
         self.logg(1, f'Logging level:       {self.logging}')
-        self.logg(1, f'Shape of Prism:      {self.shape}')
+        self.logg(1, f'Shape:               {self.shape}')
         self.logg(1, f'Total nodes:         {self.n}')
         self.logg(1, f'Inner nodes:         {self.inner}')
         self.logg(1, f'Boundary nodes:      {self.border}')
-        self.logg(1, f'Time steps:          {len(self.t)}')
-        self.logg(1, f'x linspace:          {self.x}')
-        self.logg(1, f'y linspace:          {self.y}')
-        self.logg(1, f'z linspace:          {self.z}')
-        self.logg(1, f'Initial state:   {self.T0}')
-        self.logg(1, "  T1   =   T0   + (    A      @   T0   +    b  )")
         self.logg(
-            1, f'{self.T1.shape} = {self.T0.shape} + ({(self.n,self.n)} @ {self.T0.shape} + {(self.n,)})')
+            1, f'x linspace:          dx: {self.dh}, \t x: {self.x[0]} -> {self.x[-1]}, \t steps: {self.x.size}')
+        self.logg(
+            1, f'y linspace:          dy: {self.dh}, \t y: {self.y[0]} -> {self.y[-1]}, \t steps: {self.y.size}')
+        self.logg(
+            1, f'z linspace:          dz: {self.dh}, \t z: {self.z[0]} -> {self.z[-1]}, \t steps: {self.z.size}')
+        self.logg(
+            1, f'time steps:          dt: {self.dt}, \t t: {self.t[0]} -> {self.t[-1]}, \t steps: {self.t.size}')
+        self.logg(1, f'Initial state:       {self.T0}')
+        self.logg(1, "T1 = T0 + ( A @ T0 + b )")
+        self.logg(
+            1, f'{self.T1.shape} = {self.T0.shape} + ( {(self.n,self.n)} @ {self.T0.shape} + {(self.n,)} )')
+        self.logg(1, f'----------------------------------------------')
 
     def logg(self, lvl, txt, logger=print):
         """
@@ -106,30 +118,45 @@ class BeefSimulator:
             logger(txt)
 
     def plot(self):
+        """
+        Plot the current state
+        """
         # TODO
         ...
 
     def solve_next(self, method="cd"):
+        """
+        Calculate the next time step (T1)
+        """
         if method == "cd":
             A, b = self.make_Ab()
-            # transpose A ?
             self.T1[...] = self.T0 + (self.dt/self.a) * (A @ self.T0 + b)
 
     def solve_all(self, method="cd"):
-        self.logg(2, "Iterating",)
+        """
+        Iterate through from t0 -> tn
+        """
+        self.logg(1, "Iterating...",)
         for t in self.t:
-            self.logg(2, f't = {t}')
+            self.logg(2, f'- t = {t}')
             self.solve_next(method)
             self.save(self.T1)
             self.T0, self.T1 = self.T1, np.zeros(self.n)
-        self.logg(2, "Finished",)
-        self.logg(1, self.T0)
+        self.logg(1, "Finished",)
+        self.logg(1, f'Final state: {self.T0}')
 
     def save(self, array):
+        """
+        save array to disk(self.filename)
+        """
         # TODO
         ...
 
     def make_Ab(self):
+        """
+        Contruct A and b
+        """
+
         # diagonal indicies
         [k0, k1, k2, k3, k4, k5, k6] = self.get_ks()
         ks = [k0, k1, k2, k3, k4, k5, k6]
@@ -157,11 +184,13 @@ class BeefSimulator:
         # --------------- modify the boundaries ---------------
         # see project report
         # TODO:
-        # [X] set C1-C2
+        # [X] set C1+C2
         # [X] set 0
         # not sure if implemented correctly, need to validate with manufactored solutions
+        # - tested with neuman boundary = 0 -> behaves correctly
+        # - need to validate with non-zero values / functions
 
-        d0[self.bis[:, 0]] -= (self.bis[:, 1]*C2 +
+        d0[self.bis[:, 0]] -= (-self.bis[:, 1]*C2 +
                                self.bis[:, 1]*C1)*C4*self.beta
 
         i1 = self.diag_indicies(1)
@@ -171,39 +200,40 @@ class BeefSimulator:
         i5 = self.diag_indicies(5)
         i6 = self.diag_indicies(6)
 
-        d1[i1] = C1-C2
-        d1[i1+k4] = 0.0
+        d1[i1] = C1+C2
+        d1[i1+k4] = 0
         d1 = d1[k1:]
 
-        d2[i2] = C1-C2
+        d2[i2] = C1+C2
         d2[i2+k5] = 0
         d2 = d2[k2:]
 
-        d3[i3] = C1-C2
-        d3[i3+k6] = 0.0
+        d3[i3] = C1+C2
+        d3[i3+k6] = 0
         d3 = d3[k3:]
 
-        d4[i4+k4] = C1-C2
-        d4[i1+k4] = 0.0
+        d4[i4+k4] = C1+C2
+        d4[i1+k4] = 0
         d4 = d4[:k4]
 
-        d5[i5+k5] = C1-C2
-        d5[i2+k5] = 0.0
+        d5[i5+k5] = C1+C2
+        d5[i2+k5] = 0
         d5 = d5[:k5]
 
-        d6[i6+k6] = C1-C2
-        d6[i3+k6] = 0.0
+        d6[i6+k6] = C1+C2
+        d6[i3+k6] = 0
         d6 = d6[:k6]
         # -----------------------------------------------------
-        A = diags(ds, ks)  # .todense()
+        A = diags(ds, ks)
 
         b = np.zeros(self.n)
-        b[self.bis[:, 0]] = (self.bis[:, 1]*C2 +
+        b[self.bis[:, 0]] = (-self.bis[:, 1]*C2 +
                              self.bis[:, 2]*C1)*C4*self.gamma
 
         self.logg(3, f'A = {A}')
         self.logg(3, f'b = {b}')
         return A, b
+
     # --------------- Helper methods for make_Ab ---------------
 
     def index_of(self, i, j, k):
@@ -214,7 +244,7 @@ class BeefSimulator:
 
     def get_ks(self):
         """
-        Get the ks to use in diags(ds,ks) in self.make_Ab
+        Get the ks to use in diags(ds, ks) in self.make_Ab
         """
         k0 = 0
         k1 = self.index_of(1, 0, 0)
@@ -227,6 +257,16 @@ class BeefSimulator:
 
     def diag_indicies(self, bnd):
         """
+        Finds the indicies of a secific boundary
+
+        bnd:
+        - 0: x = 0
+        - 1: y = 0
+        - 2: z = 0
+        - 3: x = X
+        - 4: y = Y
+        - 5: z = Z
+
         Used to index the diagonals
 
         May only be run one time for each diagonal
@@ -242,7 +282,7 @@ class BeefSimulator:
         """
         returns the indicies for every boundary node
 
-        [[index, # of start, # of end],...]
+        [[index,  # of start, # of end],...]
 
         only need to be run one time
         """
@@ -262,11 +302,11 @@ class BeefSimulator:
         wacky way to count the different boundaries the node borders
 
         E.g: \n
-        (0,0,0) -> [3,0] \n
-        (0,0,Z) -> [2,1] \n
-        (0,4,Z) -> [1,1]
+        (0, 0, 0) -> [3, 0] \n
+        (0, 0, Z) -> [2, 1] \n
+        (0, 4, Z) -> [1, 1]
         """
-        # pretend you didn't see the this
+        # pretend you didn't see this
         boundaries = ((i == 0 and "start") or (i == self.I-1 and "end"),
                       (j == 0 and "start") or (j == self.J-1 and "end"),
                       (k == 0 and "start") or (k == self.K-1 and "end"))
