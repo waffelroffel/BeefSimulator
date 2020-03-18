@@ -92,10 +92,13 @@ class BeefSimulator:
 
         self.filename = filename
         self.H_file = Path(self.filename + '_header.csv')
+        self.H_file.open('w').close()
         self.T_file = Path(self.filename + '_temp.npy')
+        self.T_file.open('w').close()
         self.C_file = Path(self.filename + '_cons.npy')
+        self.C_file.open('w').close()
 
-        self.save([], self.H_file, 'csv')  # save header data: dims, time steps, ...
+        #self.save([], self.H_file, 'csv')  # save header data: dims, time steps, ...
         self.save(self.T0, self.T_file, 'npy')
 
         self.plotter = BP.Plotter(self)
