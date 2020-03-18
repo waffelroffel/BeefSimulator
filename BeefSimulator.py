@@ -2,10 +2,13 @@ import numpy as np
 import matplotlib.pyplot as plt
 from scipy.sparse import diags
 import Plotting.BeefPlotter as BP
+from data_management import write_csv
+from pathlib import Path
+import os
 
 
 class BeefSimulator:
-    def __init__(self, dims, a, b, c, alpha, beta, gamma, initial, dh=0.01, dt=0.1, filename="data.csv", logging=1):
+    def __init__(self, dims, a, b, c, alpha, beta, gamma, initial, dh=0.01, dt=0.1, filename="data/data", logging=1):
         """
         dims: [ [x_start, x_len], [y_start, y_len], ... , [t_start, t_len] ]
 
@@ -77,8 +80,12 @@ class BeefSimulator:
             initial) else initial  # currently does't support function
 
         self.filename = filename
-        self.save([])  # save header data: dims, time steps, ...
-        self.save(self.T0)
+        self.H_file = Path(self.filename + '_header.csv')
+        self.T_file = Path(self.filename + '_temp.npy')
+        self.C_file = Path(self.filename + '_cons.npy')
+
+        self.save([], self.H_file, 'csv')  # save header data: dims, time steps, ...
+        self.save(self.T0, self.T_file, 'npy')
 
         self.plotter = BP.Plotter(self)
 
@@ -140,17 +147,28 @@ class BeefSimulator:
         for t in self.t:
             self.logg(2, f'- t = {t}')
             self.solve_next(method)
-            self.save(self.T1)
+            self.save(self.T1, self.T_file, 'npy')
             self.T0, self.T1 = self.T1, np.zeros(self.n)
         self.logg(1, "Finished",)
         self.logg(1, f'Final state: {self.T0}')
 
-    def save(self, array):
+    def save(self, array, file, ext):
         """
         save array to disk(self.filename)
+
+        array: array to save. E.g. temperature or concentration array for a given timestep. 
+
+        file: file/path to save to. E.g. self.H_file, self.T_file, self.C_file
+
+        ext: file extension. E.g 'npy' or 'csv'
         """
-        # TODO
-        ...
+        if (ext == 'npy'):
+            with file.open('ab') as f:
+                np.save(f, array)
+        elif (ext == 'csv'):
+            write_csv(array, file, False)
+        else:
+            raise ValueError("ext must either be 'npy' or 'csv'.")
 
     def make_Ab(self):
         """
