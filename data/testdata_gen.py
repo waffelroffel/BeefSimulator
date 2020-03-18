@@ -67,6 +67,8 @@ def make_manisol_3d(shape_d: tuple, td: int) -> np.array:
     T(x,y,z,t) = 3 * exp(-4*a*pi^2*(1/Lx^2+1/Ly^2+4/Lz^2) * t) * sin(2*pi/Lx * x) * sin(2*pi/Ly * y) * sin(4*pi/Lz * z)
     insert a = 1e-3, Lx=Ly=Lz=1
 
+    ### NB! (3.1) -> T(x,y,0,t) = 0 and (3.2) -> T(x,y,Lz,t) = 0 gives exactly the same solution!
+
     :param shape_d: tuple[int] of the numbers of points discretising x, y and z (Nx, Ny, Nz)
     :param td: number of points discretising t
     :return: The manifactured solution to the BVP described above
@@ -94,11 +96,12 @@ def test_diff_manisol(calcdata: np.array, manidata: np.array) -> float:
     (Note: This squelches all imaginary parts too)
     '''
     return np.linalg.norm(np.abs(calcdata - manidata))
-
+    # TODO: Denne bør også returnere punktvis feil
 
 # TODO: Dette kan abstraheres og automatiseres enda mer hvis lesing og skriving til fil er på plass. Lag i så fall
 # TODO: ... en funksjon som henter inn filnavn, bruker innlesing og kaller test_diff_manisol på dem
 # TODO: ... Man kan evt. legge til produksjon av disse datasett og lagre dem i __main__ under.		--Svein
+
 
 '''
 Very simple test data generator.
