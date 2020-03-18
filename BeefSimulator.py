@@ -19,6 +19,11 @@ class BeefSimulator:
 
         initial: scalar or function with parameter (x,y,z,t)
 
+        bnd_types:
+         - d: direchet (only this do something)
+         - n: neumann
+         - r: robin
+
         logging:
          - 0: nothing
          - 1: only initial setup and end state
@@ -31,7 +36,7 @@ class BeefSimulator:
         - [X] change 3D cordinates to 1D indexing: T1 = T0 + ( A @ T0 + b )
         - [X] contruct A and b
         - [ ] make it work with only direchet boundary: alpha = 0
-        - [ ] change a, b, c, alpha, beta, gamma to functions
+        - [X] change a, b, c, alpha, beta, gamma to functions
         - [ ] validate with manufactored solution
         - [ ] implement C (concentration)
         - [ ] T and C coupled
@@ -71,10 +76,20 @@ class BeefSimulator:
         self.inner = (self.I-2) * (self.J-2) * (self.K-2)
         self.border = self.n-self.inner
 
-        direchets = np.where(bnd_types == "d")
+        # ---------- refactor ----------
+        uniques = set()
 
-        self.direchets_bnds = [self.diag_indicies(
-            bnd) for bnd in direchets]
+        bnd_lst = []
+        for qqq, bnd in enumerate(bnd_types):
+            if bnd == "d":
+                bnd_lst.append(self.diag_indicies(qqq+1))
+
+        for qq in bnd_lst:
+            for q in qq:
+                uniques.add(q)
+
+        self.direchet_bnds = sorted(list(uniques))
+        # ---------- refactor ----------
 
         # rename: the 1D indicies for all the boundary points
         self.bis = self.find_border_indicies()
@@ -144,6 +159,9 @@ class BeefSimulator:
             self.T1[...] = self.T0 + \
                 (self.dt/self.a(self.ii)) * (A @ self.T0 + b)
 
+            self.T1[self.direchet_bnds] = (self.gamma(
+                self.ii)/self.beta(self.ii))[self.direchet_bnds]
+
     def solve_all(self, method="cd"):
         """
         Iterate through from t0 -> tn
@@ -181,7 +199,10 @@ class BeefSimulator:
         C2 = self.b(self.ii)/self.dh**2 - self.c(self.ii)/(2*self.dh)
         C3 = 6*self.b(self.ii)/self.dh**2
 
-        C4 = 2*self.dh/self.alpha(self.ii)
+        _alpha = self.alpha(self.ii).copy()
+        _alpha[self.direchet_bnds] = 1  # dummy
+        _alpha[_alpha == 0] = 1  # dummy
+        C4 = 2*self.dh/_alpha
 
         d0 = -C3*d.copy()
 
@@ -206,6 +227,8 @@ class BeefSimulator:
 
         d0[self.bis[:, 0]] -= (-self.bis[:, 1]*C2[self.bis[:, 0]] +
                                self.bis[:, 1]*C1[self.bis[:, 0]])*C4[self.bis[:, 0]]*self.beta(self.ii)[self.bis[:, 0]]
+
+        d0[self.direchet_bnds] = 1
 
         i1 = self.diag_indicies(1)
         i2 = self.diag_indicies(2)
@@ -275,12 +298,12 @@ class BeefSimulator:
         Finds the indicies of a secific boundary
 
         bnd:
-        - 0: x = 0
-        - 1: y = 0
-        - 2: z = 0
-        - 3: x = X
-        - 4: y = Y
-        - 5: z = Z
+        - 1: x = 0
+        - 2: y = 0
+        - 3: z = 0
+        - 4: x = X
+        - 5: y = Y
+        - 6: z = Z
 
         Used to index the diagonals
 
