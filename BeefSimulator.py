@@ -5,7 +5,7 @@ import Plotting.BeefPlotter as BP
 
 
 class BeefSimulator:
-    def __init__(self, dims, a, b, c, alpha, beta, gamma, initial, dh=0.01, dt=0.1, filename="data.csv", logging=1):
+    def __init__(self, dims, a, b, c, alpha, beta, gamma, initial, dh=0.01, dt=0.1, filename="data.csv", logging=1, bnd_types=[]):
         """
         dims: [ [x_start, x_len], [y_start, y_len], ... , [t_start, t_len] ]
 
@@ -39,14 +39,20 @@ class BeefSimulator:
         - [ ] add data management
         - [ ] add another logg level between 1 and 2 for linspaces and initial state
         """
+        def _wrap(fun):
+            def wrap(ii):
+                res = fun(*ii) if callable(fun) else fun
+                return res.flatten() if isinstance(res, np.ndarray) else res
+            return wrap
 
         # Defines the PDEs and boundary conditions
-        self.a = a
-        self.b = b
-        self.c = c
-        self.alpha = alpha
-        self.beta = beta
-        self.gamma = gamma
+        self.a = _wrap(a)
+        self.b = _wrap(b)
+        self.c = _wrap(c)
+        self.alpha = _wrap(alpha)
+        self.beta = _wrap(beta)
+        self.gamma = _wrap(gamma)
+        self.initial = _wrap(initial)
 
         self.dh = dh
         self.dt = dt
@@ -65,16 +71,21 @@ class BeefSimulator:
         self.inner = (self.I-2) * (self.J-2) * (self.K-2)
         self.border = self.n-self.inner
 
+        direchets = np.where(bnd_types == "d")
+
+        self.direchets_bnds = [self.diag_indicies(
+            bnd) for bnd in direchets]
+
         # rename: the 1D indicies for all the boundary points
         self.bis = self.find_border_indicies()
 
-        # send it through self.index_of before use
         xx, yy, zz = np.meshgrid(self.x, self.y, self.z)
+        self.tn = self.t[0]
+        self.ii = (xx, yy, zz, self.tn)
 
         self.T1 = np.zeros(self.n)
         self.T0 = np.zeros(self.n)
-        self.T0[...] = initial(xx, yy, zz) if callable(
-            initial) else initial  # currently does't support function
+        self.T0[...] = self.initial(self.ii)
 
         self.filename = filename
         self.save([])  # save header data: dims, time steps, ...
@@ -130,7 +141,8 @@ class BeefSimulator:
         """
         if method == "cd":
             A, b = self.make_Ab()
-            self.T1[...] = self.T0 + (self.dt/self.a) * (A @ self.T0 + b)
+            self.T1[...] = self.T0 + \
+                (self.dt/self.a(self.ii)) * (A @ self.T0 + b)
 
     def solve_all(self, method="cd"):
         """
@@ -138,6 +150,7 @@ class BeefSimulator:
         """
         self.logg(1, "Iterating...",)
         for t in self.t:
+            self.tn = t
             self.logg(2, f'- t = {t}')
             self.solve_next(method)
             self.save(self.T1)
@@ -152,7 +165,7 @@ class BeefSimulator:
         # TODO
         ...
 
-    def make_Ab(self):
+    def make_Ab(self,):
         """
         Contruct A and b
         """
@@ -164,10 +177,11 @@ class BeefSimulator:
         # ------- contruct all diagonals -------
         d = np.ones(self.n)
 
-        C1 = self.b/self.dh**2 + self.c/(2*self.dh)
-        C2 = self.b/self.dh**2 - self.c/(2*self.dh)
-        C3 = 6*self.b/self.dh**2
-        C4 = 2*self.dh/self.alpha
+        C1 = self.b(self.ii)/self.dh**2 + self.c(self.ii)/(2*self.dh)
+        C2 = self.b(self.ii)/self.dh**2 - self.c(self.ii)/(2*self.dh)
+        C3 = 6*self.b(self.ii)/self.dh**2
+
+        C4 = 2*self.dh/self.alpha(self.ii)
 
         d0 = -C3*d.copy()
 
@@ -190,8 +204,8 @@ class BeefSimulator:
         # - tested with neuman boundary = 0 -> behaves correctly
         # - need to validate with non-zero values / functions
 
-        d0[self.bis[:, 0]] -= (-self.bis[:, 1]*C2 +
-                               self.bis[:, 1]*C1)*C4*self.beta
+        d0[self.bis[:, 0]] -= (-self.bis[:, 1]*C2[self.bis[:, 0]] +
+                               self.bis[:, 1]*C1[self.bis[:, 0]])*C4[self.bis[:, 0]]*self.beta(self.ii)[self.bis[:, 0]]
 
         i1 = self.diag_indicies(1)
         i2 = self.diag_indicies(2)
@@ -200,35 +214,36 @@ class BeefSimulator:
         i5 = self.diag_indicies(5)
         i6 = self.diag_indicies(6)
 
-        d1[i1] = C1+C2
+        d1[i1] = (C1+C2)[i1]
         d1[i1+k4] = 0
         d1 = d1[k1:]
 
-        d2[i2] = C1+C2
+        d2[i2] = (C1+C2)[i2]
         d2[i2+k5] = 0
         d2 = d2[k2:]
 
-        d3[i3] = C1+C2
+        d3[i3] = (C1+C2)[i3]
         d3[i3+k6] = 0
         d3 = d3[k3:]
 
-        d4[i4+k4] = C1+C2
+        d4[i4+k4] = (C1+C2)[i4+k4]
         d4[i1+k4] = 0
         d4 = d4[:k4]
 
-        d5[i5+k5] = C1+C2
+        d5[i5+k5] = (C1+C2)[i5+k5]
         d5[i2+k5] = 0
         d5 = d5[:k5]
 
-        d6[i6+k6] = C1+C2
+        d6[i6+k6] = (C1+C2)[i6+k6]
         d6[i3+k6] = 0
         d6 = d6[:k6]
+
         # -----------------------------------------------------
         A = diags(ds, ks)
 
         b = np.zeros(self.n)
-        b[self.bis[:, 0]] = (-self.bis[:, 1]*C2 +
-                             self.bis[:, 2]*C1)*C4*self.gamma
+        b[self.bis[:, 0]] = (-self.bis[:, 1]*C2[self.bis[:, 0]] +
+                             self.bis[:, 2]*C1[self.bis[:, 0]])*C4[self.bis[:, 0]]*self.gamma(self.ii)[self.bis[:, 0]]
 
         self.logg(3, f'A = {A}')
         self.logg(3, f'b = {b}')
