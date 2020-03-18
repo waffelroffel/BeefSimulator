@@ -8,7 +8,7 @@ import os
 
 
 class BeefSimulator:
-    def __init__(self, dims, a, b, c, alpha, beta, gamma, initial, dh=0.01, dt=0.1, filename="data/data", logging=1, bnd_types=[]):
+    def __init__(self, dims, a, b, c, alpha, beta, gamma, initial, dh=0.01, dt=0.1, filename="../data/data", logging=1, bnd_types=[]):
         """
         dims: [ [x_start, x_len], [y_start, y_len], ... , [t_start, t_len] ]
 
@@ -68,8 +68,8 @@ class BeefSimulator:
         self.z = np.linspace(*xyz_steps[2])
         self.t = np.linspace(*t_steps)
 
-        self.shape = (self.x.size, self.y.size, self.z.size)
-        self.I, self.J, self.K = self.shape
+        self.shape = (1, self.x.size, self.y.size, self.z.size)
+        self.I, self.J, self.K = self.shape[1:]
         self.n = self.I * self.J * self.K
         self.inner = (self.I-2) * (self.J-2) * (self.K-2)
         self.border = self.n-self.inner
@@ -92,16 +92,16 @@ class BeefSimulator:
 
         self.filename = filename
         self.H_file = Path(self.filename + '_header.csv')
-        self.H_file.open('w').close()
+        self.H_file.open('w+').close()
         self.T_file = Path(self.filename + '_temp.npy')
-        self.T_file.open('w').close()
+        self.T_file.open('w+').close()
         self.C_file = Path(self.filename + '_cons.npy')
-        self.C_file.open('w').close()
+        self.C_file.open('w+').close()
 
         #self.save([], self.H_file, 'csv')  # save header data: dims, time steps, ...
         self.save(self.T0, self.T_file, 'npy')
 
-        self.plotter = BP.Plotter(self)
+        self.plotter = BP.Plotter(self, name=filename, save_fig=True)
 
         self.logging = logging
 
@@ -138,12 +138,13 @@ class BeefSimulator:
         if self.logging >= lvl:
             logger(txt)
 
-    def plot(self):
+    def plot(self, t = None, x = None, y = None, z = None):
         """
         Plot the current state
+        x, y, or z: perpendicular cross-section of beef to plot.
         """
-        # TODO
-        ...
+        t_ = self.tn if t == None else t
+        self.plotter.show_heat_map(self.T_file, t_, x, y, z)
 
     def solve_next(self, method="cd"):
         """
@@ -180,7 +181,7 @@ class BeefSimulator:
         """
         if (ext == 'npy'):
             with file.open('ab') as f:
-                np.save(f, array)
+                np.save(f, array.reshape(self.shape))
         elif (ext == 'csv'):
             write_csv(array, file, False)
         else:

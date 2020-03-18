@@ -35,3 +35,4 @@ dims = [[0, 20], [0, 20], [0, 20], [0, 3]]
 bs = BeefSimulator(dims=dims, a=a, b=b, c=c, alpha=alpha, beta=beta,
                    gamma=gamma, initial=initial, dh=1, dt=0.01, logging=1)
 bs.solve_all()
+bs.plot(x=10)
