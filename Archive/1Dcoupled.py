@@ -129,7 +129,6 @@ def FTCS3(T, C, dx, dt):
                 C[1] - 2 * C[0] + C[1])  # - dt/(2*dx) * (u_w[0] * (C[1] - C[1]) + C[0] * (u_w[1] - u_w[1]))
     CNp1 = C[-2] + 2 * dx / D * u_w[-1] * C[-1] - 2 * dx / D * f * h * (T_oven - T[-1]) / (H_evap * rho_m) * (
                 C[-1] - Ceq[-1])
-
     return Tnew, Cnew
 
 if __name__ == "__main__":
@@ -138,7 +137,6 @@ if __name__ == "__main__":
     dx = x[1] - x[0]
     dt = 0.5 * dx**2
     t = np.arange(0, 1 + dt, dt)
-    print(len(t))
     T = np.ones_like(x) * T_0
     C = np.ones_like(x) * C_0
     Ts = np.zeros((len(t), len(x)))
@@ -154,5 +152,3 @@ if __name__ == "__main__":
     plt.ylim(0, C_0 * 10)
     #plt.show()
     plt.close()
-    T_t = np.ones(10)
-    testval = Ceq = a1 - a2 / (1 + a3*np.exp(-a4*(T_t-T_sig)))

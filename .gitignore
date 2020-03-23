@@ -4,3 +4,7 @@ __pycache__/
 2D-heateq.mp4
 data/test_cons_dist.npy
 data/test_temp_dist.npy
+data/data_cons.npy
+data/data_header.csv
+data/data_temp.npy
+data/data_heatmap_t=0.00.pdf

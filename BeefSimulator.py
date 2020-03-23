@@ -2,12 +2,15 @@ import numpy as np
 import matplotlib.pyplot as plt
 from scipy.sparse import diags
 import Plotting.BeefPlotter as BP
+from data_management import write_csv
+from pathlib import Path
+import os
 import auxillary_functions as af
 import constants as const
 
 
 class BeefSimulator:
-    def __init__(self, dims, a, b, c, alpha, beta, gamma, initial, initial_C, dh=0.01, dt=0.1, filename="data.csv", logging=1):
+    def __init__(self, dims, a, b, c, alpha, beta, gamma, initial,initial_C, dh=0.01, dt=0.1, filename="../data/data", logging=1, bnd_types=[]):
         """
         dims: [ [x_start, x_len], [y_start, y_len], ... , [t_start, t_len] ]
 
@@ -21,6 +24,11 @@ class BeefSimulator:
 
         initial: scalar or function with parameter (x,y,z,t)
 
+        bnd_types:
+         - d: direchet (only this do something)
+         - n: neumann
+         - r: robin
+
         logging:
          - 0: nothing
          - 1: only initial setup and end state
@@ -33,7 +41,7 @@ class BeefSimulator:
         - [X] change 3D cordinates to 1D indexing: T1 = T0 + ( A @ T0 + b )
         - [X] contruct A and b
         - [ ] make it work with only direchet boundary: alpha = 0
-        - [ ] change a, b, c, alpha, beta, gamma to functions
+        - [X] change a, b, c, alpha, beta, gamma to functions
         - [ ] validate with manufactored solution
         - [ ] implement C (concentration)
         - [ ] T and C coupled
@@ -41,14 +49,20 @@ class BeefSimulator:
         - [ ] add data management
         - [ ] add another logg level between 1 and 2 for linspaces and initial state
         """
+        def _wrap(fun):
+            def wrap(ii):
+                res = fun(*ii) if callable(fun) else fun
+                return res.flatten() if isinstance(res, np.ndarray) else res
+            return wrap
 
         # Defines the PDEs and boundary conditions
-        self.a = a
-        self.b = b
-        self.c = c
-        self.alpha = alpha
-        self.beta = beta
-        self.gamma = gamma
+        self.a = _wrap(a)
+        self.b = _wrap(b)
+        self.c = _wrap(c)
+        self.alpha = _wrap(alpha)
+        self.beta = _wrap(beta)
+        self.gamma = _wrap(gamma)
+        self.initial = _wrap(initial)
 
         self.dh = dh
         self.dt = dt
@@ -61,22 +75,37 @@ class BeefSimulator:
         self.z = np.linspace(*xyz_steps[2])
         self.t = np.linspace(*t_steps)
 
-        self.shape = (self.x.size, self.y.size, self.z.size)
-        self.I, self.J, self.K = self.shape
+        self.shape = (1, self.x.size, self.y.size, self.z.size)
+        self.I, self.J, self.K = self.shape[1:]
         self.n = self.I * self.J * self.K
         self.inner = (self.I-2) * (self.J-2) * (self.K-2)
         self.border = self.n-self.inner
 
-        # rename: the 1D indices for all the boundary points
+        # ---------- refactor ----------
+        uniques = set()
+
+        bnd_lst = []
+        for qqq, bnd in enumerate(bnd_types):
+            if bnd == "d":
+                bnd_lst.append(self.diag_indicies(qqq+1))
+
+        for qq in bnd_lst:
+            for q in qq:
+                uniques.add(q)
+
+        self.direchet_bnds = sorted(list(uniques))
+        # ---------- refactor ----------
+
+        # rename: the 1D indicies for all the boundary points
         self.bis = self.find_border_indicies()
 
-        # send it through self.index_of before use
         xx, yy, zz = np.meshgrid(self.x, self.y, self.z)
+        self.tn = self.t[0]
+        self.ii = (xx, yy, zz, self.tn)
 
         self.T1 = np.zeros(self.n)
         self.T0 = np.zeros(self.n)
-        self.T0[...] = initial(xx, yy, zz) if callable(
-            initial) else initial  # currently doesn't support function
+        self.T0[...] = self.initial(self.ii)
 
         self.C1 = np.zeros(self.n)
         self.C0 = np.zeros(self.n)
@@ -84,10 +113,17 @@ class BeefSimulator:
             initial_C) else initial_C  # currently doesn't support function
 
         self.filename = filename
-        self.save([])  # save header data: dims, time steps, ...
-        self.save(self.T0)
+        self.H_file = Path(self.filename + '_header.csv')
+        self.H_file.open('w+').close()
+        self.T_file = Path(self.filename + '_temp.npy')
+        self.T_file.open('w+').close()
+        self.C_file = Path(self.filename + '_cons.npy')
+        self.C_file.open('w+').close()
 
-        self.plotter = BP.Plotter(self)
+        #self.save([], self.H_file, 'csv')  # save header data: dims, time steps, ...
+        self.save(self.T0, self.T_file, 'npy')
+
+        self.plotter = BP.Plotter(self, name=filename, save_fig=True)
 
         self.logging = logging
 
@@ -124,12 +160,13 @@ class BeefSimulator:
         if self.logging >= lvl:
             logger(txt)
 
-    def plot(self):
+    def plot(self, t = None, x = None, y = None, z = None):
         """
         Plot the current state
+        x, y, or z: perpendicular cross-section of beef to plot.
         """
-        # TODO
-        ...
+        t_ = self.tn if t == None else t
+        self.plotter.show_heat_map(self.T_file, t_, x, y, z)
 
     def solve_next(self, method="cd"):
         """
@@ -137,7 +174,11 @@ class BeefSimulator:
         """
         if method == "cd":
             A, b = self.make_Ab()
-            self.T1[...] = self.T0 + (self.dt/self.a) * (A @ self.T0 + b)
+            self.T1[...] = self.T0 + \
+                (self.dt/self.a(self.ii)) * (A @ self.T0 + b)
+
+            self.T1[self.direchet_bnds] = (self.gamma(
+                self.ii)/self.beta(self.ii))[self.direchet_bnds]
 
     def solve_all(self, method="cd"):
         """
@@ -145,21 +186,33 @@ class BeefSimulator:
         """
         self.logg(1, "Iterating...",)
         for t in self.t:
+            self.tn = t
             self.logg(2, f'- t = {t}')
             self.solve_next(method)
-            self.save(self.T1)
+            self.save(self.T1, self.T_file, 'npy')
             self.T0, self.T1 = self.T1, np.zeros(self.n)
         self.logg(1, "Finished",)
         self.logg(1, f'Final state: {self.T0}')
 
-    def save(self, array):
+    def save(self, array, file, ext):
         """
         save array to disk(self.filename)
-        """
-        # TODO
-        ...
 
-    def make_Ab(self):
+        array: array to save. E.g. temperature or concentration array for a given timestep.
+
+        file: file/path to save to. E.g. self.H_file, self.T_file, self.C_file
+
+        ext: file extension. E.g 'npy' or 'csv'
+        """
+        if (ext == 'npy'):
+            with file.open('ab') as f:
+                np.save(f, array.reshape(self.shape))
+        elif (ext == 'csv'):
+            write_csv(array, file, False)
+        else:
+            raise ValueError("ext must either be 'npy' or 'csv'.")
+
+    def make_Ab(self,):
         """
         Contruct A and b
         """
@@ -171,10 +224,14 @@ class BeefSimulator:
         # ------- contruct all diagonals -------
         d = np.ones(self.n)
 
-        C1 = self.b/self.dh**2 + self.c/(2*self.dh)
-        C2 = self.b/self.dh**2 - self.c/(2*self.dh)
-        C3 = 6*self.b/self.dh**2
-        C4 = 2*self.dh/self.alpha
+        C1 = self.b(self.ii)/self.dh**2 + self.c(self.ii)/(2*self.dh)
+        C2 = self.b(self.ii)/self.dh**2 - self.c(self.ii)/(2*self.dh)
+        C3 = 6*self.b(self.ii)/self.dh**2
+
+        _alpha = self.alpha(self.ii).copy()
+        _alpha[self.direchet_bnds] = 1  # dummy
+        _alpha[_alpha == 0] = 1  # dummy
+        C4 = 2*self.dh/_alpha
 
         d0 = -C3*d.copy()
 
@@ -197,8 +254,10 @@ class BeefSimulator:
         # - tested with neuman boundary = 0 -> behaves correctly
         # - need to validate with non-zero values / functions
 
-        d0[self.bis[:, 0]] -= (-self.bis[:, 1]*C2 +
-                               self.bis[:, 1]*C1)*C4*self.beta
+        d0[self.bis[:, 0]] -= (-self.bis[:, 1]*C2[self.bis[:, 0]] +
+                               self.bis[:, 1]*C1[self.bis[:, 0]])*C4[self.bis[:, 0]]*self.beta(self.ii)[self.bis[:, 0]]
+
+        d0[self.direchet_bnds] = 1
 
         i1 = self.diag_indicies(1)
         i2 = self.diag_indicies(2)
@@ -207,35 +266,36 @@ class BeefSimulator:
         i5 = self.diag_indicies(5)
         i6 = self.diag_indicies(6)
 
-        d1[i1] = C1+C2
+        d1[i1] = (C1+C2)[i1]
         d1[i1+k4] = 0
         d1 = d1[k1:]
 
-        d2[i2] = C1+C2
+        d2[i2] = (C1+C2)[i2]
         d2[i2+k5] = 0
         d2 = d2[k2:]
 
-        d3[i3] = C1+C2
+        d3[i3] = (C1+C2)[i3]
         d3[i3+k6] = 0
         d3 = d3[k3:]
 
-        d4[i4+k4] = C1+C2
+        d4[i4+k4] = (C1+C2)[i4+k4]
         d4[i1+k4] = 0
         d4 = d4[:k4]
 
-        d5[i5+k5] = C1+C2
+        d5[i5+k5] = (C1+C2)[i5+k5]
         d5[i2+k5] = 0
         d5 = d5[:k5]
 
-        d6[i6+k6] = C1+C2
+        d6[i6+k6] = (C1+C2)[i6+k6]
         d6[i3+k6] = 0
         d6 = d6[:k6]
+
         # -----------------------------------------------------
         A = diags(ds, ks)
 
         b = np.zeros(self.n)
-        b[self.bis[:, 0]] = (-self.bis[:, 1]*C2 +
-                             self.bis[:, 2]*C1)*C4*self.gamma
+        b[self.bis[:, 0]] = (-self.bis[:, 1]*C2[self.bis[:, 0]] +
+                             self.bis[:, 2]*C1[self.bis[:, 0]])*C4[self.bis[:, 0]]*self.gamma(self.ii)[self.bis[:, 0]]
 
         self.logg(3, f'A = {A}')
         self.logg(3, f'b = {b}')
@@ -336,12 +396,12 @@ class BeefSimulator:
         Finds the indicies of a secific boundary
 
         bnd:
-        - 0: x = 0
-        - 1: y = 0
-        - 2: z = 0
-        - 3: x = X
-        - 4: y = Y
-        - 5: z = Z
+        - 1: x = 0
+        - 2: y = 0
+        - 3: z = 0
+        - 4: x = X
+        - 5: y = Y
+        - 6: z = Z
 
         Used to index the diagonals
 
