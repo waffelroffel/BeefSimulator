@@ -2,10 +2,12 @@ import numpy as np
 import matplotlib.pyplot as plt
 from scipy.sparse import diags
 import Plotting.BeefPlotter as BP
+import auxillary_functions as af
+import constants as const
 
 
 class BeefSimulator:
-    def __init__(self, dims, a, b, c, alpha, beta, gamma, initial, dh=0.01, dt=0.1, filename="data.csv", logging=1):
+    def __init__(self, dims, a, b, c, alpha, beta, gamma, initial, initial_C, dh=0.01, dt=0.1, filename="data.csv", logging=1):
         """
         dims: [ [x_start, x_len], [y_start, y_len], ... , [t_start, t_len] ]
 
@@ -65,7 +67,7 @@ class BeefSimulator:
         self.inner = (self.I-2) * (self.J-2) * (self.K-2)
         self.border = self.n-self.inner
 
-        # rename: the 1D indicies for all the boundary points
+        # rename: the 1D indices for all the boundary points
         self.bis = self.find_border_indicies()
 
         # send it through self.index_of before use
@@ -74,7 +76,12 @@ class BeefSimulator:
         self.T1 = np.zeros(self.n)
         self.T0 = np.zeros(self.n)
         self.T0[...] = initial(xx, yy, zz) if callable(
-            initial) else initial  # currently does't support function
+            initial) else initial  # currently doesn't support function
+
+        self.C1 = np.zeros(self.n)
+        self.C0 = np.zeros(self.n)
+        self.C0[...] = initial_C(xx, yy, zz) if callable(
+            initial_C) else initial_C  # currently doesn't support function
 
         self.filename = filename
         self.save([])  # save header data: dims, time steps, ...
@@ -234,7 +241,76 @@ class BeefSimulator:
         self.logg(3, f'b = {b}')
         return A, b
 
-    # --------------- Helper methods for make_Ab ---------------
+    # ----------------------- Concentration solver ------------------------------
+
+    def solve_next_C(self, method="cd"):
+        """
+        Calculate the next time step (C1)
+        """
+        if method == "cd":
+            C, d = self.make_Cd()
+            self.C1[...] = self.C0 + (self.dt/(2 * self.dh**2) * (C @ self.C0 + d))
+
+    def solve_all_C(self, method="cd"):
+        """
+        Iterate through from t0 -> tn
+        """
+        self.logg(1, "Iterating...",)
+        for t in self.t:
+            self.logg(2, f'- t = {t}')
+            self.solve_next_C(method)
+            self.save(self.C1)
+            self.C0, self.C1 = self.C1, np.zeros(self.n)
+        self.logg(1, "Finished",)
+        self.logg(1, f'Final state: {self.C0}')
+
+    def make_Cd(self):
+        """
+        Construct C and d for Concentration equation
+        """
+        # diagonal indices
+        [k0, k1, k2, k3, k4, k5, k6] = self.get_ks()
+        ks = [k0, k1, k2, k3, k4, k5, k6]
+
+        # ------- construct all diagonals -------
+        d = np.ones(self.n)
+
+        # TODO:
+        # Fix \nabla u_w, currently placeholder
+        # !DOES NOT WORK!
+        D1 = 2 * self.dh * af.u_w(self.T0, self.C0) + const.D
+        D2 = - 2 * self.dh * af.u_w(self.T0, self.C0) + const.D
+        D3 = 2 * self.dh * np.gradient(af.u_w(self.T0, self.C0)) - 6 * const.D
+
+        d0 = D3 * d.copy()
+
+        d1 = D1 * d.copy()
+        d2 = D1 * d.copy()
+        d3 = D1 * d.copy()
+
+        d4 = D2 * d.copy()
+        d5 = D2 * d.copy()
+        d6 = D2 * d.copy()
+
+        ds = [d0, d1, d2, d3, d4, d5, d6]
+
+        # TODO:
+        # --------------- modify the boundaries ---------------
+
+        # TODO:
+        # -----------------------------------------------------
+        C = diags(ds, ks)
+
+        d = np.zeros(self.n)
+        # ehm:
+        #d[self.bis[:, 0]] = (-self.bis[:, 1] * C2 +
+        #                     self.bis[:, 2] * C1) * C4 * self.gamma
+
+        self.logg(3, f'C = {C}')
+        self.logg(3, f'd = {d}')
+        return C, d
+
+    # --------------- Helper methods for make_Ab & make_Cd ---------------
 
     def index_of(self, i, j, k):
         """
