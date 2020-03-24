@@ -8,8 +8,12 @@ def T(x, y, z, t):
         np.sin(2*np.pi * x) * np.sin(2*np.pi * y) * np.sin(4*np.pi * z)
 
 
-def initial(xx, yy, zz, tt):
+def initial_T(xx, yy, zz, tt):
     return T(xx, yy, zz, tt)
+
+
+def initial_C(xx, yy, zz, tt):
+	return 1
 
 
 def a(xx, yy, zz, tt):
@@ -42,7 +46,7 @@ dt = 0.001
 dims = [[0, 4], [0, 4], [0, 2], [0, 1]]
 shape = [ int((dims[0][1]-dims[0][0])/dh), int((dims[1][1]-dims[1][0])/dh), int((dims[2][1]-dims[2][0])/dh) ]
 bs = BeefSimulator(dims=dims, a=a, b=b, c=c, alpha=alpha, beta=beta,
-                   gamma=gamma, initial=initial, initial_C=np.zeros(shape), dh=dh, dt=dt,
+                   gamma=gamma, initial=initial_T, initial_C=initial_C, dh=dh, dt=dt,
 				   logging=0, bnd_types=["d", "d", "d", "d", "d", "d"])
 
 bs.solve_all()

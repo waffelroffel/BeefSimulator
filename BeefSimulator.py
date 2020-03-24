@@ -109,7 +109,7 @@ class BeefSimulator:
 
         self.C1 = np.zeros(self.n)
         self.C0 = np.zeros(self.n)
-        self.C0[...] = initial_C(xx, yy, zz) if callable(
+        self.C0[...] = initial_C(xx, yy, zz, self.tn) if callable(
             initial_C) else initial_C  # currently doesn't support function
 
         self.filename = filename
