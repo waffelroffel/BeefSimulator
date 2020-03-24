@@ -56,7 +56,7 @@ def make_manisol_1d(xd: int, td: int) -> np.array:
     return T(xx, tt)
 
 
-def make_manisol_3d(shape_d: tuple, td: int) -> np.array:
+def make_manisol_3d(shape_d: list, td: int) -> np.array:
     '''
     Boundary value problem:
     Solve T_t = a * (T_x^2 + T_y^2 + T_z^2) for x in [0, Lx], y in [0, Ly], z in [0, Lz], t in [0, inf)
@@ -106,14 +106,19 @@ def test_diff_manisol(calcdata: np.array, manidata: np.array) -> float:
 # TODO: ... Man kan evt. legge til produksjon av disse datasett og lagre dem i __main__ under.		--Svein
 
 
-def make_Dirichlet_analytic_object(shape: tuple, td: int) -> np.array:
+def make_Dirichlet_analytic_object(shape: list, td: int) -> np.array:
 	analyticSol = make_manisol_3d(shape, td)
 	initial = analyticSol[:,:,:,0]
 	np.save(f'3D_manisol_T_{shape[0]}_{shape[1]}_{shape[2]}_{td}.npy', analyticSol)
 	return initial
 
 
-def make_Dirichlet_test_object(shape, td, initial):
+def T_init(x, y, z, t):
+	return 3*np.exp(-4*1e-3*(np.pi)**2*(1 + 1 + 4)*t)*\
+		   np.sin(2*np.pi*x)*np.sin(2*np.pi*y)*np.sin(4*np.pi*z)
+
+
+def make_Dirichlet_test_object(shape: list, td: int) -> None:
 	dh = 0.01
 	dt = 0.1
 	beefdims = [ [0, shape[0]*dh], [0, shape[1]*dh], [0, shape[2]*dh], [0, td*dt] ]
@@ -126,8 +131,25 @@ def make_Dirichlet_test_object(shape, td, initial):
 	beta = [1, 1, 1, 1, 1, 1]
 	gamma = [0, 0, 0, 0, 0, 0]
 
-	Beef = BeefSimulator.BeefSimulator(beefdims, a, b, c, alpha, beta, gamma, initial, np.zeros(shape.append(td)), dh, dt, filename=f'../data/3D_testsol_T_{shape[0]}_{shape[1]}_{shape[2]}_{td}.npy', logging=1, bnd_types=['d', 'd', 'd', 'd', 'd', 'd'])
+	Beef = BeefSimulator.BeefSimulator(beefdims, a, b, c, alpha, beta, gamma, T_init, np.zeros(shape.append(td)), dh,
+										dt, filename=f'../data/3D_testsol_T_{shape[0]}_{shape[1]}_{shape[2]}_{td}.npy',
+									   	logging=1, bnd_types=['d', 'd', 'd', 'd', 'd', 'd'])
+	Beef.solve_all()
+	Beef.plot(Beef.tn)
+	
 
+if __name__ == '__main__':
+	shape = [20, 30, 40]
+	td = 100
+	# initial = make_Dirichlet_analytic_object(shape, td)
+	make_Dirichlet_test_object(shape, td)
+
+'''
+NB:
+Jeg har definert shape til å være [20, 30, 40]
+Beef-objektet rapporterer dette til å være [1, 21, 31, 41]
+Noen som har kommentarer ang. dette?
+'''
 
 
 '''
