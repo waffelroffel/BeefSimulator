@@ -1,4 +1,5 @@
 import numpy as np
+import BeefSimulator
 
 '''
 Make data for testing of plot etc.
@@ -68,7 +69,9 @@ def make_manisol_3d(shape_d: tuple, td: int) -> np.array:
     insert a = 1e-3, Lx=Ly=Lz=1
 
     ### NB! (3.1) -> T(x,y,0,t) = 0 and (3.2) -> T(x,y,Lz,t) = 0 gives exactly the same solution!
-
+    ### NB2! Jeg kan også tvinge frem rene Neumann-B.C.s for å få denne løsningen. Skal skrive det ned etterpå.
+    #TODO: Gjør det ^
+    
     :param shape_d: tuple[int] of the numbers of points discretising x, y and z (Nx, Ny, Nz)
     :param td: number of points discretising t
     :return: The manifactured solution to the BVP described above
@@ -103,8 +106,30 @@ def test_diff_manisol(calcdata: np.array, manidata: np.array) -> float:
 # TODO: ... Man kan evt. legge til produksjon av disse datasett og lagre dem i __main__ under.		--Svein
 
 
-'''
-Very simple test data generator.
+def make_Dirichlet_analytic_object(shape: tuple, td: int) -> np.array:
+	analyticSol = make_manisol_3d(shape, td)
+	initial = analyticSol[:,:,:,0]
+	np.save(f'3D_manisol_T_{shape[0]}_{shape[1]}_{shape[2]}_{td}.npy', analyticSol)
+	return initial
+
+
+def make_Dirichlet_test_object(shape, td, initial):
+	dh = 0.01
+	dt = 0.1
+	beefdims = [ [0, shape[0]*dh], [0, shape[1]*dh], [0, shape[2]*dh], [0, td*dt] ]
+	# Notat til meg selv: bør a, b, c spesifiseres komponentvis eller nah?
+	a = 1
+	b = 1
+	c = 0
+	# Antar at dette henspeiler alle front og bak for alle x, y, z retninger - derfor 6 komponenter.
+	alpha = [0, 0, 0, 0, 0, 0]
+	beta = [1, 1, 1, 1, 1, 1]
+	gamma = [0, 0, 0, 0, 0, 0]
+
+	Beef = BeefSimulator.BeefSimulator(beefdims, a, b, c, alpha, beta, gamma, initial, np.zeros(shape.append(td)), dh, dt, filename=f'../data/3D_testsol_T_{shape[0]}_{shape[1]}_{shape[2]}_{td}.npy', logging=1, bnd_types=['d', 'd', 'd', 'd', 'd', 'd'])
+
+
+
 '''
 if __name__ == '__main__':
     h = 0.25
@@ -139,3 +164,4 @@ if __name__ == '__main__':
 
     np.save('test_temp_dist.npy', U)
     np.save('test_cons_dist.npy', C)
+'''

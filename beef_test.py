@@ -36,9 +36,14 @@ def gamma(xx, yy, zz, tt):
     return np.zeros(xx.size)
 
 
+dh = 1
+dt = 0.001
+
 dims = [[0, 4], [0, 4], [0, 2], [0, 1]]
+shape = [ int((dims[0][1]-dims[0][0])/dh), int((dims[1][1]-dims[1][0])/dh), int((dims[2][1]-dims[2][0])/dh) ]
 bs = BeefSimulator(dims=dims, a=a, b=b, c=c, alpha=alpha, beta=beta,
-                   gamma=gamma, initial=initial, dh=1, dt=0.001, logging=0, bnd_types=["d", "d", "d", "d", "d", "d"])
+                   gamma=gamma, initial=initial, initial_C=np.zeros(shape), dh=dh, dt=dt,
+				   logging=0, bnd_types=["d", "d", "d", "d", "d", "d"])
 
 bs.solve_all()
 bs.plot(x=10)
