@@ -1,5 +1,4 @@
 import numpy as np
-import BeefSimulator
 
 '''
 Make data for testing of plot etc.
@@ -58,7 +57,11 @@ def make_manisol_1d(xd: int, td: int) -> np.array:
 
 def make_manisol_3d(shape_d: list, td: int) -> np.array:
     '''
-    Boundary value problem:
+    Boun(1.1): T(0,y,z,t) = 0		(1.2): T(Lx,y,z,t) = 0
+    (2.1): T(x,0,z,t) = 0		(2.2): T(x,Ly,z,t) = 0
+    (3.1): T(x,y,0,t) = T(x,y,Lz,t)			(3.2): T_z(x,y,0,t) = T_z(x,y,Lz,t)
+    (4): T(x,y,z,0) = 3*sin(2*pi*x/Lx)*sin(2*pi*y/Ly)*sin(4*pi*z/Lz)			(Chosen for convenience)
+    dary value problem:
     Solve T_t = a * (T_x^2 + T_y^2 + T_z^2) for x in [0, Lx], y in [0, Ly], z in [0, Lz], t in [0, inf)
     (1.1): T(0,y,z,t) = 0		(1.2): T(Lx,y,z,t) = 0
     (2.1): T(x,0,z,t) = 0		(2.2): T(x,Ly,z,t) = 0
@@ -66,7 +69,7 @@ def make_manisol_3d(shape_d: list, td: int) -> np.array:
     (4): T(x,y,z,0) = 3*sin(2*pi*x/Lx)*sin(2*pi*y/Ly)*sin(4*pi*z/Lz)			(Chosen for convenience)
     Only the (nx=2, ny=2, nz=2)-Fourier component is non-zero due to B.C. (4) => ...
     T(x,y,z,t) = 3 * exp(-4*a*pi^2*(1/Lx^2+1/Ly^2+4/Lz^2) * t) * sin(2*pi/Lx * x) * sin(2*pi/Ly * y) * sin(4*pi/Lz * z)
-    insert a = 1e-3, Lx=Ly=Lz=1
+    insert a = 1, Lx=Ly=Lz=1
 
     ### NB! (3.1) -> T(x,y,0,t) = 0 and (3.2) -> T(x,y,Lz,t) = 0 gives exactly the same solution!
     ### NB2! Jeg kan også tvinge frem rene Neumann-B.C.s for å få denne løsningen. Skal skrive det ned etterpå.
@@ -77,7 +80,7 @@ def make_manisol_3d(shape_d: list, td: int) -> np.array:
     :return: The manifactured solution to the BVP described above
     '''
     # Analytic solution
-    def T(x, y, z, t): return 3 * np.exp(-4*1e-3*(np.pi)**2*(1+1+4) * t) * \
+    def T(x, y, z, t): return 3 * np.exp(-4*1*(np.pi)**2*(1+1+4) * t) * \
         np.sin(2*np.pi * x) * np.sin(2*np.pi * y) * np.sin(4*np.pi * z)
 
     xd, yd, zd = shape_d
@@ -86,7 +89,7 @@ def make_manisol_3d(shape_d: list, td: int) -> np.array:
     z = np.linspace(0, 1, zd)
     delta_t = 0.1
     t = np.linspace(0, td*delta_t, td)
-    xx, yy, zz, tt = np.meshgrid(x, y, z, t)
+    tt, xx, yy, zz = np.meshgrid(t, x, y, z, indexing='ij')
     return T(xx, yy, zz, tt)
 
 
@@ -138,12 +141,6 @@ def make_Dirichlet_test_object(shape: list, td: int) -> None:
 	Beef.plot(Beef.tn)
 	
 
-if __name__ == '__main__':
-	shape = [20, 30, 40]
-	td = 100
-	# initial = make_Dirichlet_analytic_object(shape, td)
-	make_Dirichlet_test_object(shape, td)
-
 '''
 NB:
 Jeg har definert shape til å være [20, 30, 40]
@@ -151,39 +148,28 @@ Beef-objektet rapporterer dette til å være [1, 21, 31, 41]
 Noen som har kommentarer ang. dette?
 '''
 
-
-'''
 if __name__ == '__main__':
-    h = 0.25
-    dt = 0.1
+    
+    
 
-    shape = (101, 151, 201)
-    t = np.arange(0, 10.1, dt)
-    x = np.linspace(0, 25.00, shape[0])
-    y = np.linspace(0, 37.50, shape[1])
-    z = np.linspace(0, 50.00, shape[2])
+    ''' Create sample manufactured solutions
+    h = 0.5
+    dt = 0.1
+    x_m = 25
+    y_m = 32.5
+    z_m = 40
+
+    shape = (int(x_m / h + 1), int(y_m / h + 1), int(z_m / h + 1))
+    t = np.arange(0, 7.0 + dt, dt)
+    x = np.arange(0, x_m + h, h)
+    y = np.arange(0, y_m + h, h)
+    z = np.arange(0, z_m + h, h)
 
     d_shape = (len(t), len(x), len(y), len(z))
     print(d_shape)
 
-    U = np.random.random(d_shape)
-    C = np.random.random(d_shape)
+    U = make_manisol_3d(shape, d_shape[0])
+    print(U.shape)
 
-    U[:, :, :, 0] = 0.00
-    U[:, :, 0, :] = 25.0
-    U[:, :, :, -1] = 50.0
-    U[:, :, -1, :] = 75.0
-    U[:, 0, :, :] = 100.0
-    U[:, -1, :, :] = 125.0
-    U[0, :, :, :], U[10, :, :, :] = make_testdata(shape)
-
-    C[:, :, :, 0] = 0.00
-    C[:, :, 0, :] = 0.25
-    C[:, :, :, -1] = 0.50
-    C[:, :, -1, :] = 0.75
-    C[:, 0, :, :] = 1.00
-    C[:, -1, :, :] = 1.25
-
-    np.save('test_temp_dist.npy', U)
-    np.save('test_cons_dist.npy', C)
-'''
+    np.save('test_temp.npy', U)
+    '''
