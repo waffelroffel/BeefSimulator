@@ -24,7 +24,8 @@ class Plotter:
         self.save_fig = save_fig
 
     def show_heat_map(self, U_name, t, x=None, y=None, z=None):
-        U = np.load(U_name, mmap_mode='r')
+        U = np.load(str(U_name), mmap_mode='r')
+        print(U.shape)
         if isinstance(t, list):
             pass
         else:
@@ -33,34 +34,38 @@ class Plotter:
             fig, ax = plt.subplots()
             cs = []
             cbarlab = ''
+            coordlab = ''
 
             if x is not None:
                 plt.title(f'X-section @ $x={x:.2f}$ and $t =$ {t:.2f}')
                 i = int(x // self.h)
                 yz, zy = np.meshgrid(self.y, self.z, indexing='ij')
-                cs = [ax.contourf(yz, zy, U[n, i, :, :], 200,
+                cs = [ax.contourf(yz, zy, U[n, i, :, :], 65,
                                   cmap=cm.get_cmap('magma'))]
                 plt.xlabel(r"$y$", fontsize=16)
                 plt.ylabel(r"$z$", fontsize=16)
                 cbarlab = r'$U(y,z)$'
+                coordlab = f'x={x:.2f}'
             elif y is not None:
                 plt.title(f'X-section @ $y={y:.2f}$ and $t =$ {t:.2f}')
                 j = int(y // self.h)
                 xz, zx = np.meshgrid(self.x, self.z, indexing='ij')
-                cs = [ax.contourf(xz, zx, U[n, :, j, :], 200,
+                cs = [ax.contourf(xz, zx, U[n, :, j, :], 65,
                                   cmap=cm.get_cmap('magma'))]
                 plt.xlabel(r"$x$", fontsize=16)
                 plt.ylabel(r"$z$", fontsize=16)
                 cbarlab = r'$U(x,z)$'
+                coordlab = f'y={y:.2f}'
             elif z is not None:
                 plt.title(f'X-section @ $z={z:.2f}$ and $t =$ {t:.2f}')
                 k = int(z // self.h)
                 xy, yx = np.meshgrid(self.x, self.y, indexing='ij')
-                cs = [ax.contourf(xy, yx, U[n, :, :, k], 200,
+                cs = [ax.contourf(xy, yx, U[n, :, :, k], 65,
                                   cmap=cm.get_cmap('magma'))]
                 plt.xlabel(r"$x$", fontsize=16)
                 plt.ylabel(r"$y$", fontsize=16)
                 cbarlab = r'$U(x,y)$'
+                coordlab = f'z={z:.2f}'
             else:
                 raise Exception("No crossection coordinate given.")
 
@@ -68,7 +73,7 @@ class Plotter:
             cbar1.ax.set_ylabel(cbarlab, fontsize=14)
 
             if self.save_fig:
-                plt.savefig(self.name + f"_heatmap_t={t:.2f}.pdf")
+                plt.savefig(self.name + "_heatmap_" + coordlab + f"_t={t:.2f}.png")
             plt.show()
 
     def show_boundary_cond(self):
@@ -78,7 +83,7 @@ class Plotter:
         plt.legend()
         plt.grid()
         if self.save_fig:
-            plt.savefig(self.name + "_BC.pdf")
+            plt.savefig(self.name + "_BC.png")
         plt.show()
 
 

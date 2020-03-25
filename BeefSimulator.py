@@ -43,9 +43,9 @@ class BeefSimulator:
         - [ ] make it work with only direchet boundary: alpha = 0
         - [X] change a, b, c, alpha, beta, gamma to functions
         - [ ] validate with manufactored solution
-        - [ ] implement C (concentration)
+        - [X] implement C (concentration)
         - [ ] T and C coupled
-        - [ ] add plotter
+        - [X] add plotter
         - [ ] add data management
         - [ ] add another logg level between 1 and 2 for linspaces and initial state
         """
@@ -116,12 +116,13 @@ class BeefSimulator:
         self.H_file = Path(self.filename + '_header.csv')
         self.H_file.open('w+').close()
         self.T_file = Path(self.filename + '_temp.npy')
-        self.T_file.open('w+').close()
+        print(self.T_file)
+        #self.T_file.open('w+').close()
         self.C_file = Path(self.filename + '_cons.npy')
         self.C_file.open('w+').close()
 
         #self.save([], self.H_file, 'csv')  # save header data: dims, time steps, ...
-        self.save(self.T0, self.T_file, 'npy')
+        #self.save(self.T0, self.T_file, 'npy')
 
         self.plotter = BP.Plotter(self, name=filename, save_fig=True)
 
@@ -319,7 +320,7 @@ class BeefSimulator:
         for t in self.t:
             self.logg(2, f'- t = {t}')
             self.solve_next_C(method)
-            self.save(self.C1)
+            self.save(self.C1, self.C_file, 'npy')
             self.C0, self.C1 = self.C1, np.zeros(self.n)
         self.logg(1, "Finished",)
         self.logg(1, f'Final state: {self.C0}')
