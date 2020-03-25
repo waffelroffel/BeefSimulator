@@ -48,3 +48,8 @@ dt = 0.1           #s
 Lx = 0.10          #m			X-length of beef
 Ly = 0.20          #m			Y-length of beef
 Lz = 0.15          #m			X-length of beef
+'''Constants for fraction of energy used for evaporation'''
+f0=0                #minimum fraction of energy that can be used for evaporation
+f1=47               #based on cooking of cod
+f2=15               #based on cooking of cod
+f_max=1             #maximum fraction of energy than can be used for evaporation
