@@ -72,8 +72,6 @@ def make_manisol_3d(shape_d: list, td: int) -> np.array:
     insert a = 1, Lx=Ly=Lz=1
 
     ### NB! (3.1) -> T(x,y,0,t) = 0 and (3.2) -> T(x,y,Lz,t) = 0 gives exactly the same solution!
-    ### NB2! Jeg kan også tvinge frem rene Neumann-B.C.s for å få denne løsningen. Skal skrive det ned etterpå.
-    #TODO: Gjør det ^
     
     :param shape_d: tuple[int] of the numbers of points discretising x, y and z (Nx, Ny, Nz)
     :param td: number of points discretising t
@@ -91,6 +89,40 @@ def make_manisol_3d(shape_d: list, td: int) -> np.array:
     t = np.linspace(0, td*delta_t, td)
     tt, xx, yy, zz = np.meshgrid(t, x, y, z, indexing='ij')
     return T(xx, yy, zz, tt)
+
+#########################################################################################################
+# HELPER FUNCTIONS #
+D = 1
+Lx, Ly, Lz = 1, 1, 1
+
+xi = lambda x:  np.sin( 2*np.pi/Lx * x )
+eta = lambda y: np.sin( 2*np.pi/Ly * y )
+zeta = lambda z: np.sin( 4*np.pi/Lz * z )
+tau = lambda t: np.exp( -4*D*t*np.pi**2 * (1/Lx**2 + 1/Ly**2 + 4/Lz**2) )
+
+f_x0 = lambda y, z, t: 2*np.pi/Lx * eta(y) * zeta(z) * tau(t)
+f_xL = lambda y, z, t: 2*np.pi/Lx * eta(y) * zeta(z) * tau(t)
+f_y0 = lambda x, z, t: xi(x) * 2*np.pi/Ly * zeta(z) * tau(t)
+f_yL = lambda x, z, t: xi(x) * 2*np.pi/Ly * zeta(z) * tau(t)
+f_z0 = lambda x, y, t: xi(x) * eta(y) * 4*np.pi/Lz * tau(t)
+f_zL = lambda x, y, t: xi(x) * eta(y) * 4*np.pi/Lz * tau(t)
+
+'''
+Diff eq has Neumann boundary conditions
+
+dT/dx|_0  = f_x0
+dT/dx|_Lx = f_xL
+dT/dy|_0  = f_y0
+dT/dy|_Ly = f_yL
+dT/dz|_0  = f_z0
+dT/dz|_Lz = f_zL
+T(x,y,z,0) =  3*sin(2*pi*x/Lx)*sin(2*pi*y/Ly)*sin(4*pi*z/Lz)
+
+Gives the same manifactured solution as before. You may insert these functions as inputs in BeefSimulator
+'''
+
+#########################################################################################################
+
 
 
 def test_diff_manisol(calcdata: np.array, manidata: np.array) -> float:
@@ -139,7 +171,10 @@ def make_Dirichlet_test_object(shape: list, td: int) -> None:
 									   	logging=1, bnd_types=['d', 'd', 'd', 'd', 'd', 'd'])
 	Beef.solve_all()
 	Beef.plot(Beef.tn)
+
+
 	
+
 
 '''
 NB:
