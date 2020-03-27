@@ -156,6 +156,29 @@ class BeefSimulator:
             1, f'{self.T1.shape} = {self.T0.shape} + ( {(self.n,self.n)} @ {self.T0.shape} + {(self.n,)} )')
         self.logg(1, f'----------------------------------------------')
 
+    def solver(self):
+        """
+        Iterate through from t0 -> tn
+        solve for both temp. and conc.
+        """
+        method = "cd"
+        self.logg(1, "Iterating...", )
+        for t in self.t:
+            # litt usikker på dimensjonene på Q
+            Q = af.u_w(self.T0, self.C0)
+
+            self.tn = t
+            self.logg(2, f'- t = {t}')
+            self.solve_next(method, Q)
+            self.save(self.T1, self.T_file, 'npy')
+            self.T0, self.T1 = self.T1, np.zeros(self.n)
+            self.solve_next_C(method, Q)
+            self.save(self.C1, self.C_file, 'npy')
+            self.C0, self.C1 = self.C1, np.zeros(self.n)
+        self.logg(1, "Finished", )
+        #self.logg(1, f'Final state: {self.T0}')
+
+
     def logg(self, lvl, txt, logger=print):
         """
         Logg when lvl >= self.logging
@@ -175,6 +198,8 @@ class BeefSimulator:
         """
         t_ = self.tn if t == None else t
         self.plotter.show_heat_map(self.T_data, t_, x, y, z)
+
+    # ----------------------- Temperature solver -------------------------------
 
     def solve_next(self, method="cd"):
         """
@@ -312,12 +337,12 @@ class BeefSimulator:
 
     # ----------------------- Concentration solver ------------------------------
 
-    def solve_next_C(self, method="cd"):
+    def solve_next_C(self, Q, method="cd"):
         """
         Calculate the next time step (C1)
         """
         if method == "cd":
-            C, d = self.make_Cd()
+            C, d = self.make_Cd(Q)
             self.C1[...] = self.C0 + (self.dt/(2 * self.dh**2) * (C @ self.C0 + d))
 
     def solve_all_C(self, method="cd"):
@@ -337,7 +362,7 @@ class BeefSimulator:
         self.logg(1, "Finished",)
         self.logg(1, f'Final state: {self.C0}')
 
-    def make_Cd(self):
+    def make_Cd(self, Q):
         """
         Construct C and d for Concentration equation
         """
@@ -350,20 +375,21 @@ class BeefSimulator:
 
         # TODO:
         # Fix \nabla u_w, currently placeholder
-        # !DOES NOT WORK!
-        D1 = 2 * self.dh * af.u_w(self.T0, self.C0) + const.D
-        D2 = - 2 * self.dh * af.u_w(self.T0, self.C0) + const.D
-        D3 = 2 * self.dh * np.gradient(af.u_w(self.T0, self.C0)) - 6 * const.D
+        # Should work
+
+        D1 = 2 * self.dh * Q + const.D
+        D2 = - 2 * self.dh * Q + const.D
+        D3 = 2 * self.dh * np.gradient(Q) - 6 * const.D
 
         d0 = D3 * d.copy()
 
-        d1 = D1 * d.copy()
-        d2 = D1 * d.copy()
-        d3 = D1 * d.copy()
+        d1 = D1[0] * d.copy()
+        d2 = D1[1] * d.copy()
+        d3 = D1[2] * d.copy()
 
-        d4 = D2 * d.copy()
-        d5 = D2 * d.copy()
-        d6 = D2 * d.copy()
+        d4 = D2[0] * d.copy()
+        d5 = D2[1] * d.copy()
+        d6 = D2[2] * d.copy()
 
         ds = [d0, d1, d2, d3, d4, d5, d6]
 
@@ -390,6 +416,13 @@ class BeefSimulator:
         Returns the 1D index from 3D cordinates
         """
         return i + self.I*j + self.I*self.J*k
+
+    # Unnecessary?
+    def index_of_inverse(self, p):
+        k = p // (self.I * self.J)
+        j = (p - k * self.I * self.J) // self.I
+        i = (p - k * self.I * self.J - j * self.I)
+        return i, j, k
 
     def get_ks(self):
         """
