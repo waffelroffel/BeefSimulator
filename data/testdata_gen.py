@@ -55,7 +55,7 @@ def make_manisol_1d(xd: int, td: int) -> np.array:
     return T(xx, tt)
 
 
-def make_manisol_3d(shape_d: list, td: int) -> np.array:
+def make_manisol_3d(shape_d: list, filename: str) -> None:
     '''
     Boun(1.1): T(0,y,z,t) = 0		(1.2): T(Lx,y,z,t) = 0
     (2.1): T(x,0,z,t) = 0		(2.2): T(x,Ly,z,t) = 0
@@ -69,33 +69,38 @@ def make_manisol_3d(shape_d: list, td: int) -> np.array:
     (4): T(x,y,z,0) = 3*sin(2*pi*x/Lx)*sin(2*pi*y/Ly)*sin(4*pi*z/Lz)			(Chosen for convenience)
     Only the (nx=2, ny=2, nz=2)-Fourier component is non-zero due to B.C. (4) => ...
     T(x,y,z,t) = 3 * exp(-4*a*pi^2*(1/Lx^2+1/Ly^2+4/Lz^2) * t) * sin(2*pi/Lx * x) * sin(2*pi/Ly * y) * sin(4*pi/Lz * z)
-    insert a = 1, Lx=Ly=Lz=1
+    insert a = 1e-4, Lx=Ly=Lz=1
 
     ### NB! (3.1) -> T(x,y,0,t) = 0 and (3.2) -> T(x,y,Lz,t) = 0 gives exactly the same solution!
     ### NB2! Jeg kan også tvinge frem rene Neumann-B.C.s for å få denne løsningen. Skal skrive det ned etterpå.
     #TODO: Gjør det ^
     
-    :param shape_d: tuple[int] of the numbers of points discretising x, y and z (Nx, Ny, Nz)
-    :param td: number of points discretising t
-    :return: The manifactured solution to the BVP described above
+    :param shape_d: tuple[int] of the numbers of points discretising t, x, y and z (Nt, Nx, Ny, Nz)
+    :param filename: filename of data, something such as 'file.dat'
+    :return: None. The manufactured solution to the BVP described above is saved to a file.
     '''
     # Analytic solution
-    def T(x, y, z, t): return 3 * np.exp(-4*1*(np.pi)**2*(1+1+4) * t) * \
+    def T(x, y, z, t): return 3 * np.exp(-4*1E-4*(np.pi)**2*(1+1+4) * t) * \
         np.sin(2*np.pi * x) * np.sin(2*np.pi * y) * np.sin(4*np.pi * z)
 
-    xd, yd, zd = shape_d
+    data = np.memmap(   filename,
+                        dtype='float64', 
+                        mode= 'w+', 
+                        shape=(shape_d))
+    
+    td, xd, yd, zd = shape_d
     x = np.linspace(0, 1, xd)
     y = np.linspace(0, 1, yd)
     z = np.linspace(0, 1, zd)
-    delta_t = 0.1
-    t = np.linspace(0, td*delta_t, td)
-    tt, xx, yy, zz = np.meshgrid(t, x, y, z, indexing='ij')
-    return T(xx, yy, zz, tt)
+    dt = 0.1
 
+    xx, yy, zz = np.meshgrid(x, y, z, indexing='ij')
+    
+    for n in range(td):
+        data[n] = T(xx, yy, zz, n * dt)
 
 def test_diff_manisol(calcdata: np.array, manidata: np.array) -> float:
     '''
-
     :param calcdata: Calculated data
     :param manidata: Manifactured data
     :return: (Frobenius) matrix norm of the absolute value of the difference
@@ -150,16 +155,15 @@ Noen som har kommentarer ang. dette?
 
 if __name__ == '__main__':
     
-    
 
-    ''' Create sample manufactured solutions
+
+    #Create sample manufactured solutions
     h = 0.5
     dt = 0.1
-    x_m = 25
-    y_m = 32.5
-    z_m = 40
+    x_m = 75
+    y_m = 150
+    z_m = 175
 
-    shape = (int(x_m / h + 1), int(y_m / h + 1), int(z_m / h + 1))
     t = np.arange(0, 7.0 + dt, dt)
     x = np.arange(0, x_m + h, h)
     y = np.arange(0, y_m + h, h)
@@ -168,8 +172,13 @@ if __name__ == '__main__':
     d_shape = (len(t), len(x), len(y), len(z))
     print(d_shape)
 
-    U = make_manisol_3d(shape, d_shape[0])
-    print(U.shape)
+    manu_file = 'manu_sol_temp.dat'
+    make_manisol_3d(d_shape, manu_file)
 
-    np.save('test_temp.npy', U)
-    '''
+    manu_data = np.memmap(manu_file,
+                        dtype='float64', 
+                        mode= 'r', 
+                        shape=(d_shape))
+
+    print(manu_data)
+
