@@ -353,7 +353,7 @@ class BeefSimulator:
         self.C_data = np.memmap(self.C_file, dtype='float64', mode='w+', shape=self.shape)
 
         self.logg(1, "Iterating...",)
-        for i in range(len(t)):
+        for i in range(len(self.t)):
             self.tn = i * self.dt
             self.logg(2, f'- t = {self.tn}')
             self.solve_next_C(method)
@@ -376,7 +376,6 @@ class BeefSimulator:
         # TODO:
         # Fix \nabla u_w, currently placeholder
         # Should work
-
 
         D1 = 2 * self.dh * Q + const.D
         D2 = - 2 * self.dh * Q + const.D
