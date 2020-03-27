@@ -10,7 +10,7 @@ import constants as const
 
 
 class BeefSimulator:
-    def __init__(self, dims, a, b, c, alpha, beta, gamma, initial,initial_C, dh=0.01, dt=0.1, filename="../data/data", logging=1, bnd_types=[]):
+    def __init__(self, dims, a, b, c, alpha, beta, gamma, initial,initial_C, dh=0.01, dt=0.1, filename="data/data", logging=1, bnd_types=[]):
         """
         dims: [ [x_start, x_len], [y_start, y_len], ... , [t_start, t_len] ]
 
@@ -328,7 +328,7 @@ class BeefSimulator:
         self.C_data = np.memmap(self.C_file, dtype='float64', mode='w+', shape=self.shape)
 
         self.logg(1, "Iterating...",)
-        for i in range(len(t)):
+        for i in range(len(self.t)):
             self.tn = i * self.dt
             self.logg(2, f'- t = {self.tn}')
             self.solve_next_C(method)

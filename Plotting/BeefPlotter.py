@@ -23,8 +23,8 @@ class Plotter:
         self.name = name
         self.save_fig = save_fig
 
-    def show_heat_map(self, U_name, t, x=None, y=None, z=None):
-        U = np.load(str(U_name), mmap_mode='r')
+    def show_heat_map(self, U_data, t, x=None, y=None, z=None):
+        U = U_data
         print(U.shape)
         if isinstance(t, list):
             pass

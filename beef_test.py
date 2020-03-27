@@ -40,20 +40,20 @@ def gamma(xx, yy, zz, tt):
     return np.zeros(xx.size)
 
 
-dh = 1
-dt = 0.001
+dh = 0.05
+dt = 0.01
 
-dims = [[0, 4], [0, 4], [0, 2], [0, 1]]
+dims = [[0, 4], [0, 3], [0, 2], [0, 1]]
 shape = [ int((dims[0][1]-dims[0][0])/dh), int((dims[1][1]-dims[1][0])/dh), int((dims[2][1]-dims[2][0])/dh) ]
 bs = BeefSimulator(dims=dims, a=a, b=b, c=c, alpha=alpha, beta=beta,
                    gamma=gamma, initial=initial_T, initial_C=initial_C, dh=dh, dt=dt,
 				   logging=0, bnd_types=["d", "d", "d", "d", "d", "d"])
 
 bs.solve_all()
-bs.plot(x=10)
+bs.plot(0.001, z=1)
 
 x = np.linspace(0, 4, 5)
-y = np.linspace(0, 4, 5)
+y = np.linspace(0, 3, 5)
 z = np.linspace(0, 2, 3)
 t = 1
 xx, yy, zz = np.meshgrid(x, y, z)

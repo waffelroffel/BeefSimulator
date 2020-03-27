@@ -174,11 +174,3 @@ if __name__ == '__main__':
 
     manu_file = 'manu_sol_temp.dat'
     make_manisol_3d(d_shape, manu_file)
-
-    manu_data = np.memmap(manu_file,
-                        dtype='float64', 
-                        mode= 'r', 
-                        shape=(d_shape))
-
-    print(manu_data)
-
