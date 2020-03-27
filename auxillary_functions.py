@@ -61,3 +61,11 @@ def dotND(A: np.array, B: np.array):
     :return: np.array: N-dim where the m-dim axis 0 has been summed over
     '''
     return np.sum(A*B, 0)
+
+def f(T: np.array) -> np.array:
+    '''
+    Calculate fraction of water used for evaporation
+    :param T: np.array: Temperature distribution (x,y,z) in ⁰C
+    :return: np.array: fraction of water used for evaporation (x,y,z)
+    '''
+    return co.f_max + (co.f0-co.f_max) / (1+np.exp((T-co.f1)/co.f2))
