@@ -75,7 +75,7 @@ class BeefSimulator:
         self.z = np.linspace(*xyz_steps[2])
         self.t = np.linspace(*t_steps)
 
-        self.shape = (1, self.x.size, self.y.size, self.z.size)
+        self.shape = (t_steps[2], self.x.size, self.y.size, self.z.size)
         self.I, self.J, self.K = self.shape[1:]
         self.n = self.I * self.J * self.K
         self.inner = (self.I-2) * (self.J-2) * (self.K-2)
@@ -115,12 +115,19 @@ class BeefSimulator:
         self.filename = filename
         self.H_file = Path(self.filename + '_header.csv')
         self.H_file.open('w+').close()
-        self.T_file = Path(self.filename + '_temp.npy')
-        print(self.T_file)
-        #self.T_file.open('w+').close()
-        self.C_file = Path(self.filename + '_cons.npy')
-        self.C_file.open('w+').close()
 
+        self.T_file = Path(self.filename + '_temp.dat')
+        self.T_data = np.memmap(self.T_file, 
+                                dtype='float64', 
+                                mode= 'r+' if self.T_file.exists() else 'w+', 
+                                shape=self.shape)
+
+        self.C_file = Path(self.filename + '_cons.dat')
+        self.C_data = np.memmap(self.C_file, 
+                                dtype='float64', 
+                                mode='r+' if self.C_file.exists() else 'w+', 
+                                shape=self.shape)
+       
         #self.save([], self.H_file, 'csv')  # save header data: dims, time steps, ...
         #self.save(self.T0, self.T_file, 'npy')
 
@@ -167,7 +174,7 @@ class BeefSimulator:
         x, y, or z: perpendicular cross-section of beef to plot.
         """
         t_ = self.tn if t == None else t
-        self.plotter.show_heat_map(self.T_file, t_, x, y, z)
+        self.plotter.show_heat_map(self.T_data, t_, x, y, z)
 
     def solve_next(self, method="cd"):
         """
@@ -180,21 +187,22 @@ class BeefSimulator:
 
             self.T1[self.direchet_bnds] = (self.gamma(
                 self.ii)/self.beta(self.ii))[self.direchet_bnds]
-
+    
     def solve_all(self, method="cd"):
         """
         Iterate through from t0 -> tn
         """
+        
         self.logg(1, "Iterating...",)
-        for t in self.t:
-            self.tn = t
-            self.logg(2, f'- t = {t}')
+        for i in range(len(self.t)):
+            self.tn = i * self.dt
+            self.logg(2, f'- t = {self.tn}')
             self.solve_next(method)
-            self.save(self.T1, self.T_file, 'npy')
+            self.T_data[i] = self.T1.reshape(self.shape[1:])
             self.T0, self.T1 = self.T1, np.zeros(self.n)
         self.logg(1, "Finished",)
         self.logg(1, f'Final state: {self.T0}')
-
+    
     def save(self, array, file, ext):
         """
         save array to disk(self.filename)
@@ -207,7 +215,7 @@ class BeefSimulator:
         """
         if (ext == 'npy'):
             with file.open('ab') as f:
-                np.save(f, array.reshape(self.shape))
+                np.save(f, array.reshape((1, self.shape[1], self.shape[2], self.shape[3])))
         elif (ext == 'csv'):
             write_csv(array, file, False)
         else:
@@ -316,11 +324,15 @@ class BeefSimulator:
         """
         Iterate through from t0 -> tn
         """
+        # Clear data before solving for all C.
+        self.C_data = np.memmap(self.C_file, dtype='float64', mode='w+', shape=self.shape)
+
         self.logg(1, "Iterating...",)
-        for t in self.t:
-            self.logg(2, f'- t = {t}')
+        for i in range(len(t)):
+            self.tn = i * self.dt
+            self.logg(2, f'- t = {self.tn}')
             self.solve_next_C(method)
-            self.save(self.C1, self.C_file, 'npy')
+            self.C_data[i] = self.C1.reshape(self.shape[1:])
             self.C0, self.C1 = self.C1, np.zeros(self.n)
         self.logg(1, "Finished",)
         self.logg(1, f'Final state: {self.C0}')
