@@ -274,10 +274,8 @@ class BeefSimulator:
 
         # diagonal indicies
         [k0, k1, k2, k3, k4, k5, k6] = self.get_ks()
-        ks = [k0, k1, k2, k3, k4, k5, k6]
 
         # ------- contruct all diagonals -------
-        d = np.ones(self.n)
 
         C1 = self.b(self.ii)/self.dh**2 + self.c(self.ii)/(2*self.dh)
         C2 = self.b(self.ii)/self.dh**2 - self.c(self.ii)/(2*self.dh)
@@ -288,17 +286,8 @@ class BeefSimulator:
         _alpha[_alpha == 0] = 1  # dummy
         C4 = 2*self.dh/_alpha
 
-        d0 = -C3*d.copy()
-
-        d1 = C1*d.copy()
-        d2 = C1*d.copy()
-        d3 = C1*d.copy()
-
-        d4 = C2*d.copy()
-        d5 = C2*d.copy()
-        d6 = C2*d.copy()
-
-        ds = [d0, d1, d2, d3, d4, d5, d6]
+        d = np.ones(self.n)
+        [d0, d1, d2, d3, d4, d5, d6] = [-C3*d, C1*d, C1*d, C1*d, C2*d, C2*d, C2*d]
 
         # --------------- modify the boundaries ---------------
         # see project report
@@ -313,13 +302,7 @@ class BeefSimulator:
                                self.bis[:, 1]*C1[self.bis[:, 0]])*C4[self.bis[:, 0]]*self.beta(self.ii)[self.bis[:, 0]]
 
         d0[self.direchet_bnds] = 1
-
-        i1 = self.diag_indicies(1)
-        i2 = self.diag_indicies(2)
-        i3 = self.diag_indicies(3)
-        i4 = self.diag_indicies(4)
-        i5 = self.diag_indicies(5)
-        i6 = self.diag_indicies(6)
+        [i1, i2, i3, i4, i5, i6] = [self.diag_indicies(i + 1) for i in range(6)] 
 
         d1[i1] = (C1+C2)[i1]
         d1[i1+k4] = 0
@@ -346,6 +329,8 @@ class BeefSimulator:
         d6 = d6[:k6]
 
         # -----------------------------------------------------
+        ds = [d0, d1, d2, d3, d4, d5, d6]
+        ks = [k0, k1, k2, k3, k4, k5, k6]
         A = diags(ds, ks)
 
         b = np.zeros(self.n)
@@ -365,7 +350,6 @@ class BeefSimulator:
         ks = [k0, k1, k2, k3, k4, k5, k6]
 
         # ------- construct all diagonals -------
-        d = np.ones(self.n)
 
         # TODO:
         # Fix \nabla u_w, currently placeholder
@@ -375,17 +359,9 @@ class BeefSimulator:
         D2 = - 2 * self.dh * Q + const.D
         D3 = 2 * self.dh * np.gradient(Q) - 6 * const.D
 
-        d0 = D3 * d.copy()
-
-        d1 = D1[0] * d.copy()
-        d2 = D1[1] * d.copy()
-        d3 = D1[2] * d.copy()
-
-        d4 = D2[0] * d.copy()
-        d5 = D2[1] * d.copy()
-        d6 = D2[2] * d.copy()
-
-        ds = [d0, d1, d2, d3, d4, d5, d6]
+        d = np.ones(self.n)
+        ds = [ D3*d, D1[0]*d, D1[1]*d, D1[2]*d, D2[0]*d, D2[1]*d, D2[2]*d]
+        [d0, d1, d2, d3, d4, d5, d6] = ds        
 
         # TODO:
         # --------------- modify the boundaries ---------------
