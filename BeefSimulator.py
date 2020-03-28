@@ -217,6 +217,12 @@ class BeefSimulator:
         """
         Iterate through from t0 -> tn
         """
+        # Clear temperature data before solving all
+        del self.T_data
+        self.T_data = np.memmap(self.T_file, 
+                                dtype='float64', 
+                                mode= 'w+', 
+                                shape=self.shape)
         
         self.logg(1, "Iterating...",)
         for i in range(len(self.t)):
@@ -224,28 +230,43 @@ class BeefSimulator:
             self.logg(2, f'- t = {self.tn}')
             self.solve_next(method)
             self.T_data[i] = self.T1.reshape(self.shape[1:])
-            self.T0, self.T1 = self.T1, np.zeros(self.n)
+            self.T0, self.T1 = self.T1, np.empty(self.n)
+            self.T_data.flush() # Make sure data gets written to disk
         self.logg(1, "Finished",)
         self.logg(1, f'Final state: {self.T0}')
+
+    # ----------------------- Concentration solver ------------------------------
+
+    def solve_next_C(self, Q, method="cd"):
+        """
+        Calculate the next time step (C1)
+        """
+        if method == "cd":
+            C, d = self.make_Cd(Q)
+            self.C1[...] = self.C0 + (self.dt/(2 * self.dh**2) * (C @ self.C0 + d))
+
+    def solve_all_C(self, method="cd"):
+        """
+        Iterate through from t0 -> tn
+        """
+        # Clear concentration data before solving all
+        del self.C_data
+        self.C_data = np.memmap(self.C_file, 
+                                dtype='float64', 
+                                mode= 'w+', 
+                                shape=self.shape)
+        
+        self.logg(1, "Iterating...",)
+        for i in range(len(self.t)):
+            self.tn = i * self.dt
+            self.logg(2, f'- t = {self.tn}')
+            self.solve_next_C(method)
+            self.C_data[i] = self.C1.reshape(self.shape[1:])
+            self.C0, self.C1 = self.C1, np.empty(self.n)
+            self.C_data.flush() # Makes sure data gets written to disk
+        self.logg(1, "Finished",)
+        self.logg(1, f'Final state: {self.C0}')
     
-    def save(self, array, file, ext):
-        """
-        save array to disk(self.filename)
-
-        array: array to save. E.g. temperature or concentration array for a given timestep.
-
-        file: file/path to save to. E.g. self.H_file, self.T_file, self.C_file
-
-        ext: file extension. E.g 'npy' or 'csv'
-        """
-        if (ext == 'npy'):
-            with file.open('ab') as f:
-                np.save(f, array.reshape((1, self.shape[1], self.shape[2], self.shape[3])))
-        elif (ext == 'csv'):
-            write_csv(array, file, False)
-        else:
-            raise ValueError("ext must either be 'npy' or 'csv'.")
-
     def make_Ab(self,):
         """
         Contruct A and b
@@ -334,33 +355,6 @@ class BeefSimulator:
         self.logg(3, f'A = {A}')
         self.logg(3, f'b = {b}')
         return A, b
-
-    # ----------------------- Concentration solver ------------------------------
-
-    def solve_next_C(self, Q, method="cd"):
-        """
-        Calculate the next time step (C1)
-        """
-        if method == "cd":
-            C, d = self.make_Cd(Q)
-            self.C1[...] = self.C0 + (self.dt/(2 * self.dh**2) * (C @ self.C0 + d))
-
-    def solve_all_C(self, method="cd"):
-        """
-        Iterate through from t0 -> tn
-        """
-        # Clear data before solving for all C.
-        self.C_data = np.memmap(self.C_file, dtype='float64', mode='w+', shape=self.shape)
-
-        self.logg(1, "Iterating...",)
-        for i in range(len(self.t)):
-            self.tn = i * self.dt
-            self.logg(2, f'- t = {self.tn}')
-            self.solve_next_C(method)
-            self.C_data[i] = self.C1.reshape(self.shape[1:])
-            self.C0, self.C1 = self.C1, np.zeros(self.n)
-        self.logg(1, "Finished",)
-        self.logg(1, f'Final state: {self.C0}')
 
     def make_Cd(self, Q):
         """
