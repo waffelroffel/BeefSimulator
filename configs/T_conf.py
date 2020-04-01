@@ -1,8 +1,9 @@
 import numpy as np
+from auxillary_functions import u_w
 
 
 def T(xx, yy, zz, t):
-    return 1000 * 3 * np.exp(-4*(np.pi)**2*(1+1+4) * t) * \
+    return 3 * np.exp(-4*(np.pi)**2*(1+1+4) * t) * \
         np.sin(2*np.pi * xx) * np.sin(2*np.pi * yy) * np.sin(4*np.pi * zz)
 
 
@@ -34,16 +35,9 @@ def T_gamma(xx, yy, zz, t):
     return np.zeros(xx.size)
 
 
-def T_ux(xx, yy, zz, t):
-    return 1
-
-
-def T_uy(xx, yy, zz, t):
-    return 1
-
-
-def T_uz(xx, yy, zz, t):
-    return 1
+def uw(T, C, I, J, K, dh):
+    u = u_w(T.reshape((I, J, K)), C.reshape((I, J, K)), dh)
+    return u.reshape((3, -1)).T
 
 
 T_bnd_types = ["d", "d", "d", "d", "d", "d"]
@@ -55,9 +49,7 @@ T_conf = {
     "bnd": {"alpha": T_alpha,
             "beta": T_beta,
             "gamma": T_gamma},
-    "u": {"x": T_ux,
-          "y": T_uy,
-          "z": T_uz},
+    "uw": uw,
     "bnd_types": T_bnd_types,
     "initial": T_initial,
     "analytic": T
