@@ -34,13 +34,13 @@ def C_eq(T: np.array) -> np.array:
 
 
 def u_w(T: np.array, C: np.array) -> np.array:
-	'''
-	Calculate water velocity in meat
-	:param T: np.array: Temperature distribution (x,y,z) in ⁰C
-	:param C: np.array: Water holding capacity distribution (x,y,z)
-	:return: np.array: Water velocity vector [(x,y,z), (x,y,z), (x,y,z)]
-	'''
-	return -co.K * E(T) / mu_w(T) * np.array(np.gradient(C - C_eq(T), co.dx))
+    '''
+    Calculate water velocity in meat
+    :param T: np.array: Temperature distribution (x,y,z) in ⁰C
+    :param C: np.array: Water holding capacity distribution (x,y,z)
+    :return: np.array: Water velocity vector [(x,y,z), (x,y,z), (x,y,z)]
+    '''
+    return -co.K * E(T) / mu_w(T) * np.array(np.gradient(C - C_eq(T), co.dx))
 
 
 def div(A: np.array, dr: float = 1) -> np.array:
@@ -53,14 +53,15 @@ def div(A: np.array, dr: float = 1) -> np.array:
     return np.sum(np.gradient(A, dr), 0)
 
 
-def dotND(A: np.array, B: np.array):
+def dotND(A: np.array, B: np.array, axis=0):
     '''
     Shorthand function for dotting N-dim arrays along first (0-th) axis
     :param A: np.array: first array, mxN
     :param B: np.array: second array, mxN
     :return: np.array: N-dim where the m-dim axis 0 has been summed over
     '''
-    return np.sum(A*B, 0)
+    return np.sum(A*B, axis)
+
 
 def f(T: np.array) -> np.array:
     '''
