@@ -132,7 +132,7 @@ Gives the same manifactured solution as before. You may insert these functions a
 
 
 
-def compare_beefs(beef1: BeefSimulator, beef2: BeefSimulator, t: float, pprty: str, x=None, y=None, z=None) -> np.array:
+def compare_beefs(beef1: BeefSimulator, beef2: BeefSimulator, t: float, pprty: str) -> float:
     '''
     :param beef1: A BeefSimulator object
     :param beef2: Another BeefSimulator object with identical config settings as
@@ -141,25 +141,17 @@ def compare_beefs(beef1: BeefSimulator, beef2: BeefSimulator, t: float, pprty: s
     :param t: Time snapshot to compare
     :param pprty: String that determines what property of the beef should 
     be compared. For now this either takes temperature 'T' or concentration 'C'.
-    :return: Square of the difference between the data in the beef objects at a 
+    :return: A float norm of the difference between the data in the beef objects at a 
     particular time t.
     '''
     n = int(beef1.shape[0] / beef1.dt) # Timestep of the particular time.
-    if x is not None:
-        i = int(x // beef1.dh)
-    elif y is not None:
-        j = int(y // beef1.dh)
-    elif z is not None:
-        k = int(z // beef1.dh)
-    else:
-        raise ValueError("No crossection coordinate given.")
+   
     if (pprty == 'T'):
-        return np.square(beef1.T_data[n] - beef2.T_data[n])
-    elif (pprty = 'C'):
-        return np.square(beef1.C_data[n] - beef2.C_data[n])
+        return np.linalg.norm(beef1.T_data[n] - beef2.T_data[n])
+    elif (pprty == 'C'):
+        return np.linalg.norm(beef1.C_data[n] - beef2.C_data[n])
     else:
         raise ValueError("No proper property to compare given. pprty has to either be 'T' or 'C'.")
-        return 
 # TODO: Dette kan abstraheres og automatiseres enda mer hvis lesing og skriving til fil er på plass. Lag i så fall
 # TODO: ... en funksjon som henter inn filnavn, bruker innlesing og kaller test_diff_manisol på dem
 # TODO: ... Man kan evt. legge til produksjon av disse datasett og lagre dem i __main__ under.		--Svein
