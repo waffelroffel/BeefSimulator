@@ -39,11 +39,11 @@ class BeefSimulator:
         """
         TODO:
         - [X] change 3D cordinates to 1D indexing: T1 = T0 + ( A @ T0 + b )
-        - [X] contruct A and b
+        - [X] construct A and b
         - [X] make it work with only direchet boundary: alpha = 0
         - [X] change a, b, c, alpha, beta, gamma to functions
         - [X] implement u_w
-        - [ ] validate with manufactored solution
+        - [ ] validate with manufactured solution
         - [X] implement C (concentration)
         - [ ] T and C coupled
         - [X] add plotter
@@ -300,7 +300,7 @@ class BeefSimulator:
 
     def make_Ab(self,):
         """
-        Contruct A and b
+        Construct A and b
         """
         # TODO: change to self.bis when other refecenres use the new implementation
         bis = self.find_border_indicies(True)
@@ -413,7 +413,7 @@ class BeefSimulator:
 
         D1 = 2 * self.dh * Q + const.D
         D2 = - 2 * self.dh * Q + const.D
-        D3 = 2 * self.dh * np.gradient(Q) - 6 * const.D
+        D3 = 6 * const.D
 
         d = np.ones(self.n)
         ds = [D3*d, D1[0]*d, D1[1]*d, D1[2]*d, D2[0]*d, D2[1]*d, D2[2]*d]
@@ -439,7 +439,7 @@ class BeefSimulator:
 
     def index_of(self, i, j, k):
         """
-        Returns the 1D index from 3D cordinates
+        Returns the 1D index from 3D coordinates
         """
         return i + self.I*j + self.I*self.J*k
 
@@ -468,7 +468,7 @@ class BeefSimulator:
 
     def diag_indicies(self, bnd):
         """
-        Finds the indicies of a secific boundary
+        Finds the indices of a specific boundary
 
         bnd:
         - 1: x = 0
@@ -491,7 +491,7 @@ class BeefSimulator:
 
     def find_border_indicies(self, new=False):
         """
-        returns the indicies for every boundary node
+        returns the indices for every boundary node
 
         [[index, x0, xn, y0, yn, z0, zn],...]
 
