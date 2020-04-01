@@ -176,21 +176,39 @@ class BeefSimulator:
         solve for both temp. and conc.
         """
         method = "cd"
-        self.logg("stage", "Iterating...", )
-        for t in self.t:
+
+        del self.T_data
+        del self.C_data
+        self.T_data = np.memmap(self.T_file,
+                                dtype="float64",
+                                mode="w+",
+                                shape=self.shape)
+        self.C_data = np.memmap(self.C_file,
+                                dtype="float64",
+                                mode="w+",
+                                shape=self.shape)
+
+        self.logg(1, "Iterating...", )
+        for i, t in enumerate(self.t):
             # litt usikker på dimensjonene på Q
             Q = af.u_w(self.T0, self.C0, self.dh)
 
-            self.tn = t
-            self.logg("tn", f'- t = {t}')
-            self.solve_next(method)  # , Q)
-            # self.save(self.T1, self.T_file, "npy")
-            self.T0, self.T1 = self.T1, np.zeros(self.n)
+            self.ii[3] = t
+            self.logg(2, f'- t = {t}')
+
+            self.solve_next(method)
+            self.T_data[i] = self.T1.reshape(self.shape[1:])
+            self.T0, self.T1 = self.T1, np.empty(self.n)
+
             self.solve_next_C(method, Q)
-            # self.save(self.C1, self.C_file, "npy")
-            self.C0, self.C1 = self.C1, np.zeros(self.n)
-        self.logg("stage", "Finished", )
-        #self.logg("final", f'Final state: {self.T0}')
+            self.C_data[i] = self.C1.reshape(self.shape[1:])
+            self.C0, self.C1 = self.C1, np.empty(self.n)
+
+            self.T_data.flush()
+            self.C_data.flush()
+
+        self.logg(1, "Finished", )
+        #self.logg(1, f'Final state: {self.T0}')
 
     def logg(self, lvl, txt, logger=print):
         """
@@ -204,8 +222,7 @@ class BeefSimulator:
         Plot the current state
         x, y, or z: perpendicular cross-section of beef to plot.
         """
-        t_ = self.tn if t == None else t
-        self.plotter.show_heat_map(self.T_data, t_, x, y, z)
+        self.plotter.show_heat_map(self.T_data, t, x, y, z)
 
     # ----------------------- Temperature solver -------------------------------
 
@@ -424,6 +441,9 @@ class BeefSimulator:
 
     # Unnecessary?
     def index_of_inverse(self, p):
+        """
+        Returns the 3D index from 1D coordinate
+        """
         k = p // (self.I * self.J)
         j = (p - k * self.I * self.J) // self.I
         i = (p - k * self.I * self.J - j * self.I)

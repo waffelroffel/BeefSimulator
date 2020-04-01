@@ -1,4 +1,5 @@
 import numpy as np
+from BeefSimulator import BeefSimulator
 
 '''
 Make data for testing of plot etc.
@@ -131,16 +132,26 @@ Gives the same manifactured solution as before. You may insert these functions a
 
 
 
-def test_diff_manisol(calcdata: np.array, manidata: np.array) -> float:
+def compare_beefs(beef1: BeefSimulator, beef2: BeefSimulator, t: float, pprty: str) -> float:
     '''
-    :param calcdata: Calculated data
-    :param manidata: Manifactured data
-    :return: (Frobenius) matrix norm of the absolute value of the difference
-    (Note: This squelches all imaginary parts too)
+    :param beef1: A BeefSimulator object
+    :param beef2: Another BeefSimulator object with identical config settings as
+    beef1 (this is important!). This can be e.g. be the manufactured solution 
+    counterpart to beef1.
+    :param t: Time snapshot to compare
+    :param pprty: String that determines what property of the beef should 
+    be compared. For now this either takes temperature 'T' or concentration 'C'.
+    :return: A float norm of the difference between the data in the beef objects at a 
+    particular time t.
     '''
-    return np.linalg.norm(np.abs(calcdata - manidata))
-    # TODO: Denne bør også returnere punktvis feil
-
+    n = int(beef1.shape[0] / beef1.dt) # Timestep of the particular time.
+   
+    if (pprty == 'T'):
+        return np.linalg.norm(beef1.T_data[n] - beef2.T_data[n])
+    elif (pprty == 'C'):
+        return np.linalg.norm(beef1.C_data[n] - beef2.C_data[n])
+    else:
+        raise ValueError("No proper property to compare given. pprty has to either be 'T' or 'C'.")
 # TODO: Dette kan abstraheres og automatiseres enda mer hvis lesing og skriving til fil er på plass. Lag i så fall
 # TODO: ... en funksjon som henter inn filnavn, bruker innlesing og kaller test_diff_manisol på dem
 # TODO: ... Man kan evt. legge til produksjon av disse datasett og lagre dem i __main__ under.		--Svein
@@ -171,7 +182,7 @@ def make_Dirichlet_test_object(shape: list, td: int) -> None:
 	beta = [1, 1, 1, 1, 1, 1]
 	gamma = [0, 0, 0, 0, 0, 0]
 
-	Beef = BeefSimulator.BeefSimulator(beefdims, a, b, c, alpha, beta, gamma, T_init, np.zeros(shape.append(td)), dh,
+	Beef = BeefSimulator(beefdims, a, b, c, alpha, beta, gamma, T_init, np.zeros(shape.append(td)), dh,
 										dt, filename=f'../data/3D_testsol_T_{shape[0]}_{shape[1]}_{shape[2]}_{td}.npy',
 									   	logging=1, bnd_types=['d', 'd', 'd', 'd', 'd', 'd'])
 	Beef.solve_all()
