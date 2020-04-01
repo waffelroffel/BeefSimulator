@@ -4,9 +4,9 @@ from scipy.sparse import diags
 import Plotting.BeefPlotter as BP
 from data_management import write_csv
 from pathlib import Path
-import os
 import auxillary_functions as af
 import constants as const
+import json
 
 
 class BeefSimulator:
@@ -42,13 +42,13 @@ class BeefSimulator:
         - [X] contruct A and b
         - [X] make it work with only direchet boundary: alpha = 0
         - [X] change a, b, c, alpha, beta, gamma to functions
-        - [-] implement u_w (missing last parameter)
+        - [X] implement u_w
         - [ ] validate with manufactored solution
         - [X] implement C (concentration)
         - [ ] T and C coupled
         - [X] add plotter
         - [ ] add data management
-        - [ ] change logging to config (dict)
+        - [X] change logging to a config (dict)
         """
         self.pre_check(conf, T_conf, C_conf)
 
@@ -107,43 +107,47 @@ class BeefSimulator:
         self.C0 = np.zeros(self.n)
         self.C0[...] = self.initial_C(self.ii)
 
-        self.filename = conf["filename"]
-        self.H_file = Path(self.filename + "_header.csv")
-        self.H_file.open("w+").close()
+        self.base = Path("data")
+        self.path = self.base.joinpath(conf["folder"])
+        self.path.mkdir() if not self.path.exists() else ...
 
-        self.T_file = Path(self.filename + "_temp.dat")
+        #
+        self.H_file = self.path.joinpath("header.json")
+        with open(self.H_file, "w") as f:
+            json.dump(conf, f)
+
+        self.T_file = self.path.joinpath("T.dat")
         self.T_data = self.memmap(self.T_file)
 
-        self.C_file = Path(self.filename + "_cons.dat")
+        self.C_file = self.path.joinpath("C.dat")
         self.C_data = self.memmap(self.C_file)
+        #
 
-        # self.save([], self.H_file, "csv")  # save header data: dims, time steps, ...
-        #self.save(self.T0, self.T_file, "npy")
-
-        self.plotter = BP.Plotter(self, name=self.filename, save_fig=True)
+        self.plotter = BP.Plotter(
+            self, name=self.path, save_fig=True)
 
         self.logging = conf["logging"]
 
-        self.logg(1, f'SETUP FINISHED. LOGGING...')
-        self.logg(1, f'----------------------------------------------')
-        self.logg(1, f'Logging level:       {self.logging}')
-        self.logg(1, f'Shape:               {self.shape}')
-        self.logg(1, f'Total nodes:         {self.n}')
-        self.logg(1, f'Inner nodes:         {self.inner}')
-        self.logg(1, f'Boundary nodes:      {self.border}')
-        self.logg(
-            1, f'x linspace:          dx: {self.dh}, \t x: {self.x[0]} -> {self.x[-1]}, \t steps: {self.x.size}')
-        self.logg(
-            1, f'y linspace:          dy: {self.dh}, \t y: {self.y[0]} -> {self.y[-1]}, \t steps: {self.y.size}')
-        self.logg(
-            1, f'z linspace:          dz: {self.dh}, \t z: {self.z[0]} -> {self.z[-1]}, \t steps: {self.z.size}')
-        self.logg(
-            1, f'time steps:          dt: {self.dt}, \t t: {self.t[0]} -> {self.t[-1]}, \t steps: {self.t.size}')
-        self.logg(1, f'Initial state:       {self.T0}')
-        self.logg(1, "T1 = T0 + ( A @ T0 + b )")
-        self.logg(
-            1, f'{self.T1.shape} = {self.T0.shape} + ( {(self.n,self.n)} @ {self.T0.shape} + {(self.n,)} )')
-        self.logg(1, f'----------------------------------------------')
+        self.logg("stage", f'SETUP FINISHED. LOGGING...')
+        self.logg("init", f'----------------------------------------------')
+        self.logg("init", f'Logging level:       {self.logging}')
+        self.logg("init", f'Shape:               {self.shape}')
+        self.logg("init", f'Total nodes:         {self.n}')
+        self.logg("init", f'Inner nodes:         {self.inner}')
+        self.logg("init", f'Boundary nodes:      {self.border}')
+        self.logg("init",
+                  f'x linspace:          dx: {self.dh}, \t x: {self.x[0]} -> {self.x[-1]}, \t steps: {self.x.size}')
+        self.logg("init",
+                  f'y linspace:          dy: {self.dh}, \t y: {self.y[0]} -> {self.y[-1]}, \t steps: {self.y.size}')
+        self.logg("init",
+                  f'z linspace:          dz: {self.dh}, \t z: {self.z[0]} -> {self.z[-1]}, \t steps: {self.z.size}')
+        self.logg("init",
+                  f'time steps:          dt: {self.dt}, \t t: {self.t[0]} -> {self.t[-1]}, \t steps: {self.t.size}')
+        self.logg("init_state", f'Initial state:       {self.T0}')
+        self.logg("init", "T1 = T0 + ( A @ T0 + b )")
+        self.logg("init",
+                  f'{self.T1.shape} = {self.T0.shape} + ( {(self.n,self.n)} @ {self.T0.shape} + {(self.n,)} )')
+        self.logg("init", f'----------------------------------------------')
 
     def get_d_bnd_indices(self, bnd_types):
         uniques = set()
@@ -172,32 +176,27 @@ class BeefSimulator:
         solve for both temp. and conc.
         """
         method = "cd"
-        self.logg(1, "Iterating...", )
+        self.logg("stage", "Iterating...", )
         for t in self.t:
             # litt usikker på dimensjonene på Q
             Q = af.u_w(self.T0, self.C0, self.dh)
 
             self.tn = t
-            self.logg(2, f'- t = {t}')
+            self.logg("tn", f'- t = {t}')
             self.solve_next(method)  # , Q)
             # self.save(self.T1, self.T_file, "npy")
             self.T0, self.T1 = self.T1, np.zeros(self.n)
             self.solve_next_C(method, Q)
             # self.save(self.C1, self.C_file, "npy")
             self.C0, self.C1 = self.C1, np.zeros(self.n)
-        self.logg(1, "Finished", )
-        #self.logg(1, f'Final state: {self.T0}')
+        self.logg("stage", "Finished", )
+        #self.logg("final", f'Final state: {self.T0}')
 
     def logg(self, lvl, txt, logger=print):
         """
-        Logg when lvl >= self.logging
-         - 0: nothing
-         - 1: only initial setup
-         - 2: time steps
-         - 3: A and b
-         - 4: everything
+        See config/conf.py for details
         """
-        if self.logging >= lvl:
+        if self.logging[lvl]:
             logger(txt)
 
     def plot(self, t=None, x=None, y=None, z=None):
@@ -234,16 +233,16 @@ class BeefSimulator:
                                 mode="w+",
                                 shape=self.shape)
 
-        self.logg(1, "Iterating...",)
+        self.logg("stage", "Iterating...",)
         for i, t in enumerate(self.t):
             self.ii[3] = t
-            self.logg(2, f'- t = {t}')
+            self.logg("tn", f'- t = {t}')
             self.solve_next(method)
             self.T_data[i] = self.T1.reshape(self.shape[1:])
             self.T0, self.T1 = self.T1, np.empty(self.n)
             self.T_data.flush()  # Make sure data gets written to disk
-        self.logg(1, "Finished",)
-        self.logg(1, f'Final state: {self.T0}')
+        self.logg("stage", "Finished",)
+        self.logg("final", f'Final state: {self.T0}')
 
     # ----------------------- Concentration solver ------------------------------
 
@@ -267,16 +266,16 @@ class BeefSimulator:
                                 mode="w+",
                                 shape=self.shape)
 
-        self.logg(1, "Iterating...",)
+        self.logg("stage", "Iterating...",)
         for i, t in enumerate(self.t):
             self.ii[3] = t
-            self.logg(2, f'- t = {self.t}')
+            self.logg("tn", f'- t = {self.t}')
             self.solve_next_C(method)
             self.C_data[i] = self.C1.reshape(self.shape[1:])
             self.C0, self.C1 = self.C1, np.empty(self.n)
             self.C_data.flush()  # Makes sure data gets written to disk
-        self.logg(1, "Finished",)
-        self.logg(1, f'Final state: {self.C0}')
+        self.logg("stage", "Finished",)
+        self.logg("final", f'Final state: {self.C0}')
 
     def make_Ab(self,):
         """
@@ -373,8 +372,8 @@ class BeefSimulator:
             self.gamma(self.ii)[bis[:, 0]]
         #(-self.bis[:, 1]*C2[self.bis[:, 0]] +  self.bis[:, 2]*C1[self.bis[:, 0]])*C4[self.bis[:, 0]]*self.gamma(self.ii)[self.bis[:, 0]]
 
-        self.logg(3, f'A = {A}')
-        self.logg(3, f'b = {b}')
+        self.logg("Ab", f'A = {A}')
+        self.logg("Ab", f'b = {b}')
         return A, b
 
     def make_Cd(self, Q):
@@ -411,8 +410,8 @@ class BeefSimulator:
         # d[self.bis[:, 0]] = (-self.bis[:, 1] * C2 +
         #                     self.bis[:, 2] * C1) * C4 * self.gamma
 
-        self.logg(3, f'C = {C}')
-        self.logg(3, f'd = {d}')
+        self.logg("Ab", f'C = {C}')
+        self.logg("Ab", f'd = {d}')
         return C, d
 
     # --------------- Helper methods for make_Ab & make_Cd ---------------
@@ -564,3 +563,6 @@ class BeefSimulator:
 
         _check_T_or_C(T_conf, "T")
         _check_T_or_C(C_conf, "C")
+
+    def __str__(self):
+        ...

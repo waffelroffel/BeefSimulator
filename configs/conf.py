@@ -1,5 +1,13 @@
-logging = 0
-filename = "data/data"
+logging = {
+    "init": True,
+    "init_state": False,
+    "stage": True,
+    "tn": False,
+    "Ab": False,
+    "final": False
+}
+
+folder = "beef1"
 
 dh = 0.1
 dt = 0.001
@@ -38,5 +46,5 @@ conf = {
         "zn": zn,
     },
     "logging": logging,
-    "filename": filename
+    "folder": folder
 }

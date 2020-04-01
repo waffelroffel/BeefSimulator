@@ -3,10 +3,11 @@ import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 from matplotlib import cm
 import matplotlib.animation as animation
+from pathlib import Path
 
 
 class Plotter:
-    def __init__(self, beefsim, name='untitled', save_fig=False):
+    def __init__(self, beefsim, name: Path = 'untitled', save_fig=False):
         """
         beefsim: A BeefSimulator object with axis and stepping data for plotting.
         name: Filename for saved plots. Default: 'untitled'
@@ -25,7 +26,7 @@ class Plotter:
 
     def show_heat_map(self, U_data, t, x=None, y=None, z=None):
         U = U_data
-        print(U.shape)
+        # print(U.shape)
         if isinstance(t, list):
             pass
         else:
@@ -44,7 +45,7 @@ class Plotter:
                     i = int(x // self.h)
                     yz, zy = np.meshgrid(self.y, self.z, indexing='ij')
                     cs = [ax.contourf(yz, zy, U[n, i, :, :], 65,
-                                    cmap=cm.get_cmap('magma'))]
+                                      cmap=cm.get_cmap('magma'))]
                     plt.xlabel(r"$y$", fontsize=16)
                     plt.ylabel(r"$z$", fontsize=16)
                     cbarlab = r'$U(y,z)$'
@@ -57,7 +58,7 @@ class Plotter:
                     j = int(y // self.h)
                     xz, zx = np.meshgrid(self.x, self.z, indexing='ij')
                     cs = [ax.contourf(xz, zx, U[n, :, j, :], 65,
-                                    cmap=cm.get_cmap('magma'))]
+                                      cmap=cm.get_cmap('magma'))]
                     plt.xlabel(r"$x$", fontsize=16)
                     plt.ylabel(r"$z$", fontsize=16)
                     cbarlab = r'$U(x,z)$'
@@ -70,7 +71,7 @@ class Plotter:
                     k = int(z // self.h)
                     xy, yx = np.meshgrid(self.x, self.y, indexing='ij')
                     cs = [ax.contourf(xy, yx, U[n, :, :, k], 65,
-                                    cmap=cm.get_cmap('magma'))]
+                                      cmap=cm.get_cmap('magma'))]
                     plt.xlabel(r"$x$", fontsize=16)
                     plt.ylabel(r"$y$", fontsize=16)
                     cbarlab = r'$U(x,y)$'
@@ -82,7 +83,9 @@ class Plotter:
             cbar1.ax.set_ylabel(cbarlab, fontsize=14)
 
             if self.save_fig:
-                plt.savefig(self.name + "_heatmap_" + coordlab + f"_t={t:.3g}.png")
+                filename = self.name.joinpath(
+                    f'heatmap_{coordlab}_t={t:.3g}.png')
+                plt.savefig(filename)
             plt.show()
 
     def show_boundary_cond(self):
