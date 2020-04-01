@@ -1,10 +1,10 @@
 logging = {
-    "init": True,
-    "init_state": False,
-    "stage": True,
-    "tn": False,
-    "Ab": False,
-    "final": False
+    "init": True,  # print the configuration of beefsimulator
+    "init_state": False,  # print the initial state of T
+    "stage": True,  # print the different stages of beefsimulator
+    "tn": False,  # print the current time step
+    "Ab": False,  # print the A matrix and b vector
+    "final": False  # print the final state of T
 }
 
 folder = "beef1"

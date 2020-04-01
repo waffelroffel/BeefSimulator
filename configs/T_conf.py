@@ -16,7 +16,7 @@ def T_a(xx, yy, zz, t):
 
 
 def T_b(xx, yy, zz, t):
-    return np.ones(xx.size)
+    return 1
 
 
 def T_c(xx, yy, zz, t):
@@ -24,7 +24,7 @@ def T_c(xx, yy, zz, t):
 
 
 def T_alpha(xx, yy, zz, t):
-    return np.zeros(xx.size)
+    return 0
 
 
 def T_beta(xx, yy, zz, t):

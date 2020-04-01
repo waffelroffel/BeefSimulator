@@ -56,7 +56,7 @@ class BeefSimulator:
             # TODO: move the checks one level higher
             def wrap(ii):
                 res = fun(*ii) if callable(fun) else fun
-                return res.flatten() if isinstance(res, np.ndarray) else res
+                return res.flatten() if isinstance(res, np.ndarray) else np.ones(ii[1].size)*res
             return wrap
 
         # Defines the PDE and boundary conditions for T
@@ -111,17 +111,14 @@ class BeefSimulator:
         self.path = self.base.joinpath(conf["folder"])
         self.path.mkdir() if not self.path.exists() else ...
 
-        #
         self.H_file = self.path.joinpath("header.json")
-        with open(self.H_file, "w") as f:
-            json.dump(conf, f)
+        self.save_header(conf)
 
         self.T_file = self.path.joinpath("T.dat")
         self.T_data = self.memmap(self.T_file)
 
         self.C_file = self.path.joinpath("C.dat")
         self.C_data = self.memmap(self.C_file)
-        #
 
         self.plotter = BP.Plotter(
             self, name=self.path, save_fig=True)
@@ -143,11 +140,18 @@ class BeefSimulator:
                   f'z linspace:          dz: {self.dh}, \t z: {self.z[0]} -> {self.z[-1]}, \t steps: {self.z.size}')
         self.logg("init",
                   f'time steps:          dt: {self.dt}, \t t: {self.t[0]} -> {self.t[-1]}, \t steps: {self.t.size}')
-        self.logg("init_state", f'Initial state:       {self.T0}')
         self.logg("init", "T1 = T0 + ( A @ T0 + b )")
         self.logg("init",
                   f'{self.T1.shape} = {self.T0.shape} + ( {(self.n,self.n)} @ {self.T0.shape} + {(self.n,)} )')
         self.logg("init", f'----------------------------------------------')
+        self.logg("init_state", f'Initial state:       {self.T0}')
+
+    def save_header(self, conf: dict):
+        header = conf.copy()
+        header.pop("logging")
+        header["shape"] = self.shape
+        with open(self.H_file, "w") as f:
+            json.dump(header, f)
 
     def get_d_bnd_indices(self, bnd_types):
         uniques = set()
@@ -310,9 +314,9 @@ class BeefSimulator:
         c2h = self.c(self.ii) / (2*self.dh)
 
         u = self.uw(self.T0, self.C0, self.I, self.J, self.K, self.dh)
-        ux = u[:, 0]
-        uy = u[:, 1]
-        uz = u[:, 2]
+        ux = 1  # u[:, 0]
+        uy = 1  # u[:, 1]
+        uz = 1  # u[:, 2]
 
         C1_x = bh2 + c2h * ux
         C2_x = bh2 - c2h * ux
@@ -585,4 +589,4 @@ class BeefSimulator:
         _check_T_or_C(C_conf, "C")
 
     def __str__(self):
-        ...
+        return "Sorry can't do... yet"
