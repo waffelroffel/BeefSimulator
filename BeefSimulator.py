@@ -50,7 +50,7 @@ class BeefSimulator:
         - [ ] add data management
         - [ ] change logging to config (dict)
         """
-        self.pre_check(conf,T_conf,C_conf)
+        self.pre_check(conf, T_conf, C_conf)
 
         def _wrap(fun):
             # TODO: move the checks one level higher
@@ -67,9 +67,7 @@ class BeefSimulator:
         self.beta = _wrap(T_conf["bnd"]["beta"])
         self.gamma = _wrap(T_conf["bnd"]["gamma"])
         self.initial = _wrap(T_conf["initial"])
-        self.ux = _wrap(T_conf["u"]["x"])
-        self.uy = _wrap(T_conf["u"]["y"])
-        self.uz = _wrap(T_conf["u"]["z"])
+        self.uw = T_conf["uw"]
 
         # Defines the PDE and boundary conditions for C
         self.initial_C = _wrap(C_conf["initial"])
@@ -189,7 +187,7 @@ class BeefSimulator:
         self.logg(1, "Iterating...", )
         for i, t in enumerate(self.t):
             # litt usikker på dimensjonene på Q
-            Q = af.u_w(self.T0, self.C0)
+            Q = af.u_w(self.T0, self.C0, self.dh)
 
             self.ii[3] = t
             self.logg(2, f'- t = {t}')
@@ -313,12 +311,17 @@ class BeefSimulator:
         bh2 = self.b(self.ii)/self.dh**2
         c2h = self.c(self.ii) / (2*self.dh)
 
-        C1_x = bh2 + c2h * self.ux(self.ii)
-        C2_x = bh2 - c2h * self.ux(self.ii)
-        C1_y = bh2 + c2h * self.uy(self.ii)
-        C2_y = bh2 - c2h * self.uy(self.ii)
-        C1_z = bh2 + c2h * self.uz(self.ii)
-        C2_z = bh2 - c2h * self.uz(self.ii)
+        u = self.uw(self.T0, self.C0, self.I, self.J, self.K, self.dh)
+        ux = u[:, 0]
+        uy = u[:, 1]
+        uz = u[:, 2]
+
+        C1_x = bh2 + c2h * ux
+        C2_x = bh2 - c2h * ux
+        C1_y = bh2 + c2h * uy
+        C2_y = bh2 - c2h * uy
+        C1_z = bh2 + c2h * uz
+        C2_z = bh2 - c2h * uz
 
         C_u = np.array([C1_x, -C2_x, C1_y, -C2_y, C1_z, -C2_z])
 
@@ -341,6 +344,8 @@ class BeefSimulator:
         # not sure if implemented correctly, need to validate with manufactored solutions
         # - tested with neuman boundary = 0 -> behaves correctly
         # - need to validate with non-zero values / functions
+
+        # add u_w to prod
 
         prod = af.dotND(bis[:, 1:],
                         C_u.T[bis[:, 0]], axis=1)  # pylint: disable=E1136
@@ -382,7 +387,8 @@ class BeefSimulator:
 
         prod = af.dotND(bis[:, 1:],
                         C_u.T[bis[:, 0]], axis=1)  # pylint: disable=E1136
-        b[self.bis[:, 0]] = prod * C4[bis[:, 0]]*self.gamma(self.ii)[bis[:, 0]]
+        b[self.bis[:, 0]] = prod * C4[bis[:, 0]] * \
+            self.gamma(self.ii)[bis[:, 0]]
         #(-self.bis[:, 1]*C2[self.bis[:, 0]] +  self.bis[:, 2]*C1[self.bis[:, 0]])*C4[self.bis[:, 0]]*self.gamma(self.ii)[self.bis[:, 0]]
 
         self.logg(3, f'A = {A}')
@@ -555,9 +561,7 @@ class BeefSimulator:
             assert conf["bnd"]["alpha"] is not None, f'{prefix}: alpha should not be None'
             assert conf["bnd"]["beta"] is not None, f'{prefix}: beta should not be None'
             assert conf["bnd"]["gamma"] is not None, f'{prefix}: gamma should not be None'
-            assert conf["u"]["x"] is not None, f'{prefix}: ux should not be None'
-            assert conf["u"]["y"] is not None, f'{prefix}: uy should not be None'
-            assert conf["u"]["z"] is not None, f'{prefix}: uz should not be None'
+            assert conf["uw"] is not None, f'{prefix}: uw should not be None'
             assert 0 <= len(conf["bnd_types"]) <= 6, \
                 f'{prefix}: bnd_types should be of length 0-6, got length={len(conf["bnd_types"])}'
             assert conf["initial"] is not None, f'{prefix}: initial should not be None'

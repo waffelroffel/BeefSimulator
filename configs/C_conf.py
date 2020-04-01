@@ -1,4 +1,5 @@
 import numpy as np
+from auxillary_functions import u_w
 
 
 def C(xx, yy, zz, t):
@@ -33,16 +34,9 @@ def C_gamma(xx, yy, zz, t):
     return np.zeros(xx.size)
 
 
-def C_ux():
-    ...
-
-
-def C_uy():
-    ...
-
-
-def C_uz():
-    ...
+def C_uw(T, C, I, J, K, dh):
+    u = u_w(T.reshape((I, J, K)), C.reshape((I, J, K)), dh)
+    return u.reshape((3, -1)).T
 
 
 C_bnd_types = []
@@ -55,9 +49,7 @@ C_conf = {
     "bnd": {"alpha": C_alpha,
             "beta": C_beta,
             "gamma": C_gamma},
-    "u": {"x": C_ux,
-          "y": C_uy,
-          "z": C_uz},
+    "uw": C_uw,
     "bnd_types": C_bnd_types,
     "initial": C_initial,
     "analytic": C
