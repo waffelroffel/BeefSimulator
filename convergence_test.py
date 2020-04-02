@@ -12,14 +12,21 @@ float_list = typing.List[ float ]
 
 
 # A function that parses config file and initializes beef objects with the data corresponding to the parsed folder names
-def initialize_conv_beefs( conf ) -> beef_list:
+# TODO: Implement stuff that does not exist
+def initialize_conv_beefs( conf ) -> [ beef_list, beef_list ]:
     du_list: float_list = conf[ 'du_list' ]
     N: int = len( du_list )
     beef_names = [ f'beef{n}' for n in range( N ) ]
     calc_beefs = [
         ... ]  # Lists of beefs to be initialized with appropriate config files (may become unnecessary if
     # functionality to extract data without configing the beef object is ever added
+    exact_beefs = [
+        ...  # List (may be of length one) of the beef objects initialized with analytic solution
+    ]
     
+    ...
+    
+    return [ calc_beefs, exact_beefs ]
 
 
 def produce_conv_plotdata( calc_beefs: beef_list, analytic_beefs: beef_list, t: float, du_list: float_list,
@@ -63,10 +70,22 @@ def produce_conv_plotdata( calc_beefs: beef_list, analytic_beefs: beef_list, t: 
 
 
 # Much pseudo code
-# TODO: Implement stuff that does not exist.
-def plot_convergencetest( data: np.array, config_file: str ):
+def plot_convergencetest( data: np.array, config ):
     plt.plot( data[ 0 ], data[ 1 ], marker='o', lw=5 )
-    plt.xlabel( config_file.get_xlabel( ) )
-    plt.ylabel( config_file.get_ylabel( ) )
+    plt.xlabel( config[ 'x_label' ] )
+    plt.ylabel( config[ 'y_label' ] )
+    plt.title( config[ 'title' ] )
     plt.show( )
-    plt.savefig( fname=config_file.get_figfilename( ), format='pdf' )
+    plt.savefig( fname=config[ 'savefile' ], format='pdf' )
+
+
+# Example: Producing convergence test for a single quantity (ex. T) over a single variable (ex. dt)
+if __name__ == '__main__':
+    from configs.convTest_conf import convTest_conf
+    
+    config_filename = 'configs/convTest_conf.py'
+    beef_objects = initialize_conv_beefs( convTest_conf )
+    plotdata = produce_conv_plotdata( beef_objects[ 0 ], beef_objects[ 1 ], convTest_conf[ 't' ],
+                                      convTest_conf[ 'du_list' ], convTest_conf[ 'du_type' ],
+                                      convTest_conf[ 'quantity' ] )
+    plot_convergencetest( plotdata, convTest_conf[ 'plot_data' ] )

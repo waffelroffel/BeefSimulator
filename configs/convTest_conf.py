@@ -37,11 +37,16 @@ t = 2.25
 # Example: what we are measuring the convergence ov. Must be either 'T' or 'C'.
 quantity = 'T'
 
+# Example
+plot_savefile = '/data/plots/conv_plot1.pdf'
+
 # TODO: Probably, should add functionality to plot conv. test in dt for T and C in the same graph.
 plot_data = {
     'x_label' : r'dt',
     'y_label' : 'Error',
     'title' : f'Error in measuring {quantity} at time {t} s.',
+    
+    'savefile' : plot_savefile,
 
     'line_colour' : 'red',
     'line_width' : 4,
