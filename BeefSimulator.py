@@ -255,14 +255,14 @@ class BeefSimulator:
         :param t: time
         :return: T at time t
         '''
-        return self.get_data_from_time( self, 'T', t )
+        return self.get_data_from_time( 'T', t )
     
     def get_C( self, t: float ) -> np.array:
         '''
         :param t: time
         :return: C at time t
         '''
-        return self.get_data_from_time( self, 'C', t )
+        return self.get_data_from_time( 'C', t )
     
     # ----------------------- Temperature solver -------------------------------
     

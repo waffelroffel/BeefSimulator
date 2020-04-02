@@ -1,21 +1,25 @@
 # convergence_test.py
 
-import BeefSimulator
+from BeefSimulator import BeefSimulator
 import numpy as np
 import beef_functions
 import matplotlib.pyplot as plt
 import typing
 
-
-# A function that parses config file and initializes beef objects with the data corresponding to the parsed folder names
-def initialize_conv_beefs( ):
-    # TODO: Implement
-    ...
-
-
 # Advanced type hints, just for fun
 beef_list = typing.List[ BeefSimulator ]
 float_list = typing.List[ float ]
+
+
+# A function that parses config file and initializes beef objects with the data corresponding to the parsed folder names
+def initialize_conv_beefs( conf ) -> beef_list:
+    du_list: float_list = conf[ 'du_list' ]
+    N: int = len( du_list )
+    beef_names = [ f'beef{n}' for n in range( N ) ]
+    calc_beefs = [
+        ... ]  # Lists of beefs to be initialized with appropriate config files (may become unnecessary if
+    # functionality to extract data without configing the beef object is ever added
+    
 
 
 def produce_conv_plotdata( calc_beefs: beef_list, analytic_beefs: beef_list, t: float, du_list: float_list,
