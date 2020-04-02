@@ -4,6 +4,7 @@ from BeefSimulator import BeefSimulator
 import numpy as np
 import beef_functions
 import matplotlib.pyplot as plt
+import data_management
 import typing
 
 # Advanced type hints, just for fun
@@ -13,7 +14,7 @@ float_list = typing.List[ float ]
 
 # A function that parses config file and initializes beef objects with the data corresponding to the parsed folder names
 # TODO: Implement stuff that does not exist
-def initialize_conv_beefs( conf ) -> [ beef_list, beef_list ]:
+def initialize_conv_beefs( conf: dict ) -> [ beef_list, beef_list ]:
     du_list: float_list = conf[ 'du_list' ]
     N: int = len( du_list )
     beef_names = [ f'beef{n}' for n in range( N ) ]
@@ -70,13 +71,16 @@ def produce_conv_plotdata( calc_beefs: beef_list, analytic_beefs: beef_list, t: 
 
 
 # Much pseudo code
-def plot_convergencetest( data: np.array, config ):
-    plt.plot( data[ 0 ], data[ 1 ], marker='o', lw=5 )
+def plot_convergencetest( data: list, config: dict ):
+    # Plot each dataset that is sent in
+    for d in data:
+        plt.plot( d[ 0 ], d[ 1 ], marker='o', lw=5, label='' )
     plt.xlabel( config[ 'x_label' ] )
     plt.ylabel( config[ 'y_label' ] )
     plt.title( config[ 'title' ] )
+    plt.legend( )
     plt.show( )
-    plt.savefig( fname=config[ 'savefile' ], format='pdf' )
+    plt.savefig( fname=config[ 'plot_savefile' ], format='pdf' )
 
 
 # Example: Producing convergence test for a single quantity (ex. T) over a single variable (ex. dt)
@@ -85,7 +89,14 @@ if __name__ == '__main__':
     
     config_filename = 'configs/convTest_conf.py'
     beef_objects = initialize_conv_beefs( convTest_conf )
-    plotdata = produce_conv_plotdata( beef_objects[ 0 ], beef_objects[ 1 ], convTest_conf[ 't' ],
-                                      convTest_conf[ 'du_list' ], convTest_conf[ 'du_type' ],
-                                      convTest_conf[ 'quantity' ] )
-    plot_convergencetest( plotdata, convTest_conf[ 'plot_data' ] )
+    # Removed this to incentivise convergence test for T and C simultaneously
+    # plotdata = produce_conv_plotdata( beef_objects[ 0 ], beef_objects[ 1 ], convTest_conf[ 't' ],
+    #                                   convTest_conf[ 'du_list' ], convTest_conf[ 'du_type' ],
+    #                                   convTest_conf[ 'quantity' ] )
+    plotdata_T = produce_conv_plotdata( beef_objects[ 0 ], beef_objects[ 1 ], convTest_conf[ 't' ],
+                                        convTest_conf[ 'du_list' ], convTest_conf[ 'du_type' ], 'T' )
+    plotdata_C = produce_conv_plotdata( beef_objects[ 0 ], beef_objects[ 1 ], convTest_conf[ 't' ],
+                                        convTest_conf[ 'du_list' ], convTest_conf[ 'du_type' ], 'C' )
+    data_management.write_csv( plotdata_T, convTest_conf[ 'plot_data' ][ 'data_savefile_T' ], True )
+    data_management.write_csv( plotdata_C, convTest_conf[ 'plot_data' ][ 'data_savefile_C' ], True )
+    plot_convergencetest( [ plotdata_T, plotdata_C ], convTest_conf[ 'plot_data' ] )
