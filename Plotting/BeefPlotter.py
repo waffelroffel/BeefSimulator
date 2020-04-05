@@ -24,9 +24,18 @@ class Plotter:
         self.name = name
         self.save_fig = save_fig
 
-    def show_heat_map(self, U_data, t, x=None, y=None, z=None):
-        U = U_data
-        # print(U.shape)
+    def show_heat_map(self, U_data, t, id, x=None, y=None, z=None):
+        if id == 'T':
+            self.__shm_temp(U_data, t, x, y, z)
+        elif id == 'C':
+            self.__shm_cons(U_data, t, x, y, z)
+        else:
+            raise ValueError(
+                'Trying to aquire a quantity that does not exist.')
+
+    def __shm_temp(self, U_data, t, x=None, y=None, z=None):
+        T = U_data
+
         if isinstance(t, list):
             pass
         else:
@@ -44,11 +53,11 @@ class Plotter:
                     plt.title(f'X-section @ $x={x:.3g}$ and $t =$ {t:.3g}')
                     i = int(x // self.h)
                     yz, zy = np.meshgrid(self.y, self.z, indexing='ij')
-                    cs = [ax.contourf(yz, zy, U[n, i, :, :], 65,
+                    cs = [ax.contourf(yz, zy, T[n, i, :, :], 65,
                                       cmap=cm.get_cmap('magma'))]
                     plt.xlabel(r"$y$", fontsize=16)
                     plt.ylabel(r"$z$", fontsize=16)
-                    cbarlab = r'$U(y,z)$'
+                    cbarlab = r'$T(y,z)$'
                     coordlab = f'x={x:.3g}'
             elif y is not None:
                 if isinstance(y, list):
@@ -57,11 +66,11 @@ class Plotter:
                     plt.title(f'X-section @ $y={y:.3g}$ and $t =$ {t:.3g}')
                     j = int(y // self.h)
                     xz, zx = np.meshgrid(self.x, self.z, indexing='ij')
-                    cs = [ax.contourf(xz, zx, U[n, :, j, :], 65,
+                    cs = [ax.contourf(xz, zx, T[n, :, j, :], 65,
                                       cmap=cm.get_cmap('magma'))]
                     plt.xlabel(r"$x$", fontsize=16)
                     plt.ylabel(r"$z$", fontsize=16)
-                    cbarlab = r'$U(x,z)$'
+                    cbarlab = r'$T(x,z)$'
                     coordlab = f'y={y:.3g}'
             elif z is not None:
                 if isinstance(z, list):
@@ -70,11 +79,75 @@ class Plotter:
                     plt.title(f'X-section @ $z={z:.3g}$ and $t =$ {t:.3g}')
                     k = int(z // self.h)
                     xy, yx = np.meshgrid(self.x, self.y, indexing='ij')
-                    cs = [ax.contourf(xy, yx, U[n, :, :, k], 65,
+                    cs = [ax.contourf(xy, yx, T[n, :, :, k], 65,
                                       cmap=cm.get_cmap('magma'))]
                     plt.xlabel(r"$x$", fontsize=16)
                     plt.ylabel(r"$y$", fontsize=16)
-                    cbarlab = r'$U(x,y)$'
+                    cbarlab = r'$T(x,y)$'
+                    coordlab = f'z={z:.3g}'
+            else:
+                raise Exception("No crossection coordinate given.")
+
+            cbar1 = fig.colorbar(cs[0], ax=ax, shrink=0.9)
+            cbar1.ax.set_ylabel(cbarlab, fontsize=14)
+
+            if self.save_fig:
+                filename = self.name.joinpath(
+                    f'heatmap_{coordlab}_t={t:.3g}.png')
+                plt.savefig(filename)
+            plt.show()
+
+    def __shm_cons(self, U_data, t, x=None, y=None, z=None):
+        C = U_data
+
+        if isinstance(t, list):
+            pass
+        else:
+            n = int(t // self.dt)
+
+            fig, ax = plt.subplots()
+            cs = []
+            cbarlab = ''
+            coordlab = ''
+
+            if x is not None:
+                if isinstance(x, list):
+                    pass
+                else:
+                    plt.title(f'X-section @ $x={x:.3g}$ and $t =$ {t:.3g}')
+                    i = int(x // self.h)
+                    yz, zy = np.meshgrid(self.y, self.z, indexing='ij')
+                    cs = [ax.contourf(yz, zy, C[n, i, :, :], 65,
+                                      cmap=cm.get_cmap('viridis'))]
+                    plt.xlabel(r"$y$", fontsize=16)
+                    plt.ylabel(r"$z$", fontsize=16)
+                    cbarlab = r'$C(y,z)$'
+                    coordlab = f'x={x:.3g}'
+            elif y is not None:
+                if isinstance(y, list):
+                    pass
+                else:
+                    plt.title(f'X-section @ $y={y:.3g}$ and $t =$ {t:.3g}')
+                    j = int(y // self.h)
+                    xz, zx = np.meshgrid(self.x, self.z, indexing='ij')
+                    cs = [ax.contourf(xz, zx, C[n, :, j, :], 65,
+                                      cmap=cm.get_cmap('viridis'))]
+                    plt.xlabel(r"$x$", fontsize=16)
+                    plt.ylabel(r"$z$", fontsize=16)
+                    cbarlab = r'$C(x,z)$'
+                    coordlab = f'y={y:.3g}'
+            elif z is not None:
+                if isinstance(z, list):
+                    pass
+                else:
+                    plt.title(f'X-section @ $z={z:.3g}$ and $t =$ {t:.3g}')
+                    k = int(z // self.h)
+                    xy, yx = np.meshgrid(self.x, self.y, indexing='ij')
+                    cs = [ax.contourf(xy, yx, C[n, :, :, k], 65,
+                                      cmap=cm.get_cmap('viridis'))]
+                    plt.xlabel(r"$x$", fontsize=16)
+                    plt.ylabel(r"$y$", fontsize=16)
+                    cbarlab = r'$C(x,y)$'
                     coordlab = f'z={z:.3g}'
             else:
                 raise Exception("No crossection coordinate given.")
