@@ -69,6 +69,8 @@ class BeefSimulator:
         self.gamma = _wrap( T_conf[ "bnd" ][ "gamma" ] )
         self.initial = _wrap( T_conf[ "initial" ] )
         self.uw = T_conf[ "uw" ]
+
+        self.u
         
         # Defines the PDE and boundary conditions for C
         self.initial_C = _wrap( C_conf[ "initial" ] )
@@ -196,7 +198,7 @@ class BeefSimulator:
         self.logg( 1, "Iterating...", )
         for i, t in enumerate( self.t ):
             # litt usikker på dimensjonene på Q
-            Q = af.u_w( self.T0, self.C0, self.dh )
+            self.u = self.uw( self.T0, self.C0, self.I, self.J, self.K, self.dh )
             
             self.ii[ 3 ] = t
             self.logg( 2, f'- t = {t}' )
@@ -205,7 +207,7 @@ class BeefSimulator:
             self.T_data[ i ] = self.T1.reshape( self.shape[ 1: ] )
             self.T0, self.T1 = self.T1, np.empty( self.n )
             
-            self.solve_next_C( method, Q )
+            self.solve_next_C( method )
             self.C_data[ i ] = self.C1.reshape( self.shape[ 1: ] )
             self.C0, self.C1 = self.C1, np.empty( self.n )
             
@@ -303,12 +305,12 @@ class BeefSimulator:
     
     # ----------------------- Concentration solver ------------------------------
     
-    def solve_next_C( self, Q, method="cd" ):
+    def solve_next_C( self, method="cd" ):
         """
         Calculate the next time step (C1)
         """
         if method == "cd":
-            C, d = self.make_Cd( Q )
+            C, d = self.make_Cd( )
             self.C1[ ... ] = self.C0 + \
                              (self.dt / (2 * self.dh**2) * (C @ self.C0 + d))
     
@@ -334,7 +336,7 @@ class BeefSimulator:
         self.logg( "stage", "Finished", )
         self.logg( "final", f'Final state: {self.C0}' )
     
-    def make_Ab( self, ):
+    def make_Ab( self ):
         """
         Construct A and b
         """
@@ -349,7 +351,8 @@ class BeefSimulator:
         bh2 = self.b( self.ii ) / self.dh**2
         c2h = self.c( self.ii ) / (2 * self.dh)
         
-        u = self.uw( self.T0, self.C0, self.I, self.J, self.K, self.dh )
+        #u = self.uw( self.T0, self.C0, self.I, self.J, self.K, self.dh )
+        u = self.u
         ux = 1  # u[:, 0]
         uy = 1  # u[:, 1]
         uz = 1  # u[:, 2]
@@ -433,7 +436,7 @@ class BeefSimulator:
         self.logg( "Ab", f'b = {b}' )
         return A, b
     
-    def make_Cd( self, Q ):
+    def make_Cd( self ):
         """
         Construct C and d for Concentration equation
         """
@@ -446,13 +449,13 @@ class BeefSimulator:
         # TODO:
         # Fix \nabla u_w, currently placeholder
         # Should work
-        
+        Q = self.u
         D1 = 2 * self.dh * Q + const.D
         D2 = - 2 * self.dh * Q + const.D
         D3 = 6 * const.D
         
         d = np.ones( self.n )
-        ds = [ D3 * d, D1[ 0 ] * d, D1[ 1 ] * d, D1[ 2 ] * d, D2[ 0 ] * d, D2[ 1 ] * d, D2[ 2 ] * d ]
+        ds = [ D3 * d, D1[ : ][0] * d, D1[ : ][1] * d, D1[ : ][2] * d, D2[ : ][0] * d, D2[ : ][1] * d, D2[ : ][2] * d ]
         # [d0, d1, d2, d3, d4, d5, d6] = ds
         
         # TODO:
