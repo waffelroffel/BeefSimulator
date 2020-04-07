@@ -9,3 +9,4 @@ from auxillary_functions import u_w
 if __name__ == "__main__":
     bs = BeefSimulator(conf, T_conf, C_conf)
     bs.solve_all()
+    asd
