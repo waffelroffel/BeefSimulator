@@ -70,7 +70,7 @@ class BeefSimulator:
         self.initial = _wrap(T_conf["initial"])
         self.uw = T_conf["uw"]
 
-        self.u
+        self.u = 0
 
         # Defines the PDE and boundary conditions for C
         self.initial_C = _wrap(C_conf["initial"])

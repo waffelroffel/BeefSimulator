@@ -4,8 +4,6 @@ Eksperter i Team - Matematikk innen anvendelser - Team 2
 
 ---
 
----
-
 ## How to use BeefSimulator
 
 ### 1. Setup the configs
@@ -58,6 +56,8 @@ bs = BeefSimulator(conf, T_conf, C_conf) # initialize a BeefSimulator with the g
 bs.solve_all() # iterate all time steps for Temperature and save the temperature data in data/"folder_name"/T.dat
 ```
 
+---
+
 ### 3. Plotting the results
 
 The BeefSimulator class has an BeefPlotter member object which one can use to plot the data inherent in the BS class. Currently, one can simply use the BS member function `plot()` with the appropriate arguments to make use of most of the BeefPlotter features.
@@ -78,10 +78,23 @@ bs.plotter.save_fig = False # Figures will not be saved to disk anymore (the plo
 bs.plot([0.0, 2.0, 4.0, 8.0], z=0.5, 'C') # Concentration heat xy-crossections at z=0.5 at times t=0.0, 2.0, 4.0, and 8.0.
 ```
 
-The plots are saved in the same directory as the data is stored as pdf files.
+The plots are saved in the same directory as the data is stored as png files.
+
+---
+
+#### Standalone plotting
+
+To plot from precomputed results:
+
+```python
+bp = Plotter(name="path to folder inside data/")
+bp.show_heat_map2(0.0, "T", x=0.5)
+```
+
+Folder must contain:
+
+- _header.json_
+- _T.dat_
+- _C.dat_
 
 **tl;dr**: run [test.py](test.py) (will show a plot for each tenth of the time range specified in [conf.py](configs/conf.py))
-
----
-
----

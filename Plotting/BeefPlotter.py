@@ -4,25 +4,63 @@ from mpl_toolkits.mplot3d import Axes3D
 from matplotlib import cm
 import matplotlib.animation as animation
 from pathlib import Path
+from typing import Union
+import json
 
 
 class Plotter:
-    def __init__(self, beefsim, name: Path = 'untitled', save_fig=False):
+    def __init__(self, beefsim=None, name: Union[str, Path] = 'untitled', save_fig=False):
         """
         beefsim: A BeefSimulator object with axis and stepping data for plotting.
         name: Filename for saved plots. Default: 'untitled'
         save_fig: Determines whether the plots will be saved. Default: 'False'
         """
-        self.t = beefsim.t
-        self.x = beefsim.x
-        self.y = beefsim.y
-        self.z = beefsim.z
-
-        self.dt = beefsim.dt
-        self.h = beefsim.dh
+        if beefsim is None:
+            self.load_from_file(name)
+        else:
+            self.t = beefsim.t
+            self.x = beefsim.x
+            self.y = beefsim.y
+            self.z = beefsim.z
+            self.dt = beefsim.dt
+            self.h = beefsim.dh
 
         self.name = name
         self.save_fig = save_fig
+
+    def load_from_file(self, path: Path):
+        if not isinstance(path, Path):
+            path = Path(path)
+        head_path = path.joinpath("header.json")
+        temp_path = path.joinpath("T.dat")
+        cons_path = path.joinpath("C.dat")
+
+        header = None
+        with open(head_path) as f:
+            header = json.load(f)
+
+        self.dt = header["dt"]
+        self.h = header["dh"]
+
+        dims = header["dims"]
+        shape = header["shape"]
+        self.t = np.linspace(header["t0"], header["tn"], shape[0])
+        self.x = np.linspace(dims["x0"], dims["xn"], shape[1])
+        self.y = np.linspace(dims["y0"], dims["yn"], shape[2])
+        self.z = np.linspace(dims["z0"], dims["zn"], shape[3])
+
+        self.T_data = np.memmap(temp_path,
+                                dtype="float64",
+                                mode="r",
+                                shape=tuple(shape))
+        self.C_data = np.memmap(cons_path,
+                                dtype="float64",
+                                mode="r",
+                                shape=tuple(shape))
+
+    def show_heat_map2(self, t, id, x=None, y=None, z=None):
+        U_data = self.T_data if id == "T" else self.C_data
+        self.show_heat_map(U_data, t, id, x, y, z)
 
     def show_heat_map(self, U_data, t, id, x=None, y=None, z=None):
         if id == 'T':
@@ -189,8 +227,8 @@ class Animation:
             [], [], lw=1.0, color='g', label=r"")
 
         # Set limits and labels for the axes
-        #self.ax1.set_xlim(left=0, right=)
-        #self.ax1.set_ylim(bottom=-1, top=1)
+        # self.ax1.set_xlim(left=0, right=)
+        # self.ax1.set_ylim(bottom=-1, top=1)
         self.ax1.grid()
 
         # Actually do the animation
