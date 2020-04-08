@@ -6,10 +6,22 @@ import beef_functions
 import matplotlib.pyplot as plt
 import data_management
 import typing
+from configs.convTest_conf import convTest_conf
 
 # Advanced type hints, just for fun
 beef_list = typing.List[ BeefSimulator ]
 float_list = typing.List[ float ]
+
+
+# WIP:
+def produce_datasets( ):
+    # Produced with numpy logspace
+    dt_list = [ 0.01, 0.00316228, 0.001, 0.00031623, 0.0001 ]
+    dh_list = [ 1., 0.31622777, 0.1, 0.03162278, 0.01 ]
+    dt_default = 0.001
+    dh_default = 0.1
+    folder_names = [f'conv_T_dt_{i}' for i in dt_list] + [f'conv_T_dh_{j}' for j in dh_list]
+    ...
 
 
 # A function that parses config file and initializes beef objects with the data corresponding to the parsed folder names
@@ -85,7 +97,6 @@ def plot_convergencetest( data: list, config: dict ):
 
 # Example: Producing convergence test for a single quantity (ex. T) over a single variable (ex. dt)
 if __name__ == '__main__':
-    from configs.convTest_conf import convTest_conf
     
     config_filename = 'configs/convTest_conf.py'
     beef_objects = initialize_conv_beefs( convTest_conf )
