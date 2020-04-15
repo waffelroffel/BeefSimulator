@@ -39,7 +39,7 @@ def make_manisol_1d( xd: int, td: int ) -> np.array:
     (2): T(L, t) = 0
     (3): T(x, 0) = sin(2*pi*x/L)		(Chosen for convenience)
     Only the n=2-Fourier component is non-zero due to B.C. (3) => T(x,t) = exp(-4*a*pi^2/L^2 * t) * sin(2*pi/L * x)
-    Insert a = 8e-6, L = 1
+    Insert a = 1/8e6, L = 1
 
     :param xd: number of points discretising x
     :param td: number of points discretising t
@@ -47,7 +47,7 @@ def make_manisol_1d( xd: int, td: int ) -> np.array:
     '''
     
     # Analytic solution
-    def T( x, t ): return np.exp( -4 * 8e-6 * (np.pi)**2 * t ) * np.sin( 2 * np.pi * x )
+    def T( x, t ): return np.exp( -4 * 1/8e6 * (np.pi)**2 * t ) * np.sin( 2 * np.pi * x )
     
     x = np.linspace( 0, 1, xd )
     delta_t = 0.1
@@ -71,7 +71,7 @@ def make_manisol_3d( shape_d: list, filename: str ) -> None:
     (4): T(x,y,z,0) = 3*sin(2*pi*x/Lx)*sin(2*pi*y/Ly)*sin(4*pi*z/Lz)			(Chosen for convenience)
     Only the (nx=2, ny=2, nz=2)-Fourier component is non-zero due to B.C. (4) => ...
     T(x,y,z,t) = 3 * exp(-4*a*pi^2*(1/Lx^2+1/Ly^2+4/Lz^2) * t) * sin(2*pi/Lx * x) * sin(2*pi/Ly * y) * sin(4*pi/Lz * z)
-    insert a = 8e-6, Lx=Ly=Lz=1
+    insert a = 1/8e6, Lx=Ly=Lz=1
 
     ### NB! (3.1) -> T(x,y,0,t) = 0 and (3.2) -> T(x,y,Lz,t) = 0 gives exactly the same solution!
     
@@ -81,7 +81,7 @@ def make_manisol_3d( shape_d: list, filename: str ) -> None:
     '''
     
     # Analytic solution
-    def T( x, y, z, t ): return 3 * np.exp( -4 * 8e-6 * (np.pi)**2 * (1 + 1 + 4) * t ) * \
+    def T( x, y, z, t ): return 3 * np.exp( -4 * 1/8e6 * (np.pi)**2 * (1 + 1 + 4) * t ) * \
                                 np.sin( 2 * np.pi * x ) * np.sin( 2 * np.pi * y ) * np.sin( 4 * np.pi * z )
     
     data = np.memmap( filename,

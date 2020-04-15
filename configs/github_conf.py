@@ -12,6 +12,9 @@ folder = "github"
 dh = 0.1
 dt = 0.01
 
+# -1: only the last
+t_jump = 1
+
 t0 = 0
 tlen = 0.1
 tn = t0+tlen
@@ -31,6 +34,7 @@ zn = z0+zlen
 conf = {
     "dh": dh,
     "dt": dt,
+    "t_jump": t_jump,
     "t0": t0,
     "tlen": tlen,
     "tn": tn,
