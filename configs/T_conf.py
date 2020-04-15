@@ -3,7 +3,8 @@ from auxillary_functions import u_w
 
 
 def T(xx, yy, zz, t):
-    return 3 * np.exp(-4*(np.pi)**2*(1+1+4) * t) * \
+    alp = 8e-6
+    return 3 * np.exp(-4*alp*(np.pi)**2*(1+1+4) * t) * \
         np.sin(2*np.pi * xx) * np.sin(2*np.pi * yy) * np.sin(4*np.pi * zz)
 
 
