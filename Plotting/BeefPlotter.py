@@ -16,7 +16,7 @@ def init_3d(fig, axes):
 
 
 class Plotter:
-    def __init__(self, beefsim=None, name: Union[str, Path] = 'untitled', save_fig=False):
+    def __init__(self, beefsim=None, name='untitled', save_fig=False):
         """
         beefsim: A BeefSimulator object with axis and stepping data for plotting.
         name: Filename for saved plots. Default: 'untitled'
