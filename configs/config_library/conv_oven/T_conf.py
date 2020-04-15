@@ -1,43 +1,50 @@
-import numpy as np
-from auxillary_functions import u_w
+## T_conf
 
-a = 1
+import numpy as np
+import constants as c
+from auxillary_functions import u_w
 
 
 def T(xx, yy, zz, t):
-    return 3 * np.exp(-4*a*(np.pi)**2*(1+1+4) * t) * \
+    return 3 * np.exp(-4*(np.pi)**2*(1+1+4) * t) * \
         np.sin(2*np.pi * xx) * np.sin(2*np.pi * yy) * np.sin(4*np.pi * zz)
 
 
 def T_initial(xx, yy, zz, t):
-    return T(xx, yy, zz, t)
+    return c.T_init * np.ones(xx.size)
 
 
 def T_a(xx, yy, zz, t):
-    return np.ones(xx.size)/a
+    return c.rho_m * c.cp_m * np.ones(xx.size)
 
 
 def T_b(xx, yy, zz, t):
-    return 1
+    return c.k_m * np.ones(xx.size)
 
 
 def T_c(xx, yy, zz, t):
-    return np.zeros(xx.size)
+    return - c.rho_w * c.cp_w * u_w * np.ones(xx.size)
 
 
 def T_alpha(xx, yy, zz, t):
-    return 0
+    return c.k_m * np.ones(xx.size)
 
 
+# Bottom has a different heat transfer than the rest
 def T_beta(xx, yy, zz, t):
-    return np.ones(xx.size)
+    temp = u_w * c.cp_w * c.rho_w + (c.f - 1)*c.h_air * np.ones(xx.shape)
+    temp [:,:,0] *= c.h_plate / c.h_air
+    return temp.flatten()
 
 
+# Bottom has a different heat transfer than the rest
 def T_gamma(xx, yy, zz, t):
-    return np.zeros(xx.size)
+    temp = (c.f - 1) * c.T_oven * c.h_air * np.ones(xx.shape)
+    temp[:,:,0] *= c.h_plate / c.h_air
+    return temp.flatten()
 
 
-def uw(T, C, I, J, K, dh):
+def T_uw(T, C, I, J, K, dh):
     u = u_w(T.reshape((I, J, K)), C.reshape((I, J, K)), dh)
     return u.reshape((3, -1)).T
 

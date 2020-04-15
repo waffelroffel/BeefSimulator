@@ -84,26 +84,35 @@ class BeefSimulator:
         self.num_nodes_border = self.num_nodes - self.num_nodes_inner
 
     def setup_indices(self, conf, T_conf, C_conf):
-        self.d_bnd_indices = self.get_d_bnd_indices(T_conf["bnd_types"])
-
-        # rename: the 1D indicies for all the boundary points
-        self.bis = self.find_border_indicies()
+        # indices for the direchet nodes in T
+        self.T_direchets = self.get_direchet_indices(T_conf["bnd_types"])
+        # indices for the direchet nodes in C
+        self.C_direchets = self.get_direchet_indices(C_conf["bnd_types"])
+        # indices for the boundary nodes
+        self.boundaries = self.find_border_indicies()
+        # diagonal indices for make_Ab
+        self.ks = self.get_ks()
 
     def setup_TC(self, conf, T_conf, C_conf):
         # Defines the PDE and boundary conditions for T
-        self.a = self.wrap(T_conf["pde"]["a"])
-        self.b = self.wrap(T_conf["pde"]["b"])
-        self.c = self.wrap(T_conf["pde"]["c"])
-        self.alpha = self.wrap(T_conf["bnd"]["alpha"])
-        self.beta = self.wrap(T_conf["bnd"]["beta"])
-        self.gamma = self.wrap(T_conf["bnd"]["gamma"])
-        self.initial = self.wrap(T_conf["initial"])
-        self.uw = T_conf["uw"]
-
-        self.u = 0
+        self.T_a = self.wrap(T_conf["pde"]["a"])
+        self.T_b = self.wrap(T_conf["pde"]["b"])
+        self.T_c = self.wrap(T_conf["pde"]["c"])
+        self.T_alpha = self.wrap(T_conf["bnd"]["alpha"])
+        self.T_beta = self.wrap(T_conf["bnd"]["beta"])
+        self.T_gamma = self.wrap(T_conf["bnd"]["gamma"])
+        self.T_initial = self.wrap(T_conf["initial"])
 
         # Defines the PDE and boundary conditions for C
-        self.initial_C = self.wrap(C_conf["initial"])
+        self.C_a = self.wrap(C_conf["pde"]["a"])
+        self.C_b = self.wrap(C_conf["pde"]["b"])
+        self.C_c = self.wrap(C_conf["pde"]["c"])
+        self.C_alpha = self.wrap(C_conf["bnd"]["alpha"])
+        self.C_beta = self.wrap(C_conf["bnd"]["beta"])
+        self.C_gamma = self.wrap(C_conf["bnd"]["gamma"])
+        self.C_initial = self.wrap(C_conf["initial"])
+
+        self.uw = T_conf["uw"] or C_conf["uw"]
 
     def setup_mesh(self, conf, T_conf, C_conf):
         xx, yy, zz = np.meshgrid(self.x, self.y, self.z)
@@ -112,11 +121,11 @@ class BeefSimulator:
     def setup_files(self, conf, T_conf, C_conf):
         self.T1 = np.zeros(self.num_nodes)
         self.T0 = np.zeros(self.num_nodes)
-        self.T0[...] = self.initial(self.ii)
+        self.T0[...] = self.T_initial(self.ii)
 
         self.C1 = np.zeros(self.num_nodes)
         self.C0 = np.zeros(self.num_nodes)
-        self.C0[...] = self.initial_C(self.ii)
+        self.C0[...] = self.C_initial(self.ii)
 
         self.path = Path("data").joinpath(conf["folder"])
         if not self.path.exists():
@@ -167,60 +176,172 @@ class BeefSimulator:
         with open(self.H_file, "w+") as f:
             json.dump(header, f)
 
-    def get_d_bnd_indices(self, bnd_types):
-        uniques = set()
+    # -------------------- Solver --------------------
 
-        bnd_lst = []
-        for qqq, bnd in enumerate(bnd_types):
-            if bnd == "d":
-                bnd_lst.append(self.diag_indicies(qqq + 1))
+    def set_vars(self, id):
+        cond = id == "T"
+        self.a = self.T_a if cond else self.C_a
+        self.b = self.T_b if cond else self.C_b
+        self.c = self.T_c if cond else self.C_c
+        self.alpha = self.T_alpha if cond else self.C_alpha
+        self.beta = self.T_beta if cond else self.C_beta
+        self.gamma = self.T_gamma if cond else self.C_gamma
+        self.direchets = self.T_direchets if cond else self.C_direchets
 
-        for qq in bnd_lst:
-            for q in qq:
-                uniques.add(q)
-
-        # remove sorted?
-        return sorted(list(uniques))
-
-    def solver(self):
+    def solver(self, method="cd"):
         """
         Iterate through from t0 -> tn
         solve for both temp. and conc.
         """
-        method = "cd"
 
         del self.T_data
         del self.C_data
-        self.T_data = np.memmap(self.T_file,
-                                dtype="float64",
-                                mode="w+",
-                                shape=self.shape)
-        self.C_data = np.memmap(self.C_file,
-                                dtype="float64",
-                                mode="w+",
-                                shape=self.shape)
+        self.T_data = np.memmap(
+            self.T_file, dtype="float64", mode="w+", shape=self.shape)
+        self.C_data = np.memmap(
+            self.C_file, dtype="float64", mode="w+", shape=self.shape)
 
-        self.logg(1, "Iterating...", )
+        self.logg("stage", "Iterating...", )
+        step = 0
         for i, t in enumerate(self.t):
-            # litt usikker på dimensjonene på Q
-            self.u = self.uw(self.T0, self.C0, self.I, self.J, self.K, self.dh)
+            self.u = self.uw(self.T0, self.C0, *self.space, self.dh)
 
             self.ii[3] = t
-            self.logg(2, f'- t = {t}')
+            self.logg("tn", f'- t = {t}')
 
-            self.solve_next(method)
-            self.T_data[i] = self.T1.reshape(self.shape[1:])
+            self.set_vars("T")
+            self.solve_next(self.T0, self.T1, method)
             self.T0, self.T1 = self.T1, np.empty(self.num_nodes)
 
-            self.solve_next_C(method)
-            self.C_data[i] = self.C1.reshape(self.shape[1:])
+            self.set_vars("C")
+            self.solve_next(self.C0, self.C1, method)
             self.C0, self.C1 = self.C1, np.empty(self.num_nodes)
 
+            # save each "step"
+            if self.t_jump != -1 and step % self.t_jump == 0:
+                self.T_data[i] = self.T0.reshape(self.shape[1:])
+                self.C_data[i] = self.C0.reshape(self.shape[1:])
+                self.T_data.flush()
+                self.C_data.flush()
+                step += 1
+
+        # save last step if not saved
+        if step != self.shape[0]:
+            self.T_data[-1] = self.T0.reshape(self.shape[1:])
+            self.C_data[-1] = self.C0.reshape(self.shape[1:])
             self.T_data.flush()
             self.C_data.flush()
 
-        self.logg(1, "Finished", )
-        # self.logg(1, f'Final state: {self.T0}')
+        self.logg("stage", "Finished", )
+        self.logg("final", f'Final state: {self.T0}')
+
+    def solve_next(self, U0, U1, method="cd"):
+        """
+        Calculate the next time step (T1)
+        """
+        if method == "cd":
+            A, b = self.make_Ab()
+            U1[...] = U0 + (self.dt / self.a(self.ii)) * (A @ U0 + b)
+
+            # TODO: move indexing before division
+            U1[self.direchets] = (self.gamma(
+                self.ii) / self.beta(self.ii))[self.direchets]
+
+    def make_Ab(self):
+        """
+        Construct A and b
+        """
+        # ------- contruct all diagonals -------
+
+        bh2 = self.b(self.ii) / self.dh**2
+        c2h = self.c(self.ii) / (2 * self.dh)
+
+        u = self.u
+        ux = u[:, 0]
+        uy = u[:, 1]
+        uz = u[:, 2]
+
+        C1_x = bh2 + c2h * ux
+        C2_x = bh2 - c2h * ux
+        C1_y = bh2 + c2h * uy
+        C2_y = bh2 - c2h * uy
+        C1_z = bh2 + c2h * uz
+        C2_z = bh2 - c2h * uz
+
+        C_u = np.array([C1_x, -C2_x, C1_y, -C2_y, C1_z, -C2_z])
+
+        C3 = 6 * self.b(self.ii) / self.dh**2
+
+        _alpha = self.alpha(self.ii).copy()
+        _alpha[self.direchets] = 1  # dummy
+        _alpha[_alpha == 0] = 1  # dummy
+        C4 = 2 * self.dh / _alpha
+
+        d = np.ones(self.num_nodes)
+        d0, d1, d2, d3, d4, d5, d6 = [-C3 * d,
+                                      C1_x * d, C1_y * d,
+                                      C1_z * d, C2_x * d,
+                                      C2_y * d, C2_z * d]
+
+        # --------------- modify the boundaries ---------------
+        # see project report
+        # TODO:
+        # [X] set C1+C2
+        # [X] set 0
+        # not sure if implemented correctly, need to validate with manufactored solutions
+        # - tested with neuman boundary = 0 -> behaves correctly
+        # - need to validate with non-zero values / functions
+
+        # add u_w to prod
+        prod = af.dotND(
+            self.boundaries[:, 1:], C_u.T[self.boundaries[:, 0]], axis=1)  # pylint: disable=E1136
+        d0[self.boundaries[:, 0]] -= prod * C4[self.boundaries[:, 0]] * \
+            self.beta(self.ii)[self.boundaries[:, 0]]
+
+        ks = self.ks
+        k0, k1, k2, k3, k4, k5, k6 = ks
+        i1, i2, i3, i4, i5, i6 = [self.diag_indicies(i + 1) for i in range(6)]
+
+        d1[i1] = (C1_x + C2_x)[i1]
+        d1[i1 + k4] = 0
+        d1 = d1[k1:]
+
+        d2[i2] = (C1_y + C2_y)[i2]
+        d2[i2 + k5] = 0
+        d2 = d2[k2:]
+
+        d3[i3] = (C1_z + C2_z)[i3]
+        d3[i3 + k6] = 0
+        d3 = d3[k3:]
+
+        d4[i4 + k4] = (C1_x + C2_x)[i4 + k4]
+        d4[i1 + k4] = 0
+        d4 = d4[:k4]
+
+        d5[i5 + k5] = (C1_y + C2_y)[i5 + k5]
+        d5[i2 + k5] = 0
+        d5 = d5[:k5]
+
+        d6[i6 + k6] = (C1_z + C2_z)[i6 + k6]
+        d6[i3 + k6] = 0
+        d6 = d6[:k6]
+
+        # -----------------------------------------------------
+        ds = [d0, d1, d2, d3, d4, d5, d6]
+        A = diags(ds, ks)
+
+        b = np.zeros(self.num_nodes)
+
+        prod = af.dotND(
+            self.boundaries[:, 1:], C_u.T[self.boundaries[:, 0]], axis=1)  # pylint: disable=E1136
+        b[self.boundaries[:, 0]] = prod * C4[self.boundaries[:, 0]] * \
+            self.gamma(self.ii)[self.boundaries[:, 0]]
+
+        self.logg("Ab", f'A = {A}')
+        self.logg("Ab", f'b = {b}')
+        return A, b
+
+    # -------------------- Logger --------------------
 
     def logg(self, lvl, txt, logger=print):
         """
@@ -228,6 +349,8 @@ class BeefSimulator:
         """
         if self.logging[lvl]:
             logger(txt)
+
+    # -------------------- Plotter --------------------
 
     def plot(self, t, id, x=None, y=None, z=None):
         """
@@ -279,227 +402,6 @@ class BeefSimulator:
         '''
         return self.get_data_from_time('C', t)
 
-    # ----------------------- Temperature solver -------------------------------
-
-    def solve_next(self, method="cd"):
-        """
-        Calculate the next time step (T1)
-        """
-        if method == "cd":
-            A, b = self.make_Ab()
-            self.T1[...] = self.T0 + \
-                (self.dt / self.a(self.ii)) * (A @ self.T0 + b)
-
-            # TODO: move indexing before division
-            self.T1[self.d_bnd_indices] = (self.gamma(
-                self.ii) / self.beta(self.ii))[self.d_bnd_indices]
-
-    def solve_all(self, method="cd"):
-        """
-        Iterate through from t0 -> tn
-        """
-        # Clear temperature data before solving all
-        del self.T_data
-        self.T_data = np.memmap(
-            self.T_file, dtype="float64", mode="w+", shape=self.shape)
-
-        self.logg("stage", "Iterating...", )
-        n = 0
-        for i, t in enumerate(self.t):
-            self.ii[3] = t
-            self.logg("tn", f'- t = {t}')
-            self.solve_next(method)
-            self.T0, self.T1 = self.T1, np.empty(self.num_nodes)
-            if self.save(index=n, step=i, array=self.T0, file=self.T_data):
-                n += 1
-
-        # save last step if not already saved
-        if n != self.shape[0]:
-            self.save(index=-1, step=0, array=self.T0,
-                      file=self.T_data, force=True)
-
-        self.logg("stage", "Finished", )
-        self.logg("final", f'Final state: {self.T0}')
-
-    def save(self, index, step, array, file, force=False):
-        if force or (self.t_jump != -1 and step % self.t_jump == 0):
-            file[index] = array.reshape(self.shape[1:])
-            file.flush()  # Make sure data gets written to disk
-            return True
-        return False
-
-    # ----------------------- Concentration solver ------------------------------
-
-    def solve_next_C(self, method="cd"):
-        """
-        Calculate the next time step (C1)
-        """
-        if method == "cd":
-            C, d = self.make_Cd()
-            self.C1[...] = self.C0 + \
-                (self.dt / (2 * self.dh**2) * (C @ self.C0 + d))
-
-    def solve_all_C(self, method="cd"):
-        """
-        Iterate through from t0 -> tn
-        """
-        # Clear concentration data before solving all
-        del self.C_data
-        self.C_data = np.memmap(self.C_file,
-                                dtype="float64",
-                                mode="w+",
-                                shape=self.shape)
-
-        self.logg("stage", "Iterating...", )
-        for i, t in enumerate(self.t):
-            self.ii[3] = t
-            self.logg("tn", f'- t = {self.t}')
-            self.solve_next_C(method)
-            self.C_data[i] = self.C1.reshape(self.shape[1:])
-            self.C0, self.C1 = self.C1, np.empty(self.num_nodes)
-            self.C_data.flush()  # Makes sure data gets written to disk
-        self.logg("stage", "Finished", )
-        self.logg("final", f'Final state: {self.C0}')
-
-    def make_Ab(self):
-        """
-        Construct A and b
-        """
-        # TODO: change to self.bis when other refecenres use the new implementation
-        bis = self.find_border_indicies(True)
-
-        # diagonal indicies
-        [k0, k1, k2, k3, k4, k5, k6] = self.get_ks()
-
-        # ------- contruct all diagonals -------
-
-        bh2 = self.b(self.ii) / self.dh**2
-        c2h = self.c(self.ii) / (2 * self.dh)
-
-        #u = self.uw( self.T0, self.C0, self.I, self.J, self.K, self.dh )
-        u = self.u
-        ux = 1  # u[:, 0]
-        uy = 1  # u[:, 1]
-        uz = 1  # u[:, 2]
-
-        C1_x = bh2 + c2h * ux
-        C2_x = bh2 - c2h * ux
-        C1_y = bh2 + c2h * uy
-        C2_y = bh2 - c2h * uy
-        C1_z = bh2 + c2h * uz
-        C2_z = bh2 - c2h * uz
-
-        C_u = np.array([C1_x, -C2_x, C1_y, -C2_y, C1_z, -C2_z])
-
-        C3 = 6 * self.b(self.ii) / self.dh**2
-
-        _alpha = self.alpha(self.ii).copy()
-        _alpha[self.d_bnd_indices] = 1  # dummy
-        _alpha[_alpha == 0] = 1  # dummy
-        C4 = 2 * self.dh / _alpha
-
-        d = np.ones(self.num_nodes)
-        d0, d1, d2, d3, d4, d5, d6 = [-C3 * d, C1_x * d,
-                                      C1_y * d, C1_z * d, C2_x * d, C2_y * d, C2_z * d]
-
-        # --------------- modify the boundaries ---------------
-        # see project report
-        # TODO:
-        # [X] set C1+C2
-        # [X] set 0
-        # not sure if implemented correctly, need to validate with manufactored solutions
-        # - tested with neuman boundary = 0 -> behaves correctly
-        # - need to validate with non-zero values / functions
-
-        # add u_w to prod
-
-        prod = af.dotND(bis[:, 1:],
-                        C_u.T[bis[:, 0]], axis=1)  # pylint: disable=E1136
-        d0[bis[:, 0]] -= prod * C4[bis[:, 0]] * self.beta(self.ii)[bis[:, 0]]
-        # (-self.bis[:, 1]*C2[self.bis[:, 0]] +    self.bis[:, 2]*C1[self.bis[:, 0]])*C4[self.bis[:, 0]]*self.beta(self.ii)[self.bis[:, 0]]
-
-        i1, i2, i3, i4, i5, i6 = [self.diag_indicies(i + 1) for i in range(6)]
-
-        d1[i1] = (C1_x + C2_x)[i1]
-        d1[i1 + k4] = 0
-        d1 = d1[k1:]
-
-        d2[i2] = (C1_y + C2_y)[i2]
-        d2[i2 + k5] = 0
-        d2 = d2[k2:]
-
-        d3[i3] = (C1_z + C2_z)[i3]
-        d3[i3 + k6] = 0
-        d3 = d3[k3:]
-
-        d4[i4 + k4] = (C1_x + C2_x)[i4 + k4]
-        d4[i1 + k4] = 0
-        d4 = d4[:k4]
-
-        d5[i5 + k5] = (C1_y + C2_y)[i5 + k5]
-        d5[i2 + k5] = 0
-        d5 = d5[:k5]
-
-        d6[i6 + k6] = (C1_z + C2_z)[i6 + k6]
-        d6[i3 + k6] = 0
-        d6 = d6[:k6]
-
-        # -----------------------------------------------------
-        ds = [d0, d1, d2, d3, d4, d5, d6]
-        ks = [k0, k1, k2, k3, k4, k5, k6]
-        A = diags(ds, ks)
-
-        b = np.zeros(self.num_nodes)
-
-        prod = af.dotND(bis[:, 1:],
-                        C_u.T[bis[:, 0]], axis=1)  # pylint: disable=E1136
-        b[self.bis[:, 0]] = prod * C4[bis[:, 0]] * \
-            self.gamma(self.ii)[bis[:, 0]]
-        # (-self.bis[:, 1]*C2[self.bis[:, 0]] +  self.bis[:, 2]*C1[self.bis[:, 0]])*C4[self.bis[:, 0]]*self.gamma(self.ii)[self.bis[:, 0]]
-
-        self.logg("Ab", f'A = {A}')
-        self.logg("Ab", f'b = {b}')
-        return A, b
-
-    def make_Cd(self):
-        """
-        Construct C and d for Concentration equation
-        """
-        # diagonal indices
-        [k0, k1, k2, k3, k4, k5, k6] = self.get_ks()
-        ks = [k0, k1, k2, k3, k4, k5, k6]
-
-        # ------- construct all diagonals -------
-
-        # TODO:
-        # Fix \nabla u_w, currently placeholder
-        # Should work
-        Q = self.u
-        D1 = 2 * self.dh * Q + const.D
-        D2 = - 2 * self.dh * Q + const.D
-        D3 = 6 * const.D
-
-        d = np.ones(self.num_nodes)
-        ds = [D3 * d, D1[:][0] * d, D1[:][1] * d, D1[:][2]
-              * d, D2[:][0] * d, D2[:][1] * d, D2[:][2] * d]
-        # [d0, d1, d2, d3, d4, d5, d6] = ds
-
-        # TODO:
-        # --------------- modify the boundaries ---------------
-
-        # TODO:
-        # -----------------------------------------------------
-        C = diags(ds, ks)
-
-        d = np.zeros(self.num_nodes)
-        # ehm:
-        # d[self.bis[:, 0]] = (-self.bis[:, 1] * C2 +
-        #                     self.bis[:, 2] * C1) * C4 * self.gamma
-
-        self.logg("Ab", f'C = {C}')
-        self.logg("Ab", f'd = {d}')
-        return C, d
-
     # --------------- Helper methods for make_Ab & make_Cd ---------------
 
     def index_of(self, i, j, k):
@@ -508,7 +410,7 @@ class BeefSimulator:
         """
         return i + self.I * j + self.I * self.J * k
 
-    # Unnecessary?
+    # Unnecessary? TODO: remove?
     def index_of_inverse(self, p):
         """
         Returns the 3D index from 1D coordinate
@@ -554,6 +456,21 @@ class BeefSimulator:
         # just ignore sort? it doesn't break without it
         return np.sort(np.array(self.index_of(*np.meshgrid(i, j, k))).T.reshape(-1))
 
+    def get_direchet_indices(self, bnd_types):
+        uniques = set()
+
+        bnd_lst = []
+        for qqq, bnd in enumerate(bnd_types):
+            if bnd == "d":
+                bnd_lst.append(self.diag_indicies(qqq + 1))
+
+        for qq in bnd_lst:
+            for q in qq:
+                uniques.add(q)
+
+        # remove sorted?
+        return sorted(list(uniques))
+
     def find_border_indicies(self, new=False):
         """
         returns the indices for every boundary node
@@ -562,31 +479,17 @@ class BeefSimulator:
 
         E.g: (0,Y,2) \n
         [[index, 1, 0, 0, 1, 0, 0],...]
-
-        TODO: remove old implementation
         """
-        if new:
-            indicies = np.zeros((self.num_nodes_border, 7), dtype=np.int16)
-            tmp = 0
-            for k in range(self.K):
-                for j in range(self.J):
-                    for i in range(self.I):
-                        if i == 0 or i == (self.I - 1) or j == 0 or j == (self.J - 1) or k == 0 or k == (self.K - 1):
-                            indicies[tmp] = np.array(
-                                [self.index_of(i, j, k), *self.sum_start_and_end(i, j, k, True)])
-                            tmp += 1
-            return indicies
-        else:
-            indicies = np.zeros((self.num_nodes_border, 3), dtype=np.int16)
-            tmp = 0
-            for k in range(self.K):
-                for j in range(self.J):
-                    for i in range(self.I):
-                        if i == 0 or i == (self.I - 1) or j == 0 or j == (self.J - 1) or k == 0 or k == (self.K - 1):
-                            indicies[tmp] = np.array(
-                                [self.index_of(i, j, k), *self.sum_start_and_end(i, j, k)])
-                            tmp += 1
-            return indicies
+        indicies = np.zeros((self.num_nodes_border, 7), dtype=np.int16)
+        tmp = 0
+        for k in range(self.K):
+            for j in range(self.J):
+                for i in range(self.I):
+                    if i == 0 or i == (self.I - 1) or j == 0 or j == (self.J - 1) or k == 0 or k == (self.K - 1):
+                        indicies[tmp] = np.array(
+                            [self.index_of(i, j, k), *self.sum_start_and_end(i, j, k, True)])
+                        tmp += 1
+        return indicies
 
     def sum_start_and_end(self, i, j, k, new=False):
         """
@@ -644,6 +547,13 @@ class BeefSimulator:
 
         assert conf["dh"] > 0, f'conf: dh should be >0, got dh={conf[ "dh" ]}'
         assert conf["dt"] > 0, f'conf: dt should be >0, got dt={conf[ "dt" ]}'
+
+        t_jump = conf["t_jump"]
+        assert type(t_jump) == int, \
+            f'conf: t_jump should be integer, got type(t_jump)={type(t_jump)}'
+        assert t_jump > 0 or t_jump == -1, \
+            f'conf: dt should be >0 or -1, got dt={t_jump}'
+
         assert conf["tlen"] > 0, f'conf: tlen should be >0, got tlen={conf[ "tlen" ]}'
         assert conf["tn"] > conf["t0"], \
             f'conf: tn should be >t0, got t0={conf[ "t0" ]} and tn={conf[ "tn" ]}'
