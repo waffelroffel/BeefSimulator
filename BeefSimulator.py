@@ -82,15 +82,15 @@ class BeefSimulator:
         self.initial_C = _wrap( C_conf[ "initial" ] )
 
         # Iterator values
-        self.a
-        self.b
-        self.c
-        self.alpha
-        self.beta
-        self.gamma
+        self.a = 0
+        self.b = 0
+        self.c = 0
+        self.alpha = 0
+        self.beta = 0
+        self.gamma = 0
         
-        self.dh = conf[ "dh" ]
-        self.dt = conf[ "dt" ]
+        self.dh = conf["dh"]
+        self.dt = conf["dt"]
         
         dims = conf[ "dims" ]
         self.x = np.linspace( dims[ "x0" ], dims[ "xn" ],
@@ -214,8 +214,8 @@ class BeefSimulator:
             # litt usikker på dimensjonene på Q
             self.u = self.uw( self.T0, self.C0, self.I, self.J, self.K, self.dh )
             
-            self.ii[ 3 ] = t
-            self.logg( 2, f'- t = {t}' )
+            self.ii[3] = t
+            self.logg(2, f'- t = {t}')
 
             self.a = self.T_a
             self.b = self.T_b
