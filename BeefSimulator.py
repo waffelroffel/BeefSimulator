@@ -51,30 +51,15 @@ class BeefSimulator:
         - [X] change logging to a config (dict)
         """
         self.pre_check(conf, T_conf, C_conf)
+        self.setup_geometry(conf, T_conf, C_conf)
+        self.setup_indices(conf, T_conf, C_conf)
+        self.setup_TC(conf, T_conf, C_conf)
+        self.setup_mesh(conf, T_conf, C_conf)
+        self.setup_files(conf, T_conf, C_conf)
+        self.setup_additionals(conf, T_conf, C_conf)
+        self.initial_logg(conf, T_conf, C_conf)
 
-        def _wrap(fun):
-            # TODO: move the checks one level higher
-            def wrap(ii):
-                res = fun(*ii) if callable(fun) else fun
-                return res.flatten() if isinstance(res, np.ndarray) else np.ones(ii[1].size) * res
-
-            return wrap
-
-        # Defines the PDE and boundary conditions for T
-        self.a = _wrap(T_conf["pde"]["a"])
-        self.b = _wrap(T_conf["pde"]["b"])
-        self.c = _wrap(T_conf["pde"]["c"])
-        self.alpha = _wrap(T_conf["bnd"]["alpha"])
-        self.beta = _wrap(T_conf["bnd"]["beta"])
-        self.gamma = _wrap(T_conf["bnd"]["gamma"])
-        self.initial = _wrap(T_conf["initial"])
-        self.uw = T_conf["uw"]
-
-        self.u = 0
-
-        # Defines the PDE and boundary conditions for C
-        self.initial_C = _wrap(C_conf["initial"])
-
+    def setup_geometry(self, conf, T_conf, C_conf):
         self.dh = conf["dh"]
         self.dt = conf["dt"]
 
@@ -88,53 +73,79 @@ class BeefSimulator:
         self.t = np.linspace(conf["t0"], conf["tn"],
                              int(conf["tlen"] / self.dt) + 1)
 
-        self.shape = (self.t.size, self.x.size, self.y.size, self.z.size)
-        self.I, self.J, self.K = self.shape[1:]
-        self.n = self.I * self.J * self.K
-        self.inner = (self.I - 2) * (self.J - 2) * (self.K - 2)
-        self.border = self.n - self.inner
+        self.t_jump = conf["t_jump"]
+        t_steps = 1 if self.t_jump == -1 else int(self.t.size / self.t_jump)+2
 
+        self.space = (self.x.size, self.y.size, self.z.size)
+        self.shape = (t_steps, self.x.size, self.y.size, self.z.size)
+        self.I, self.J, self.K = self.shape[1:]
+        self.num_nodes = self.I * self.J * self.K
+        self.num_nodes_inner = (self.I - 2) * (self.J - 2) * (self.K - 2)
+        self.num_nodes_border = self.num_nodes - self.num_nodes_inner
+
+    def setup_indices(self, conf, T_conf, C_conf):
         self.d_bnd_indices = self.get_d_bnd_indices(T_conf["bnd_types"])
 
         # rename: the 1D indicies for all the boundary points
         self.bis = self.find_border_indicies()
 
+    def setup_TC(self, conf, T_conf, C_conf):
+        # Defines the PDE and boundary conditions for T
+        self.a = self.wrap(T_conf["pde"]["a"])
+        self.b = self.wrap(T_conf["pde"]["b"])
+        self.c = self.wrap(T_conf["pde"]["c"])
+        self.alpha = self.wrap(T_conf["bnd"]["alpha"])
+        self.beta = self.wrap(T_conf["bnd"]["beta"])
+        self.gamma = self.wrap(T_conf["bnd"]["gamma"])
+        self.initial = self.wrap(T_conf["initial"])
+        self.uw = T_conf["uw"]
+
+        self.u = 0
+
+        # Defines the PDE and boundary conditions for C
+        self.initial_C = self.wrap(C_conf["initial"])
+
+    def setup_mesh(self, conf, T_conf, C_conf):
         xx, yy, zz = np.meshgrid(self.x, self.y, self.z)
         self.ii = [xx, yy, zz, self.t[0]]
 
-        self.T1 = np.zeros(self.n)
-        self.T0 = np.zeros(self.n)
+    def setup_files(self, conf, T_conf, C_conf):
+        self.T1 = np.zeros(self.num_nodes)
+        self.T0 = np.zeros(self.num_nodes)
         self.T0[...] = self.initial(self.ii)
 
-        self.C1 = np.zeros(self.n)
-        self.C0 = np.zeros(self.n)
+        self.C1 = np.zeros(self.num_nodes)
+        self.C0 = np.zeros(self.num_nodes)
         self.C0[...] = self.initial_C(self.ii)
 
-        self.base = Path("data")
-        self.path = self.base.joinpath(conf["folder"])
-        self.path.mkdir() if not self.path.exists() else ...
+        self.path = Path("data").joinpath(conf["folder"])
+        if not self.path.exists():
+            self.path.mkdir()
 
         self.H_file = self.path.joinpath("header.json")
         self.save_header(conf)
 
         self.T_file = self.path.joinpath("T.dat")
-        self.T_data = self.memmap(self.T_file)
+        self.T_data = np.memmap(
+            self.T_file, dtype="float64", mode="w+", shape=self.shape)
 
         self.C_file = self.path.joinpath("C.dat")
-        self.C_data = self.memmap(self.C_file)
+        self.C_data = np.memmap(
+            self.C_file, dtype="float64", mode="w+", shape=self.shape)
 
-        self.plotter = BP.Plotter(
-            self, name=self.path, save_fig=True)
-
+    def setup_additionals(self, conf, T_conf, C_conf):
+        self.plotter = BP.Plotter(self, name=Path(
+            "data").joinpath(conf["folder"]), save_fig=True)
         self.logging = conf["logging"]
 
+    def initial_logg(self, conf, T_conf, C_conf):
         self.logg("stage", f'SETUP FINISHED. LOGGING...')
         self.logg("init", f'----------------------------------------------')
         self.logg("init", f'Logging level:       {self.logging}')
         self.logg("init", f'Shape:               {self.shape}')
-        self.logg("init", f'Total nodes:         {self.n}')
-        self.logg("init", f'Inner nodes:         {self.inner}')
-        self.logg("init", f'Boundary nodes:      {self.border}')
+        self.logg("init", f'Total nodes:         {self.num_nodes}')
+        self.logg("init", f'Inner nodes:         {self.num_nodes_inner}')
+        self.logg("init", f'Boundary nodes:      {self.num_nodes_border}')
         self.logg("init",
                   f'x linspace:          dx: {self.dh}, \t x: {self.x[ 0 ]} -> {self.x[ -1 ]}, \t steps: {self.x.size}')
         self.logg("init",
@@ -145,7 +156,7 @@ class BeefSimulator:
                   f'time steps:          dt: {self.dt}, \t t: {self.t[ 0 ]} -> {self.t[ -1 ]}, \t steps: {self.t.size}')
         self.logg("init", "T1 = T0 + ( A @ T0 + b )")
         self.logg("init",
-                  f'{self.T1.shape} = {self.T0.shape} + ( {(self.n, self.n)} @ {self.T0.shape} + {(self.n,)} )')
+                  f'{self.T1.shape} = {self.T0.shape} + ( {(self.num_nodes, self.num_nodes)} @ {self.T0.shape} + {(self.num_nodes,)} )')
         self.logg("init", f'----------------------------------------------')
         self.logg("init_state", f'Initial state:       {self.T0}')
 
@@ -153,7 +164,7 @@ class BeefSimulator:
         header = conf.copy()
         header.pop("logging")
         header["shape"] = self.shape
-        with open(self.H_file, "w") as f:
+        with open(self.H_file, "w+") as f:
             json.dump(header, f)
 
     def get_d_bnd_indices(self, bnd_types):
@@ -170,12 +181,6 @@ class BeefSimulator:
 
         # remove sorted?
         return sorted(list(uniques))
-
-    def memmap(self, file):
-        return np.memmap(file,
-                         dtype="float64",
-                         mode="r+" if file.exists() else "w+",
-                         shape=self.shape)
 
     def solver(self):
         """
@@ -205,11 +210,11 @@ class BeefSimulator:
 
             self.solve_next(method)
             self.T_data[i] = self.T1.reshape(self.shape[1:])
-            self.T0, self.T1 = self.T1, np.empty(self.n)
+            self.T0, self.T1 = self.T1, np.empty(self.num_nodes)
 
             self.solve_next_C(method)
             self.C_data[i] = self.C1.reshape(self.shape[1:])
-            self.C0, self.C1 = self.C1, np.empty(self.n)
+            self.C0, self.C1 = self.C1, np.empty(self.num_nodes)
 
             self.T_data.flush()
             self.C_data.flush()
@@ -295,21 +300,33 @@ class BeefSimulator:
         """
         # Clear temperature data before solving all
         del self.T_data
-        self.T_data = np.memmap(self.T_file,
-                                dtype="float64",
-                                mode="w+",
-                                shape=self.shape)
+        self.T_data = np.memmap(
+            self.T_file, dtype="float64", mode="w+", shape=self.shape)
 
         self.logg("stage", "Iterating...", )
+        n = 0
         for i, t in enumerate(self.t):
             self.ii[3] = t
             self.logg("tn", f'- t = {t}')
             self.solve_next(method)
-            self.T_data[i] = self.T1.reshape(self.shape[1:])
-            self.T0, self.T1 = self.T1, np.empty(self.n)
-            self.T_data.flush()  # Make sure data gets written to disk
+            self.T0, self.T1 = self.T1, np.empty(self.num_nodes)
+            if self.save(index=n, step=i, array=self.T0, file=self.T_data):
+                n += 1
+
+        # save last step if not already saved
+        if n != self.shape[0]:
+            self.save(index=-1, step=0, array=self.T0,
+                      file=self.T_data, force=True)
+
         self.logg("stage", "Finished", )
         self.logg("final", f'Final state: {self.T0}')
+
+    def save(self, index, step, array, file, force=False):
+        if force or (self.t_jump != -1 and step % self.t_jump == 0):
+            file[index] = array.reshape(self.shape[1:])
+            file.flush()  # Make sure data gets written to disk
+            return True
+        return False
 
     # ----------------------- Concentration solver ------------------------------
 
@@ -339,7 +356,7 @@ class BeefSimulator:
             self.logg("tn", f'- t = {self.t}')
             self.solve_next_C(method)
             self.C_data[i] = self.C1.reshape(self.shape[1:])
-            self.C0, self.C1 = self.C1, np.empty(self.n)
+            self.C0, self.C1 = self.C1, np.empty(self.num_nodes)
             self.C_data.flush()  # Makes sure data gets written to disk
         self.logg("stage", "Finished", )
         self.logg("final", f'Final state: {self.C0}')
@@ -381,7 +398,7 @@ class BeefSimulator:
         _alpha[_alpha == 0] = 1  # dummy
         C4 = 2 * self.dh / _alpha
 
-        d = np.ones(self.n)
+        d = np.ones(self.num_nodes)
         d0, d1, d2, d3, d4, d5, d6 = [-C3 * d, C1_x * d,
                                       C1_y * d, C1_z * d, C2_x * d, C2_y * d, C2_z * d]
 
@@ -432,7 +449,7 @@ class BeefSimulator:
         ks = [k0, k1, k2, k3, k4, k5, k6]
         A = diags(ds, ks)
 
-        b = np.zeros(self.n)
+        b = np.zeros(self.num_nodes)
 
         prod = af.dotND(bis[:, 1:],
                         C_u.T[bis[:, 0]], axis=1)  # pylint: disable=E1136
@@ -462,7 +479,7 @@ class BeefSimulator:
         D2 = - 2 * self.dh * Q + const.D
         D3 = 6 * const.D
 
-        d = np.ones(self.n)
+        d = np.ones(self.num_nodes)
         ds = [D3 * d, D1[:][0] * d, D1[:][1] * d, D1[:][2]
               * d, D2[:][0] * d, D2[:][1] * d, D2[:][2] * d]
         # [d0, d1, d2, d3, d4, d5, d6] = ds
@@ -474,7 +491,7 @@ class BeefSimulator:
         # -----------------------------------------------------
         C = diags(ds, ks)
 
-        d = np.zeros(self.n)
+        d = np.zeros(self.num_nodes)
         # ehm:
         # d[self.bis[:, 0]] = (-self.bis[:, 1] * C2 +
         #                     self.bis[:, 2] * C1) * C4 * self.gamma
@@ -549,7 +566,7 @@ class BeefSimulator:
         TODO: remove old implementation
         """
         if new:
-            indicies = np.zeros((self.border, 7), dtype=np.int16)
+            indicies = np.zeros((self.num_nodes_border, 7), dtype=np.int16)
             tmp = 0
             for k in range(self.K):
                 for j in range(self.J):
@@ -560,7 +577,7 @@ class BeefSimulator:
                             tmp += 1
             return indicies
         else:
-            indicies = np.zeros((self.border, 3), dtype=np.int16)
+            indicies = np.zeros((self.num_nodes_border, 3), dtype=np.int16)
             tmp = 0
             for k in range(self.K):
                 for j in range(self.J):
@@ -603,6 +620,14 @@ class BeefSimulator:
             return start, end
 
     # --------------- Misc. -------------------------------------------
+
+    def wrap(self, fun):
+        # TODO: move the checks one level higher
+        def _wrap(ii):
+            res = fun(*ii) if callable(fun) else fun
+            return res.flatten() if isinstance(res, np.ndarray) else np.ones(ii[1].size) * res
+
+        return _wrap
 
     def pre_check(self, conf, T_conf, C_conf):
         def _check_T_or_C(conf, prefix):

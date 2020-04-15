@@ -1,9 +1,11 @@
 import numpy as np
 from auxillary_functions import u_w
 
+a = 1e-3
+
 
 def T(xx, yy, zz, t):
-    return 3 * np.exp(-4*(np.pi)**2*(1+1+4) * t) * \
+    return 3 * np.exp(-4*a*(np.pi)**2*(1+1+4) * t) * \
         np.sin(2*np.pi * xx) * np.sin(2*np.pi * yy) * np.sin(4*np.pi * zz)
 
 
@@ -12,7 +14,7 @@ def T_initial(xx, yy, zz, t):
 
 
 def T_a(xx, yy, zz, t):
-    return np.ones(xx.size)
+    return np.ones(xx.size)/a
 
 
 def T_b(xx, yy, zz, t):
