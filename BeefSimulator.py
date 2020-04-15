@@ -61,33 +61,47 @@ class BeefSimulator:
             return wrap
 
         # Defines the PDE and boundary conditions for T
-        self.a = _wrap(T_conf["pde"]["a"])
-        self.b = _wrap(T_conf["pde"]["b"])
-        self.c = _wrap(T_conf["pde"]["c"])
-        self.alpha = _wrap(T_conf["bnd"]["alpha"])
-        self.beta = _wrap(T_conf["bnd"]["beta"])
-        self.gamma = _wrap(T_conf["bnd"]["gamma"])
-        self.initial = _wrap(T_conf["initial"])
-        self.uw = T_conf["uw"]
+        self.T_a = _wrap( T_conf[ "pde" ][ "a" ] )
+        self.T_b = _wrap( T_conf[ "pde" ][ "b" ] )
+        self.T_c = _wrap( T_conf[ "pde" ][ "c" ] )
+        self.T_alpha = _wrap( T_conf[ "bnd" ][ "alpha" ] )
+        self.T_beta = _wrap( T_conf[ "bnd" ][ "beta" ] )
+        self.T_gamma = _wrap( T_conf[ "bnd" ][ "gamma" ] )
+        self.T_initial = _wrap( T_conf[ "initial" ] )
+        self.uw = T_conf[ "uw" ]
 
         self.u = 0
 
         # Defines the PDE and boundary conditions for C
-        self.initial_C = _wrap(C_conf["initial"])
+        self.C_a = _wrap(C_conf["pde"]["a"])
+        self.C_b = _wrap(C_conf["pde"]["b"])
+        self.C_c = _wrap(C_conf["pde"]["c"])
+        self.C_alpha = _wrap(C_conf["bnd"]["alpha"])
+        self.C_beta = _wrap(C_conf["bnd"]["beta"])
+        self.C_gamma = _wrap(C_conf["bnd"]["gamma"])
+        self.initial_C = _wrap( C_conf[ "initial" ] )
 
+        # Iterator values
+        self.a = 0
+        self.b = 0
+        self.c = 0
+        self.alpha = 0
+        self.beta = 0
+        self.gamma = 0
+        
         self.dh = conf["dh"]
         self.dt = conf["dt"]
-
-        dims = conf["dims"]
-        self.x = np.linspace(dims["x0"], dims["xn"],
-                             int(dims["xlen"] / self.dh) + 1)
-        self.y = np.linspace(dims["y0"], dims["yn"],
-                             int(dims["ylen"] / self.dh) + 1)
-        self.z = np.linspace(dims["z0"], dims["zn"],
-                             int(dims["zlen"] / self.dh) + 1)
-        self.t = np.linspace(conf["t0"], conf["tn"],
-                             int(conf["tlen"] / self.dt) + 1)
-
+        
+        dims = conf[ "dims" ]
+        self.x = np.linspace( dims[ "x0" ], dims[ "xn" ],
+                              int( dims[ "xlen" ] / self.dh ) + 1 )
+        self.y = np.linspace( dims[ "y0" ], dims[ "yn" ],
+                              int( dims[ "ylen" ] / self.dh ) + 1 )
+        self.z = np.linspace( dims[ "z0" ], dims[ "zn" ],
+                              int( dims[ "zlen" ] / self.dh ) + 1 )
+        self.t = np.linspace( conf[ "t0" ], conf[ "tn" ],
+                              int( conf[ "tlen" ] / self.dt ) + 1 )
+        
         self.shape = (self.t.size, self.x.size, self.y.size, self.z.size)
         self.I, self.J, self.K = self.shape[1:]
         self.n = self.I * self.J * self.K
@@ -198,23 +212,37 @@ class BeefSimulator:
         self.logg(1, "Iterating...", )
         for i, t in enumerate(self.t):
             # litt usikker på dimensjonene på Q
-            self.u = self.uw(self.T0, self.C0, self.I, self.J, self.K, self.dh)
-
+            self.u = self.uw( self.T0, self.C0, self.I, self.J, self.K, self.dh )
+            
             self.ii[3] = t
             self.logg(2, f'- t = {t}')
 
-            self.solve_next(method)
-            self.T_data[i] = self.T1.reshape(self.shape[1:])
-            self.T0, self.T1 = self.T1, np.empty(self.n)
+            self.a = self.T_a
+            self.b = self.T_b
+            self.c = self.T_c
+            self.alpha = self.T_alpha
+            self.beta = self.T_beta
+            self.gamma = self.T_gamma
 
-            self.solve_next_C(method)
-            self.C_data[i] = self.C1.reshape(self.shape[1:])
-            self.C0, self.C1 = self.C1, np.empty(self.n)
+            self.solve_next( method )
+            self.T_data[ i ] = self.T1.reshape( self.shape[ 1: ] )
+            self.T0, self.T1 = self.T1, np.empty( self.n )
 
-            self.T_data.flush()
-            self.C_data.flush()
+            self.a = self.C_a
+            self.b = self.C_b
+            self.c = self.C_c
+            self.alpha = self.C_alpha
+            self.beta = self.C_beta
+            self.gamma = self.C_gamma
 
-        self.logg(1, "Finished", )
+            self.solve_next_C( method )
+            self.C_data[ i ] = self.C1.reshape( self.shape[ 1: ] )
+            self.C0, self.C1 = self.C1, np.empty( self.n )
+            
+            self.T_data.flush( )
+            self.C_data.flush( )
+        
+        self.logg( 1, "Finished", )
         # self.logg(1, f'Final state: {self.T0}')
 
     def logg(self, lvl, txt, logger=print):
@@ -293,6 +321,13 @@ class BeefSimulator:
         """
         Iterate through from t0 -> tn
         """
+        self.a = self.T_a
+        self.b = self.T_b
+        self.c = self.T_c
+        self.alpha = self.T_alpha
+        self.beta = self.T_beta
+        self.gamma = self.T_gamma
+
         # Clear temperature data before solving all
         del self.T_data
         self.T_data = np.memmap(self.T_file,
@@ -317,15 +352,28 @@ class BeefSimulator:
         """
         Calculate the next time step (C1)
         """
-        if method == "cd":
-            C, d = self.make_Cd()
-            self.C1[...] = self.C0 + \
-                (self.dt / (2 * self.dh**2) * (C @ self.C0 + d))
 
-    def solve_all_C(self, method="cd"):
+        if method == "cd":
+            A, b = self.make_Ab()
+            self.C1[...] = self.C0 + \
+                           (self.dt / self.a(self.ii)) * (A @ self.C0 + b)
+
+            # TODO: move indexing before division
+            self.C1[self.d_bnd_indices] = (self.gamma(
+                self.ii) / self.beta(self.ii))[self.d_bnd_indices]
+    
+    def solve_all_C( self, method="cd" ):
         """
         Iterate through from t0 -> tn
         """
+
+        self.a = self.C_a
+        self.b = self.C_b
+        self.c = self.C_c
+        self.alpha = self.C_alpha
+        self.beta = self.C_beta
+        self.gamma = self.C_gamma
+
         # Clear concentration data before solving all
         del self.C_data
         self.C_data = np.memmap(self.C_file,
@@ -443,45 +491,6 @@ class BeefSimulator:
         self.logg("Ab", f'A = {A}')
         self.logg("Ab", f'b = {b}')
         return A, b
-
-    def make_Cd(self):
-        """
-        Construct C and d for Concentration equation
-        """
-        # diagonal indices
-        [k0, k1, k2, k3, k4, k5, k6] = self.get_ks()
-        ks = [k0, k1, k2, k3, k4, k5, k6]
-
-        # ------- construct all diagonals -------
-
-        # TODO:
-        # Fix \nabla u_w, currently placeholder
-        # Should work
-        Q = self.u
-        D1 = 2 * self.dh * Q + const.D
-        D2 = - 2 * self.dh * Q + const.D
-        D3 = 6 * const.D
-
-        d = np.ones(self.n)
-        ds = [D3 * d, D1[:][0] * d, D1[:][1] * d, D1[:][2]
-              * d, D2[:][0] * d, D2[:][1] * d, D2[:][2] * d]
-        # [d0, d1, d2, d3, d4, d5, d6] = ds
-
-        # TODO:
-        # --------------- modify the boundaries ---------------
-
-        # TODO:
-        # -----------------------------------------------------
-        C = diags(ds, ks)
-
-        d = np.zeros(self.n)
-        # ehm:
-        # d[self.bis[:, 0]] = (-self.bis[:, 1] * C2 +
-        #                     self.bis[:, 2] * C1) * C4 * self.gamma
-
-        self.logg("Ab", f'C = {C}')
-        self.logg("Ab", f'd = {d}')
-        return C, d
 
     # --------------- Helper methods for make_Ab & make_Cd ---------------
 
