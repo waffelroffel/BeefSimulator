@@ -16,7 +16,7 @@ if __name__ == "__main__":
     tt = np.linspace(conf["t0"], conf["tn"], 11)
 
     for t in tt:
-        bs.plot(t, z=0.5)
+        bs.plot(t, 'T', z=0.5)
 
     """
     dims = conf["dims"]

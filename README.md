@@ -4,8 +4,6 @@ Eksperter i Team - Matematikk innen anvendelser - Team 2
 
 ---
 
----
-
 ## How to use BeefSimulator
 
 ### 1. Setup the configs
@@ -58,20 +56,45 @@ bs = BeefSimulator(conf, T_conf, C_conf) # initialize a BeefSimulator with the g
 bs.solve_all() # iterate all time steps for Temperature and save the temperature data in data/"folder_name"/T.dat
 ```
 
-To view a slice (plane) of the beef at a given time step:
+---
+
+### 3. Plotting the results
+
+The BeefSimulator class has an BeefPlotter member object which one can use to plot the data inherent in the BS class. Currently, one can simply use the BS member function `plot()` with the appropriate arguments to make use of most of the BeefPlotter features.
+To view a perpendicular crossection of the beef at a given time step:
 
 ```python
-bs.plot(0, x=0.5) # yz slice at x=0.5 and t=0
-bs.plot(0.01, y=0.5) # xz slice at y=0.5 and t=0.01
-bs.plot(0.1, z=0.5) # xy slice at z=0.5 and t=0.1
+bs.plot(0, x=0.5, 'T') # Temperature heatmap yz-slice at x=0.5 and t=0
+bs.plot(0.01, y=0.5, 'T') # Temperature heatmap xz-slice at y=0.5 and t=0.01
+bs.plot(0.1, z=0.5, 'C') # Concentration xy-slice at z=0.5 and t=0.1
 ```
 
+In order to view multiple crossections from an isometric projection (WIP), simply set the arguments to be a list:
+
+```python
+bs.plot(0, x=[0.0, 0.5, 1.0], 'T') # Temperature heatmap yz-crossections at x=0.0, 0.5, and 1.0 at time t=0.
+bs.plot(0.01, y=[0.5], 'T') # Temperature heatmap xz-crossections at y=0.5 at time t=0.01
+bs.plotter.save_fig = False # Figures will not be saved to disk anymore (the plotter saves by default \)
+bs.plot([0.0, 2.0, 4.0, 8.0], z=0.5, 'C') # Concentration heat xy-crossections at z=0.5 at times t=0.0, 2.0, 4.0, and 8.0.
+```
+
+The plots are saved in the same directory as the data is stored as png files.
+
+---
+
+#### Standalone plotting
+
+To plot from precomputed results:
+
+```python
+bp = Plotter(name="path to folder inside data/")
+bp.show_heat_map2(0.0, "T", x=0.5)
+```
+
+Folder must contain:
+
+- _header.json_
+- _T.dat_
+- _C.dat_
+
 **tl;dr**: run [test.py](test.py) (will show a plot for each tenth of the time range specified in [conf.py](configs/conf.py))
-
----
-
----
-
-## How to use BeefPlotter
-
-### 1. ...
