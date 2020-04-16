@@ -212,7 +212,7 @@ class BeefSimulator:
             self.u = self.uw(self.T0, self.C0, *self.space, self.dh)
 
             self.ii[3] = t
-            self.logg("tn", f'- t = {t}')
+            self.logg("tn", f't: {t:.3f}')
 
             self.set_vars("T")
             self.solve_next(self.T0, self.T1, method)
@@ -342,7 +342,11 @@ class BeefSimulator:
         """
         See config/conf.py for details
         """
-        if self.logging[lvl]:
+        if not self.logging[lvl]:
+            return
+        if lvl == "tn" and logger == print:
+            logger(f'{txt}\r', end="")
+        else:
             logger(txt)
 
     # -------------------- Plotter --------------------
