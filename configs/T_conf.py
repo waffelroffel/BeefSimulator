@@ -14,7 +14,7 @@ def T_initial(xx, yy, zz, t):
 
 
 def T_a(xx, yy, zz, t):
-    return np.ones(xx.size)/a
+    return np.ones(xx.size)
 
 
 def T_b(xx, yy, zz, t):
