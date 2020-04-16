@@ -8,6 +8,13 @@ from typing import Union
 import json
 
 
+def init_3d(fig, axes):
+    axes.append(fig.gca(projection='3d'))
+    axes[0].set_xlabel('$x$')
+    axes[0].set_ylabel('$y$')
+    axes[0].set_zlabel('$z$')
+
+
 class Plotter:
     def __init__(self, beefsim=None, name='untitled', save_fig=False):
         """
@@ -24,7 +31,10 @@ class Plotter:
             self.z = beefsim.z
             self.dt = beefsim.dt
             self.h = beefsim.dh
-
+            self.vmin_T, self.vmax_T = np.min(beefsim.T0), np.max(beefsim.T0)
+            self.vmin_C, self.vmax_C = np.min(beefsim.C0), np.max(beefsim.C0)
+        self.levels_T = np.linspace(self.vmin_T, self.vmax_T, 65)
+        self.levels_C = np.linspace(self.vmin_C, self.vmax_C, 65)
         self.name = name
         self.save_fig = save_fig
 
@@ -57,6 +67,10 @@ class Plotter:
                                 dtype="float64",
                                 mode="r",
                                 shape=tuple(shape))
+        self.vmin_T, self.vmax_T = np.min(
+            self.T_data[0]), np.max(self.T_data[0])
+        self.vmin_C, self.vmax_C = np.min(
+            self.C_data[0]), np.max(self.C_data[0])
 
     def show_heat_map2(self, t, id, x=None, y=None, z=None):
         U_data = self.T_data if id == "T" else self.C_data
@@ -75,50 +89,80 @@ class Plotter:
         T = U_data
 
         if isinstance(t, list):
+            # TODO: Implement this
             pass
         else:
             n = int(t // self.dt)
 
-            fig, ax = plt.subplots()
+            fig = plt.figure()
+            axes = []
             cs = []
             cbarlab = ''
             coordlab = ''
 
             if x is not None:
+                yz, zy = np.meshgrid(self.y, self.z, indexing='ij')
                 if isinstance(x, list):
-                    pass
+                    init_3d(fig, axes)
+                    axes[0].text2D(0.5, 0.95, f"Temperature @ $t =$ {t:.3g}",
+                                   transform=axes[0].transAxes)
+                    axes[0].set_xlim3d(x[0], x[len(x) - 1])
+                    for x_ in x:
+                        i = int(x_ // self.h)
+                        cs.append(axes[0].contourf(T[n, i, :, :], yz, zy, zdir='x', offset=x_, levels=self.levels_T,
+                                                   cmap=cm.get_cmap('magma')))
+                    cbarlab = r'$T(x,y,z)$'
+
                 else:
-                    plt.title(f'X-section @ $x={x:.3g}$ and $t =$ {t:.3g}')
+                    axes.append(fig.add_subplot(1, 1, 1))
+                    plt.title(f'Temperature @ $x={x:.3g}$ and $t =$ {t:.3g}')
                     i = int(x // self.h)
-                    yz, zy = np.meshgrid(self.y, self.z, indexing='ij')
-                    cs = [ax.contourf(yz, zy, T[n, i, :, :], 65,
-                                      cmap=cm.get_cmap('magma'))]
+                    cs = [axes[0].contourf(yz, zy, T[n, i, :, :], levels=self.levels_T, vmin=self.vmin_T, vmax=self.vmax_T,
+                                           cmap=cm.get_cmap('magma'))]
                     plt.xlabel(r"$y$", fontsize=16)
                     plt.ylabel(r"$z$", fontsize=16)
                     cbarlab = r'$T(y,z)$'
                     coordlab = f'x={x:.3g}'
             elif y is not None:
+                xz, zx = np.meshgrid(self.x, self.z, indexing='ij')
                 if isinstance(y, list):
-                    pass
+                    init_3d(fig, axes)
+                    axes[0].text2D(0.5, 0.95, f"Temperature @ $t =$ {t:.3g}",
+                                   transform=axes[0].transAxes)
+                    axes[0].set_ylim3d(y[0], y[len(y) - 1])
+                    for y_ in y:
+                        j = int(y_ // self.h)
+                        cs.append(axes[0].contourf(xz, T[n, :, j, :], zx,  offset=y_, zdir='y', levels=self.levels_T,
+                                                   cmap=cm.get_cmap('magma')))
+                    cbarlab = r'$T(x,y,z)$'
                 else:
-                    plt.title(f'X-section @ $y={y:.3g}$ and $t =$ {t:.3g}')
+                    axes.append(fig.add_subplot(1, 1, 1))
+                    plt.title(f'Temperature @ $y={y:.3g}$ and $t =$ {t:.3g}')
                     j = int(y // self.h)
-                    xz, zx = np.meshgrid(self.x, self.z, indexing='ij')
-                    cs = [ax.contourf(xz, zx, T[n, :, j, :], 65,
-                                      cmap=cm.get_cmap('magma'))]
+                    cs = [axes[0].contourf(xz, zx, T[n, :, j, :], levels=self.levels_T, vmin=self.vmin_T, vmax=self.vmax_T,
+                                           cmap=cm.get_cmap('magma'))]
                     plt.xlabel(r"$x$", fontsize=16)
                     plt.ylabel(r"$z$", fontsize=16)
                     cbarlab = r'$T(x,z)$'
                     coordlab = f'y={y:.3g}'
             elif z is not None:
+                xy, yx = np.meshgrid(self.x, self.y, indexing='ij')
                 if isinstance(z, list):
-                    pass
+                    init_3d(fig, axes)
+                    axes[0].text2D(0.5, 0.95, f"Temperature @ $t =$ {t:.3g}",
+                                   transform=axes[0].transAxes)
+                    axes[0].set_zlim3d(z[0], z[len(z) - 1])
+                    for z_ in z:
+                        k = int(z_ // self.h)
+                        cs.append(axes[0].contourf(xy, yx, T[n, :, :, k], zdir='z', offset=z_, levels=self.levels_T,
+                                                   cmap=cm.get_cmap('magma')))
+                    cbarlab = r'$T(x,y,z)$'
                 else:
-                    plt.title(f'X-section @ $z={z:.3g}$ and $t =$ {t:.3g}')
+                    axes.append(fig.add_subplot(1, 1, 1))
+                    plt.title(f'Temperature @ $z={z:.3g}$ and $t =$ {t:.3g}')
                     k = int(z // self.h)
-                    xy, yx = np.meshgrid(self.x, self.y, indexing='ij')
-                    cs = [ax.contourf(xy, yx, T[n, :, :, k], 65,
-                                      cmap=cm.get_cmap('magma'))]
+                    cs = [axes[0].contourf(xy, yx, T[n, :, :, k], levels=self.levels_T, vmin=self.vmin_T, vmax=self.vmax_T,
+                                           cmap=cm.get_cmap('magma'))]
                     plt.xlabel(r"$x$", fontsize=16)
                     plt.ylabel(r"$y$", fontsize=16)
                     cbarlab = r'$T(x,y)$'
@@ -126,12 +170,13 @@ class Plotter:
             else:
                 raise Exception("No crossection coordinate given.")
 
-            cbar1 = fig.colorbar(cs[0], ax=ax, shrink=0.9)
+            cbar1 = fig.colorbar(cs[0], ax=axes[0], shrink=0.9)
             cbar1.ax.set_ylabel(cbarlab, fontsize=14)
 
+            plt.tight_layout()
             if self.save_fig:
                 filename = self.name.joinpath(
-                    f'heatmap_{coordlab}_t={t:.3g}.png')
+                    f'tempmap_{coordlab}_t={t:.3g}.pdf')
                 plt.savefig(filename)
             plt.show()
 
@@ -139,50 +184,80 @@ class Plotter:
         C = U_data
 
         if isinstance(t, list):
+            # TODO: Implement this
             pass
         else:
             n = int(t // self.dt)
 
-            fig, ax = plt.subplots()
+            fig = plt.figure()
+            axes = []
             cs = []
             cbarlab = ''
             coordlab = ''
 
             if x is not None:
+                yz, zy = np.meshgrid(self.y, self.z, indexing='ij')
                 if isinstance(x, list):
-                    pass
+                    init_3d(fig, axes)
+                    axes[0].text2D(0.5, 0.95, f"Concentration @ $t =$ {t:.3g}",
+                                   transform=axes[0].transAxes)
+                    axes[0].set_xlim3d(x[0], x[len(x) - 1])
+                    for x_ in x:
+                        i = int(x_ // self.h)
+                        cs.append(axes[0].contourf(C[n, i, :, :], yz, zy, zdir='x', offset=x_, levels=self.levels_C,
+                                                   cmap=cm.get_cmap('viridis')))
+                    cbarlab = r'$C(x,y,z)$'
+
                 else:
-                    plt.title(f'X-section @ $x={x:.3g}$ and $t =$ {t:.3g}')
+                    axes.append(fig.add_subplot(1, 1, 1))
+                    plt.title(f'Concentration @ $x={x:.3g}$ and $t =$ {t:.3g}')
                     i = int(x // self.h)
-                    yz, zy = np.meshgrid(self.y, self.z, indexing='ij')
-                    cs = [ax.contourf(yz, zy, C[n, i, :, :], 65,
-                                      cmap=cm.get_cmap('viridis'))]
+                    cs = [axes[0].contourf(yz, zy, C[n, i, :, :], levels=self.levels_C, vmin=self.vmin_C, vmax=self.vmax_C,
+                                           cmap=cm.get_cmap('viridis'))]
                     plt.xlabel(r"$y$", fontsize=16)
                     plt.ylabel(r"$z$", fontsize=16)
                     cbarlab = r'$C(y,z)$'
                     coordlab = f'x={x:.3g}'
             elif y is not None:
+                xz, zx = np.meshgrid(self.x, self.z, indexing='ij')
                 if isinstance(y, list):
-                    pass
+                    init_3d(fig, axes)
+                    axes[0].text2D(0.5, 0.95, f"Concentration @ $t =$ {t:.3g}",
+                                   transform=axes[0].transAxes)
+                    axes[0].set_ylim3d(y[0], y[len(y) - 1])
+                    for y_ in y:
+                        j = int(y_ // self.h)
+                        cs.append(axes[0].contourf(xz, C[n, :, j, :], zx,  offset=y_, zdir='y', levels=self.levels_C,
+                                                   cmap=cm.get_cmap('viridis')))
+                    cbarlab = r'$C(x,y,z)$'
                 else:
-                    plt.title(f'X-section @ $y={y:.3g}$ and $t =$ {t:.3g}')
+                    axes.append(fig.add_subplot(1, 1, 1))
+                    plt.title(f'Concentration @ $y={y:.3g}$ and $t =$ {t:.3g}')
                     j = int(y // self.h)
-                    xz, zx = np.meshgrid(self.x, self.z, indexing='ij')
-                    cs = [ax.contourf(xz, zx, C[n, :, j, :], 65,
-                                      cmap=cm.get_cmap('viridis'))]
+                    cs = [axes[0].contourf(xz, zx, C[n, :, j, :], levels=self.levels_C, vmin=self.vmin_C, vmax=self.vmax_C,
+                                           cmap=cm.get_cmap('viridis'))]
                     plt.xlabel(r"$x$", fontsize=16)
                     plt.ylabel(r"$z$", fontsize=16)
                     cbarlab = r'$C(x,z)$'
                     coordlab = f'y={y:.3g}'
             elif z is not None:
+                xy, yx = np.meshgrid(self.x, self.y, indexing='ij')
                 if isinstance(z, list):
-                    pass
+                    init_3d(fig, axes)
+                    axes[0].text2D(0.5, 0.95, f"Concentration @ $t =$ {t:.3g}",
+                                   transform=axes[0].transAxes)
+                    axes[0].set_zlim3d(z[0], z[len(z) - 1])
+                    for z_ in z:
+                        k = int(z_ // self.h)
+                        cs.append(axes[0].contourf(xy, yx, C[n, :, :, k], zdir='z', offset=z_, levels=self.levels_C,
+                                                   cmap=cm.get_cmap('viridis')))
+                    cbarlab = r'$C(x,y,z)$'
                 else:
-                    plt.title(f'X-section @ $z={z:.3g}$ and $t =$ {t:.3g}')
+                    axes.append(fig.add_subplot(1, 1, 1))
+                    plt.title(f'Concentration @ $z={z:.3g}$ and $t =$ {t:.3g}')
                     k = int(z // self.h)
-                    xy, yx = np.meshgrid(self.x, self.y, indexing='ij')
-                    cs = [ax.contourf(xy, yx, C[n, :, :, k], 65,
-                                      cmap=cm.get_cmap('viridis'))]
+                    cs = [axes[0].contourf(xy, yx, C[n, :, :, k], levels=self.levels_C, vmin=self.vmin_C, vmax=self.vmax_C,
+                                           cmap=cm.get_cmap('viridis'))]
                     plt.xlabel(r"$x$", fontsize=16)
                     plt.ylabel(r"$y$", fontsize=16)
                     cbarlab = r'$C(x,y)$'
@@ -190,12 +265,13 @@ class Plotter:
             else:
                 raise Exception("No crossection coordinate given.")
 
-            cbar1 = fig.colorbar(cs[0], ax=ax, shrink=0.9)
+            cbar1 = fig.colorbar(cs[0], ax=axes[0], shrink=0.9)
             cbar1.ax.set_ylabel(cbarlab, fontsize=14)
 
+            plt.tight_layout()
             if self.save_fig:
                 filename = self.name.joinpath(
-                    f'heatmap_{coordlab}_t={t:.3g}.png')
+                    f'consmap_{coordlab}_t={t:.3g}.pdf')
                 plt.savefig(filename)
             plt.show()
 

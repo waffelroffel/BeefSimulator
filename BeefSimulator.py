@@ -202,8 +202,8 @@ class BeefSimulator:
             self.C_file, dtype="float64", mode="w+", shape=self.shape)
 
         self.logg("stage", "Iterating...", )
-        step = 0
-        for i, t in enumerate(self.t):
+        i = 0
+        for step, t in enumerate(self.t):
             self.u = self.uw(self.T0, self.C0, *self.space, self.dh)
 
             self.ii[3] = t
@@ -299,7 +299,7 @@ class BeefSimulator:
             self.beta(self.ii)[self.boundaries[:, 0]]
 
         ks = self.ks
-        k0, k1, k2, k3, k4, k5, k6 = ks
+        k0, k1, k2, k3, k4, k5, k6 = self.ks
         i1, i2, i3, i4, i5, i6 = [self.diag_indicies(i + 1) for i in range(6)]
 
         d1[i1] = (C1_x + C2_x)[i1]
