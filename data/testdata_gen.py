@@ -59,11 +59,7 @@ def make_manisol_1d( xd: int, td: int ) -> np.array:
 
 def make_manisol_3d( shape_d: list, filename: str ) -> None:
     '''
-    Boun(1.1): T(0,y,z,t) = 0		(1.2): T(Lx,y,z,t) = 0
-    (2.1): T(x,0,z,t) = 0		(2.2): T(x,Ly,z,t) = 0
-    (3.1): T(x,y,0,t) = T(x,y,Lz,t)			(3.2): T_z(x,y,0,t) = T_z(x,y,Lz,t)
-    (4): T(x,y,z,0) = 3*sin(2*pi*x/Lx)*sin(2*pi*y/Ly)*sin(4*pi*z/Lz)			(Chosen for convenience)
-    dary value problem:
+    Boundary value problem:
     Solve T_t = a * (T_x^2 + T_y^2 + T_z^2) for x in [0, Lx], y in [0, Ly], z in [0, Lz], t in [0, inf)
     (1.1): T(0,y,z,t) = 0		(1.2): T(Lx,y,z,t) = 0
     (2.1): T(x,0,z,t) = 0		(2.2): T(x,Ly,z,t) = 0
