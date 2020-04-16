@@ -14,10 +14,10 @@ dt = 0.001
 
 # plotter need to handle the last step being less than t_jump
 # -1: only the last
-t_jump = 12
+t_jump = 10
 
 t0 = 0
-tlen = 1
+tlen = 2
 tn = t0+tlen
 
 x0 = 0

@@ -82,9 +82,12 @@ class Plotter:
         U_data = self.T_data if id == "T" else self.C_data
         self.show_heat_map(U_data, t, id, x, y, z)
 
-    def show_heat_map(self, U_data, t, id, x=None, y=None, z=None):
+    def show_heat_map(self, U_data, t, id, x=None, y=None, z=None, multi=False):
         if id == 'T':
-            self.__shm_temp(U_data, t, x, y, z)
+            if multi:
+                self.multicross(U_data, t, x, y, z)
+            else:
+                self.__shm_temp(U_data, t, x, y, z)
         elif id == 'C':
             self.__shm_cons(U_data, t, x, y, z)
         else:
@@ -291,6 +294,56 @@ class Plotter:
         plt.grid()
         if self.save_fig:
             plt.savefig(self.name + "_BC.png")
+        plt.show()
+
+    def indext(self, t):
+        return int(round(t/(self.dt*self.t_jump)))
+
+    def indexd(self, x):
+        return int(round(x/self.dh))
+
+    def multicross(self, U, t, x, y, z):
+        # move outside
+        yz, zy = np.meshgrid(self.y, self.z, indexing='ij')
+        xz, zx = np.meshgrid(self.x, self.z, indexing='ij')
+        xy, yx = np.meshgrid(self.x, self.y, indexing='ij')
+
+        fig = plt.figure()
+        axes = []
+        cs = []
+        cbarlab = ''
+        coordlab = ''
+
+        init_3d(fig, axes)
+        axes[0].text2D(
+            0.5, 0.95, f"Temperature @ $t =$ {t:.3g}", transform=axes[0].transAxes)
+
+        axes[0].set_xlim3d(self.x[0], self.x[-1])
+        axes[0].set_ylim3d(self.y[0], self.y[-1])
+        axes[0].set_zlim3d(self.z[0], self.z[-1])
+
+        n = self.indext(t)
+        for x_ in x:
+            i = self.indexd(x_)
+            cs.append(axes[0].contourf(U[n, i, :, :], yz, zy,
+                                       levels=self.levels_T, zdir='x', offset=x_, cmap=cm.get_cmap('RdBu')))
+        for y_ in y:
+            j = self.indexd(y_)
+            cs.append(axes[0].contourf(xz, U[n, :, j, :], zx,
+                                       levels=self.levels_T, zdir='y', offset=y_, cmap=cm.get_cmap('RdBu')))
+        for z_ in z:
+            k = self.indexd(z_)
+            cs.append(axes[0].contourf(xy, yx, U[n, :, :, k],
+                                       levels=self.levels_T, zdir='z', offset=z_, cmap=cm.get_cmap('RdBu')))
+        cbarlab = r'$T(x,y,z)$'
+        cbar1 = fig.colorbar(cs[0], ax=axes[0], shrink=0.9)
+        cbar1.ax.set_ylabel(cbarlab, fontsize=14)
+
+        plt.tight_layout()
+        if self.save_fig:
+            filename = self.name.joinpath(
+                f'tempmap_{coordlab}_t={t:.3g}.pdf')
+            plt.savefig(filename)
         plt.show()
 
 
