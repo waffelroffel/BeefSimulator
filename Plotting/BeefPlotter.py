@@ -25,18 +25,22 @@ class Plotter:
         if beefsim is None:
             self.load_from_file(name)
         else:
-            self.t = beefsim.t
-            self.x = beefsim.x
-            self.y = beefsim.y
-            self.z = beefsim.z
-            self.dt = beefsim.dt
-            self.h = beefsim.dh
-            self.vmin_T, self.vmax_T = np.min(beefsim.T0), np.max(beefsim.T0)
-            self.vmin_C, self.vmax_C = np.min(beefsim.C0), np.max(beefsim.C0)
+            self.load_from_class(beefsim)
+
         self.levels_T = np.linspace(self.vmin_T, self.vmax_T, 65)
         self.levels_C = np.linspace(self.vmin_C, self.vmax_C, 65)
         self.name = name
         self.save_fig = save_fig
+
+    def load_from_class(self, beefsim):
+        self.t = beefsim.t
+        self.x = beefsim.x
+        self.y = beefsim.y
+        self.z = beefsim.z
+        self.t_jump = beefsim.t_jump
+        self.dh = beefsim.dh
+        self.vmin_T, self.vmax_T = np.min(beefsim.T0), np.max(beefsim.T0)
+        self.vmin_C, self.vmax_C = np.min(beefsim.C0), np.max(beefsim.C0)
 
     def load_from_file(self, path: Path):
         if not isinstance(path, Path):
@@ -49,8 +53,8 @@ class Plotter:
         with open(head_path) as f:
             header = json.load(f)
 
-        self.dt = header["dt"]
-        self.h = header["dh"]
+        self.t_jump = header["t_jump"]
+        self.dh = header["dh"]
 
         dims = header["dims"]
         shape = header["shape"]
@@ -92,7 +96,7 @@ class Plotter:
             # TODO: Implement this
             pass
         else:
-            n = int(t // self.dt)
+            n = int(t // self.t_jump)
 
             fig = plt.figure()
             axes = []
@@ -108,7 +112,7 @@ class Plotter:
                                    transform=axes[0].transAxes)
                     axes[0].set_xlim3d(x[0], x[len(x) - 1])
                     for x_ in x:
-                        i = int(x_ // self.h)
+                        i = int(x_ // self.dh)
                         cs.append(axes[0].contourf(T[n, i, :, :], yz, zy, zdir='x', offset=x_, levels=self.levels_T,
                                                    cmap=cm.get_cmap('magma')))
                     cbarlab = r'$T(x,y,z)$'
@@ -116,8 +120,8 @@ class Plotter:
                 else:
                     axes.append(fig.add_subplot(1, 1, 1))
                     plt.title(f'Temperature @ $x={x:.3g}$ and $t =$ {t:.3g}')
-                    i = int(x // self.h)
-                    cs = [axes[0].contourf(yz, zy, T[n, i, :, :], levels=self.levels_T, vmin=self.vmin_T, vmax=self.vmax_T,
+                    i = int(x // self.dh)
+                    cs = [axes[0].contourf(yz, zy, T[n, i, :, :], levels=self.levels_T,
                                            cmap=cm.get_cmap('magma'))]
                     plt.xlabel(r"$y$", fontsize=16)
                     plt.ylabel(r"$z$", fontsize=16)
@@ -131,15 +135,15 @@ class Plotter:
                                    transform=axes[0].transAxes)
                     axes[0].set_ylim3d(y[0], y[len(y) - 1])
                     for y_ in y:
-                        j = int(y_ // self.h)
+                        j = int(y_ // self.dh)
                         cs.append(axes[0].contourf(xz, T[n, :, j, :], zx,  offset=y_, zdir='y', levels=self.levels_T,
                                                    cmap=cm.get_cmap('magma')))
                     cbarlab = r'$T(x,y,z)$'
                 else:
                     axes.append(fig.add_subplot(1, 1, 1))
                     plt.title(f'Temperature @ $y={y:.3g}$ and $t =$ {t:.3g}')
-                    j = int(y // self.h)
-                    cs = [axes[0].contourf(xz, zx, T[n, :, j, :], levels=self.levels_T, vmin=self.vmin_T, vmax=self.vmax_T,
+                    j = int(y // self.dh)
+                    cs = [axes[0].contourf(xz, zx, T[n, :, j, :], levels=self.levels_T,
                                            cmap=cm.get_cmap('magma'))]
                     plt.xlabel(r"$x$", fontsize=16)
                     plt.ylabel(r"$z$", fontsize=16)
@@ -153,15 +157,15 @@ class Plotter:
                                    transform=axes[0].transAxes)
                     axes[0].set_zlim3d(z[0], z[len(z) - 1])
                     for z_ in z:
-                        k = int(z_ // self.h)
+                        k = int(z_ // self.dh)
                         cs.append(axes[0].contourf(xy, yx, T[n, :, :, k], zdir='z', offset=z_, levels=self.levels_T,
                                                    cmap=cm.get_cmap('magma')))
                     cbarlab = r'$T(x,y,z)$'
                 else:
                     axes.append(fig.add_subplot(1, 1, 1))
                     plt.title(f'Temperature @ $z={z:.3g}$ and $t =$ {t:.3g}')
-                    k = int(z // self.h)
-                    cs = [axes[0].contourf(xy, yx, T[n, :, :, k], levels=self.levels_T, vmin=self.vmin_T, vmax=self.vmax_T,
+                    k = int(z // self.dh)
+                    cs = [axes[0].contourf(xy, yx, T[n, :, :, k], levels=self.levels_T,
                                            cmap=cm.get_cmap('magma'))]
                     plt.xlabel(r"$x$", fontsize=16)
                     plt.ylabel(r"$y$", fontsize=16)
@@ -187,7 +191,7 @@ class Plotter:
             # TODO: Implement this
             pass
         else:
-            n = int(t // self.dt)
+            n = int(t // self.t_jump)
 
             fig = plt.figure()
             axes = []
@@ -203,7 +207,7 @@ class Plotter:
                                    transform=axes[0].transAxes)
                     axes[0].set_xlim3d(x[0], x[len(x) - 1])
                     for x_ in x:
-                        i = int(x_ // self.h)
+                        i = int(x_ // self.dh)
                         cs.append(axes[0].contourf(C[n, i, :, :], yz, zy, zdir='x', offset=x_, levels=self.levels_C,
                                                    cmap=cm.get_cmap('viridis')))
                     cbarlab = r'$C(x,y,z)$'
@@ -211,8 +215,8 @@ class Plotter:
                 else:
                     axes.append(fig.add_subplot(1, 1, 1))
                     plt.title(f'Concentration @ $x={x:.3g}$ and $t =$ {t:.3g}')
-                    i = int(x // self.h)
-                    cs = [axes[0].contourf(yz, zy, C[n, i, :, :], levels=self.levels_C, vmin=self.vmin_C, vmax=self.vmax_C,
+                    i = int(x // self.dh)
+                    cs = [axes[0].contourf(yz, zy, C[n, i, :, :], levels=self.levels_C,
                                            cmap=cm.get_cmap('viridis'))]
                     plt.xlabel(r"$y$", fontsize=16)
                     plt.ylabel(r"$z$", fontsize=16)
@@ -226,15 +230,15 @@ class Plotter:
                                    transform=axes[0].transAxes)
                     axes[0].set_ylim3d(y[0], y[len(y) - 1])
                     for y_ in y:
-                        j = int(y_ // self.h)
+                        j = int(y_ // self.dh)
                         cs.append(axes[0].contourf(xz, C[n, :, j, :], zx,  offset=y_, zdir='y', levels=self.levels_C,
                                                    cmap=cm.get_cmap('viridis')))
                     cbarlab = r'$C(x,y,z)$'
                 else:
                     axes.append(fig.add_subplot(1, 1, 1))
                     plt.title(f'Concentration @ $y={y:.3g}$ and $t =$ {t:.3g}')
-                    j = int(y // self.h)
-                    cs = [axes[0].contourf(xz, zx, C[n, :, j, :], levels=self.levels_C, vmin=self.vmin_C, vmax=self.vmax_C,
+                    j = int(y // self.dh)
+                    cs = [axes[0].contourf(xz, zx, C[n, :, j, :], levels=self.levels_C,
                                            cmap=cm.get_cmap('viridis'))]
                     plt.xlabel(r"$x$", fontsize=16)
                     plt.ylabel(r"$z$", fontsize=16)
@@ -248,15 +252,15 @@ class Plotter:
                                    transform=axes[0].transAxes)
                     axes[0].set_zlim3d(z[0], z[len(z) - 1])
                     for z_ in z:
-                        k = int(z_ // self.h)
+                        k = int(z_ // self.dh)
                         cs.append(axes[0].contourf(xy, yx, C[n, :, :, k], zdir='z', offset=z_, levels=self.levels_C,
                                                    cmap=cm.get_cmap('viridis')))
                     cbarlab = r'$C(x,y,z)$'
                 else:
                     axes.append(fig.add_subplot(1, 1, 1))
                     plt.title(f'Concentration @ $z={z:.3g}$ and $t =$ {t:.3g}')
-                    k = int(z // self.h)
-                    cs = [axes[0].contourf(xy, yx, C[n, :, :, k], levels=self.levels_C, vmin=self.vmin_C, vmax=self.vmax_C,
+                    k = int(z // self.dh)
+                    cs = [axes[0].contourf(xy, yx, C[n, :, :, k], levels=self.levels_C,
                                            cmap=cm.get_cmap('viridis'))]
                     plt.xlabel(r"$x$", fontsize=16)
                     plt.ylabel(r"$y$", fontsize=16)
