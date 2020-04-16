@@ -74,7 +74,7 @@ class BeefSimulator:
                              int(conf["tlen"] / self.dt) + 1)
 
         self.t_jump = conf["t_jump"]
-        t_steps = 1 if self.t_jump == -1 else int(self.t.size / self.t_jump)+2
+        t_steps = 1 if self.t_jump == -1 else int(self.t.size / self.t_jump)+1
 
         self.space = (self.x.size, self.y.size, self.z.size)
         self.shape = (t_steps, self.x.size, self.y.size, self.z.size)
@@ -203,7 +203,14 @@ class BeefSimulator:
 
         self.logg("stage", "Iterating...", )
         i = 0
-        for step, t in enumerate(self.t):
+        for i, t in enumerate(self.t):
+            # save each "step"
+            if self.t_jump != -1 and i % self.t_jump == 0:
+                self.T_data[i] = self.T0.reshape(self.shape[1:])
+                self.C_data[i] = self.C0.reshape(self.shape[1:])
+                self.T_data.flush()
+                self.C_data.flush()
+
             self.u = self.uw(self.T0, self.C0, *self.space, self.dh)
 
             self.ii[3] = t
@@ -217,20 +224,11 @@ class BeefSimulator:
             self.solve_next(self.C0, self.C1, method)
             self.C0, self.C1 = self.C1, np.empty(self.num_nodes)
 
-            # save each "step"
-            if self.t_jump != -1 and step % self.t_jump == 0:
-                self.T_data[i] = self.T0.reshape(self.shape[1:])
-                self.C_data[i] = self.C0.reshape(self.shape[1:])
-                self.T_data.flush()
-                self.C_data.flush()
-                step += 1
-
-        # save last step if not saved
-        if step != self.shape[0]:
-            self.T_data[-1] = self.T0.reshape(self.shape[1:])
-            self.C_data[-1] = self.C0.reshape(self.shape[1:])
-            self.T_data.flush()
-            self.C_data.flush()
+        # save last step (anyway)
+        self.T_data[-1] = self.T0.reshape(self.shape[1:])
+        self.C_data[-1] = self.C0.reshape(self.shape[1:])
+        self.T_data.flush()
+        self.C_data.flush()
 
         self.logg("stage", "Finished", )
         self.logg("final", f'Final state: {self.T0}')
