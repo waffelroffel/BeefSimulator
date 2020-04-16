@@ -59,24 +59,20 @@ class Plotter:
         self.dh = header["dh"]
 
         dims = header["dims"]
-        shape = header["shape"]
+        shape = tuple(header["shape"])
         self.t = np.linspace(header["t0"], header["tn"], shape[0])
         self.x = np.linspace(dims["x0"], dims["xn"], shape[1])
         self.y = np.linspace(dims["y0"], dims["yn"], shape[2])
         self.z = np.linspace(dims["z0"], dims["zn"], shape[3])
 
-        self.T_data = np.memmap(temp_path,
-                                dtype="float64",
-                                mode="r",
-                                shape=tuple(shape))
-        self.C_data = np.memmap(cons_path,
-                                dtype="float64",
-                                mode="r",
-                                shape=tuple(shape))
-        self.vmin_T, self.vmax_T = np.min(
-            self.T_data[0]), np.max(self.T_data[0])
-        self.vmin_C, self.vmax_C = np.min(
-            self.C_data[0]), np.max(self.C_data[0])
+        self.T_data = np.memmap(
+            temp_path, dtype="float64", mode="r", shape=shape)
+        self.C_data = np.memmap(
+            cons_path, dtype="float64", mode="r", shape=shape)
+        self.vmin_T = np.min(self.T_data[0])
+        self.vmax_T = np.max(self.T_data[0])
+        self.vmin_C = np.min(self.C_data[0])
+        self.vmax_C = np.max(self.C_data[0])
 
     def show_heat_map2(self, t, id, x=None, y=None, z=None):
         U_data = self.T_data if id == "T" else self.C_data
@@ -296,14 +292,29 @@ class Plotter:
             plt.savefig(self.name + "_BC.png")
         plt.show()
 
-    def indext(self, t):
-        return int(round(t/(self.dt*self.t_jump)))
+    def convert_to_array(self, A):
+        if isinstance(A, np.ndarray):
+            return A
+        if isinstance(A, int) or isinstance(A, float):
+            return np.array([A])
+        if type(A) == list:
+            return np.array(A)
 
-    def indexd(self, x):
-        return int(round(x/self.dh))
+    def index_t(self, T):
+        T = self.convert_to_array(T)
+        return zip(T, (T/(self.dt*self.t_jump)).round().astype(int))
 
-    def multicross(self, U, t, x, y, z):
-        # move outside
+    def index_h(self, X):
+        X = self.convert_to_array(X)
+        return zip(X, (X/self.dh).round().astype(int))
+
+    def multicross(self, U, T, X, Y, Z):
+        for t, n in self.index_t(T):
+            self._multicross(U, t, n, X, Y, Z)
+
+    def _multicross(self, U, t, n, X, Y, Z):
+        # TODO: move outside
+        # change cmap color pallett
         yz, zy = np.meshgrid(self.y, self.z, indexing='ij')
         xz, zx = np.meshgrid(self.x, self.z, indexing='ij')
         xy, yx = np.meshgrid(self.x, self.y, indexing='ij')
@@ -322,19 +333,15 @@ class Plotter:
         axes[0].set_ylim3d(self.y[0], self.y[-1])
         axes[0].set_zlim3d(self.z[0], self.z[-1])
 
-        n = self.indext(t)
-        for x_ in x:
-            i = self.indexd(x_)
+        for x, i in self.index_h(X):
             cs.append(axes[0].contourf(U[n, i, :, :], yz, zy,
-                                       levels=self.levels_T, zdir='x', offset=x_, cmap=cm.get_cmap('RdBu')))
-        for y_ in y:
-            j = self.indexd(y_)
+                                       levels=self.levels_T, zdir='x', offset=x, cmap=cm.get_cmap('RdBu')))
+        for y, j in self.index_h(Y):
             cs.append(axes[0].contourf(xz, U[n, :, j, :], zx,
-                                       levels=self.levels_T, zdir='y', offset=y_, cmap=cm.get_cmap('RdBu')))
-        for z_ in z:
-            k = self.indexd(z_)
+                                       levels=self.levels_T, zdir='y', offset=y, cmap=cm.get_cmap('RdBu')))
+        for z, k in self.index_h(Z):
             cs.append(axes[0].contourf(xy, yx, U[n, :, :, k],
-                                       levels=self.levels_T, zdir='z', offset=z_, cmap=cm.get_cmap('RdBu')))
+                                       levels=self.levels_T, zdir='z', offset=z, cmap=cm.get_cmap('RdBu')))
         cbarlab = r'$T(x,y,z)$'
         cbar1 = fig.colorbar(cs[0], ax=axes[0], shrink=0.9)
         cbar1.ax.set_ylabel(cbarlab, fontsize=14)

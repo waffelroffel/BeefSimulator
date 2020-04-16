@@ -14,8 +14,7 @@ if __name__ == "__main__":
     #np.savetxt("final.csv", bs.T0)
 
     tt = np.linspace(conf["t0"], conf["tn"], 11)
-    for t in tt:
-        bs.plot(t, 'T', x=[0.4], y=[0.4], z=[], multi=True)
+    bs.plot(tt, 'T', x=[0.4], y=[0.4], z=[], multi=True)
     """
     dims = conf["dims"]
     x = np.linspace(dims["x0"], dims["xn"], int(dims["xlen"]/conf["dh"])+1)
