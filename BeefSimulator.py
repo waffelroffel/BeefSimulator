@@ -1,11 +1,8 @@
 import numpy as np
-import matplotlib.pyplot as plt
-from scipy.sparse import diags
+import scipy.sparse as sp
 import Plotting.BeefPlotter as BP
-from data_management import write_csv
 from pathlib import Path
 import auxillary_functions as af
-import constants as const
 import json
 
 
@@ -74,7 +71,8 @@ class BeefSimulator:
                              int(conf["tlen"] / self.dt) + 1)
 
         self.t_jump = conf["t_jump"]
-        t_steps = 1 if self.t_jump == -1 else int(self.t.size / self.t_jump)+1
+        t_steps = 1 if self.t_jump == - \
+            1 else int(self.t.size / self.t_jump) + 1
 
         self.space = (self.x.size, self.y.size, self.z.size)
         self.shape = (t_steps, self.x.size, self.y.size, self.z.size)
@@ -202,10 +200,10 @@ class BeefSimulator:
             self.C_file, dtype="float64", mode="w+", shape=self.shape)
 
         self.logg("stage", "Iterating...", )
-        i = 0
-        for i, t in enumerate(self.t):
+        for step, t in enumerate(self.t):
             # save each "step"
-            if self.t_jump != -1 and i % self.t_jump == 0:
+            if self.t_jump != -1 and step % self.t_jump == 0:
+                i = int(step / self.t_jump)
                 self.T_data[i] = self.T0.reshape(self.shape[1:])
                 self.C_data[i] = self.C0.reshape(self.shape[1:])
                 self.T_data.flush()
@@ -241,9 +239,8 @@ class BeefSimulator:
             A, b = self.make_Ab()
             U1[...] = U0 + (self.dt / self.a(self.ii)) * (A @ U0 + b)
 
-            # TODO: move indexing before division
-            U1[self.direchets] = (self.gamma(
-                self.ii) / self.beta(self.ii))[self.direchets]
+            U1[self.direchets] = self.gamma(self.ii)[self.direchets] / \
+                self.beta(self.ii)[self.direchets]
 
     def make_Ab(self):
         """
@@ -266,7 +263,7 @@ class BeefSimulator:
         C1_z = bh2 + c2h * uz
         C2_z = bh2 - c2h * uz
 
-        C_u = np.array([C1_x, -C2_x, C1_y, -C2_y, C1_z, -C2_z])
+        C_u = np.array([C1_x, -C2_x, C1_y, -C2_y, C1_z, -C2_z]).transpose()
 
         C3 = 6 * self.b(self.ii) / self.dh**2
 
@@ -292,7 +289,7 @@ class BeefSimulator:
 
         # add u_w to prod
         prod = af.dotND(
-            self.boundaries[:, 1:], C_u.T[self.boundaries[:, 0]], axis=1)  # pylint: disable=E1136
+            self.boundaries[:, 1:], C_u[self.boundaries[:, 0]], axis=1)
         d0[self.boundaries[:, 0]] -= prod * C4[self.boundaries[:, 0]] * \
             self.beta(self.ii)[self.boundaries[:, 0]]
 
@@ -326,12 +323,12 @@ class BeefSimulator:
 
         # -----------------------------------------------------
         ds = [d0, d1, d2, d3, d4, d5, d6]
-        A = diags(ds, ks)
+        A = sp.diags(ds, ks)
 
         b = np.zeros(self.num_nodes)
 
         prod = af.dotND(
-            self.boundaries[:, 1:], C_u.T[self.boundaries[:, 0]], axis=1)  # pylint: disable=E1136
+            self.boundaries[:, 1:], C_u[self.boundaries[:, 0]], axis=1)
         b[self.boundaries[:, 0]] = prod * C4[self.boundaries[:, 0]] * \
             self.gamma(self.ii)[self.boundaries[:, 0]]
 
@@ -466,7 +463,7 @@ class BeefSimulator:
             for q in qq:
                 uniques.add(q)
 
-        # remove sorted?
+        # TODO: can remove sorted
         return sorted(list(uniques))
 
     def find_border_indicies(self, new=False):
@@ -491,43 +488,30 @@ class BeefSimulator:
 
     def sum_start_and_end(self, i, j, k, new=False):
         """
-        wacky way to count the different boundaries the node borders
+        returns which borders the (i,j,k) node lies on
+
+        either 0 or 1 on:
+        [x0, xn, y0, yn, z0, zn]
 
         E.g: \n
-        (0, 0, 0) -> [3, 0] \n
-        (0, 0, Z) -> [2, 1] \n
-        (0, 4, Z) -> [1, 1]
-        TODO:  remove old implementation
+        (0, 0, 0) -> [1, 0, 1, 0, 1, 0] \n
+        (0, 0, Z) -> [1, 0, 1, 0, 0, 1] \n
+        (0, 4, Z) -> [1, 0, 0, 0, 0, 1]
         """
-        if new:
-            x0 = int(i == 0)
-            xn = int(i == self.I - 1)
-            y0 = int(j == 0)
-            yn = int(j == self.J - 1)
-            z0 = int(k == 0)
-            zn = int(k == self.K - 1)
-            return x0, xn, y0, yn, z0, zn
-        else:
-            # pretend you didn't see this
-            boundaries = ((i == 0 and "start") or (i == self.I - 1 and "end"),
-                          (j == 0 and "start") or (j == self.J - 1 and "end"),
-                          (k == 0 and "start") or (k == self.K - 1 and "end"))
-
-            start = 0
-            end = 0
-            for boundary in boundaries:
-                start += 1 if boundary == "start" else 0
-                end += 1 if boundary == "end" else 0
-            return start, end
+        x0 = int(i == 0)
+        xn = int(i == self.I - 1)
+        y0 = int(j == 0)
+        yn = int(j == self.J - 1)
+        z0 = int(k == 0)
+        zn = int(k == self.K - 1)
+        return x0, xn, y0, yn, z0, zn
 
     # --------------- Misc. -------------------------------------------
 
     def wrap(self, fun):
-        # TODO: move the checks one level higher
         def _wrap(ii):
             res = fun(*ii) if callable(fun) else fun
             return res.flatten() if isinstance(res, np.ndarray) else np.ones(ii[1].size) * res
-
         return _wrap
 
     def pre_check(self, conf, T_conf, C_conf):
@@ -547,24 +531,24 @@ class BeefSimulator:
         assert conf["dt"] > 0, f'conf: dt should be >0, got dt={conf[ "dt" ]}'
 
         t_jump = conf["t_jump"]
-        assert type(t_jump) == int, \
+        assert type(t_jump) == int,\
             f'conf: t_jump should be integer, got type(t_jump)={type(t_jump)}'
-        assert t_jump > 0 or t_jump == -1, \
+        assert t_jump > 0 or t_jump == -1,\
             f'conf: dt should be >0 or -1, got dt={t_jump}'
 
         assert conf["tlen"] > 0, f'conf: tlen should be >0, got tlen={conf[ "tlen" ]}'
-        assert conf["tn"] > conf["t0"], \
+        assert conf["tn"] > conf["t0"],\
             f'conf: tn should be >t0, got t0={conf[ "t0" ]} and tn={conf[ "tn" ]}'
 
         dims = conf["dims"]
         assert dims["xlen"] > 0, f'conf: xlen should be >0, got xlen={dims[ "xlen" ]}'
-        assert dims["xn"] > dims["x0"], \
+        assert dims["xn"] > dims["x0"],\
             f'conf: xn should be >x0, got x0={dims[ "x0" ]} and xn={dims[ "xn" ]}'
         assert dims["ylen"] > 0, f'conf: ylen should be >0, got ylen={dims[ "ylen" ]}'
-        assert dims["yn"] > dims["y0"], \
+        assert dims["yn"] > dims["y0"],\
             f'conf: yn should be >y0, got y0={dims[ "y0" ]} and yn={dims[ "yn" ]}'
         assert dims["zlen"] > 0, f'conf: zlen should be >0, got zlen={dims[ "zlen" ]}'
-        assert dims["zn"] > dims["z0"], \
+        assert dims["zn"] > dims["z0"],\
             f'conf: zn should be >z0, got z0={dims[ "z0" ]} and zn={dims[ "zn" ]}'
 
         _check_T_or_C(T_conf, "T")

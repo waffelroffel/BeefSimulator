@@ -1,7 +1,7 @@
 import numpy as np
 from auxillary_functions import u_w
 
-alp = 0.125e-6
+alp = 0.01  # 0.125e-6
 
 
 def T(xx, yy, zz, t):
@@ -14,7 +14,7 @@ def T_initial(xx, yy, zz, t):
 
 
 def T_a(xx, yy, zz, t):
-    return np.ones(xx.size)
+    return np.ones(xx.size)/alp
 
 
 def T_b(xx, yy, zz, t):
