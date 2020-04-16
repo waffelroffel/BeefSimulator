@@ -5,11 +5,6 @@ import constants as c
 from auxillary_functions import u_w
 
 
-def T(xx, yy, zz, t):
-    return 3 * np.exp(-4*(np.pi)**2*(1+1+4) * t) * \
-        np.sin(2*np.pi * xx) * np.sin(2*np.pi * yy) * np.sin(4*np.pi * zz)
-
-
 def T_initial(xx, yy, zz, t):
     return c.T_init * np.ones(xx.size)
 
@@ -49,7 +44,7 @@ def T_uw(T, C, I, J, K, dh):
     return u.reshape((3, -1)).T
 
 
-T_bnd_types = ["d", "d", "d", "d", "d", "d"]
+T_bnd_types = ["n", "n", "n", "n", "n", "n"]
 
 T_conf = {
     "pde": {"a": T_a,

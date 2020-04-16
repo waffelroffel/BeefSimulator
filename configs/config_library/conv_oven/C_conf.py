@@ -36,7 +36,8 @@ def C_beta(xx, yy, zz, t, TT, CC):
 
 def C_gamma(xx, yy, zz, t):
     temp = - c.f * c.h_air * (c.T_oven - TT)/(c.H_evp * c.rho_w) * C_eq(TT)
-    temp[:,:,0] *= c.h_plate / c.h_air
+    # temp[:,:,0] *= c.h_plate / c.h_air
+    temp[:,:,0] = 1 # Is this symmetric B.C.? So no vapor leakage through the bottom?
     return temp.flatten()
 
 
@@ -45,7 +46,7 @@ def C_uw(T, C, I, J, K, dh):
     return u.reshape((3, -1)).T
 
 
-C_bnd_types = []
+C_bnd_types = ['n', 'n', 'n', 'n', 'd', 'n']
 
 
 C_conf = {
