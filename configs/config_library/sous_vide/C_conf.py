@@ -1,5 +1,5 @@
 ## C_conf
-## conv_oven
+## sous_vide
 
 import numpy as np
 from auxillary_functions import u_w, C_eq
@@ -45,13 +45,8 @@ def C_beta(T, C, shape, xx, yy, zz, t):
 
 
 def C_gamma(T, C, shape, xx, yy, zz, t):
-    temp = c.f * c.h_air * (c.T_oven - T)/(c.H_evp * c.rho_w) * (C - C_eq(T))
-    # No flux through bottom
-    temp[:,:,0] = 0
-    # Symmetric B.C.
-    temp[-1,:,:] = 0
-    temp[:,-1,:] = 0
-    return temp.flatten()
+    # Moisture does not escape at the boundaries
+    return np.zeros(xx.shape)
 
 
 def C_uw(T, C, I, J, K, dh):
@@ -59,7 +54,8 @@ def C_uw(T, C, I, J, K, dh):
     return u.reshape((3, -1)).T
 
 
-C_bnd_types = ['n', 'n', 'n', 'n', 'd', 'n']
+#C_bnd_types = ['n', 'n', 'n', 'n', 'd', 'n']
+C_bnd_types = []
 
 
 C_conf = {

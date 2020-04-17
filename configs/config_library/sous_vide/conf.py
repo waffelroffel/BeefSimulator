@@ -1,3 +1,6 @@
+## conf
+## sous_vide
+
 logging = {
     "init": True,  # print the configuration of beefsimulator
     "init_state": False,  # print the initial state of T
@@ -7,35 +10,36 @@ logging = {
     "final": False  # print the final state of T
 }
 
-folder = "beef1"
+folder = "sous_vide_10sec"
 
-dh = 0.1
-dt = 0.001
+dh = 1e-3
+dt = 1e-4
 
-# plotter need to handle the last step being less than t_jump
 # -1: only the last
-t_jump = 10
+t_jump = 1e4 # Save progress each full second
 
 t0 = 0
-tlen = 2
+tlen = 10
 tn = t0+tlen
 
+# Actual beef size split symmetrically along xy-axes. Implement symmetric B.C.s
+# to compensate.
+
 x0 = 0
-xlen = 1
+xlen = 0.075
 xn = x0+xlen
 
 y0 = 0
-ylen = 1
+ylen = 0.04
 yn = y0+ylen
 
 z0 = 0
-zlen = 1
+zlen = 0.055
 zn = z0+zlen
 
 conf = {
     "dh": dh,
     "dt": dt,
-    "t_jump": t_jump,
     "t0": t0,
     "tlen": tlen,
     "tn": tn,
