@@ -1,4 +1,5 @@
 ## conf
+## sous_vide
 
 logging = {
     "init": True,  # print the configuration of beefsimulator
@@ -15,11 +16,14 @@ dh = 1e-3
 dt = 1e-4
 
 # -1: only the last
-t_jump = 1000
+t_jump = 1e4 # Save progress each full second
 
 t0 = 0
 tlen = 10
 tn = t0+tlen
+
+# Actual beef size split symmetrically along xy-axes. Implement symmetric B.C.s
+# to compensate.
 
 x0 = 0
 xlen = 0.075

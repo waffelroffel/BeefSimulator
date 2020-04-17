@@ -1,4 +1,5 @@
-a## C_conf
+## C_conf
+## sous_vide
 
 import numpy as np
 from auxillary_functions import u_w, C_eq
@@ -8,37 +9,44 @@ def C(xx, yy, zz, t):
     return 1
 
 
-def C_initial(xx, yy, zz, t):
-    return 0.75 # kg water/kg beef
-np.ones(xx.size)
+def C_initial(T, C, shape, xx, yy, zz, t):
+    return 0.75 * np.ones(xx.size) # kg water/kg beef
 
-def C_a(xx, yy, zz, t):
+def C_a(T, C, shape, xx, yy, zz, t):
     return np.ones(xx.size)
 
 
-def C_b(xx, yy, zz, t):
+def C_b(T, C, shape, xx, yy, zz, t):
     return - u_w * np.ones(xx.size)
 
 
-def C_c(xx, yy, zz, t):
+def C_c(T, C, shape, xx, yy, zz, t):
     return c.D * np.ones(xx.size)
 
 
-def C_alpha(xx, yy, zz, t, TT, CC):
-    return - c.D * np.ones(xx.size)
-
-
-def C_beta(xx, yy, zz, t, TT, CC):
-    temp = ( u_w - c.f * c.h_air * (c.T_oven - TT)/(c.H_evp * c.rho_w) )
-    temp[:,:,0] = ( u_w - c.f * c.h_plate * (c.T_oven - TT[:,:,0])/(c.H_evp * c.rho_w) )
+def C_alpha(T, C, shape, xx, yy, zz, t):
+    temp = - c.D * np.ones(xx.size)
+    # No flux through bottom
+    temp[:,:,0] = 1
+    # Symmetric B.C.
+    temp[-1,:,:] = 1
+    temp[:,-1,:] = 1
     return temp.flatten()
 
 
-def C_gamma(xx, yy, zz, t):
-    temp = - c.f * c.h_air * (c.T_oven - TT)/(c.H_evp * c.rho_w) * C_eq(TT)
-    # temp[:,:,0] *= c.h_plate / c.h_air
-    temp[:,:,0] = 1 # Is this symmetric B.C.? So no vapor leakage through the bottom?
+def C_beta(T, C, shape, xx, yy, zz, t):
+    temp = 1 * np.ones(xx.shape)
+    # No flux through bottom
+    temp[:,:,0] = 0
+    # Symmetric B.C.
+    temp[-1,:,:] = 0
+    temp[:,-1,:] = 0
     return temp.flatten()
+
+
+def C_gamma(T, C, shape, xx, yy, zz, t):
+    # Moisture does not escape at the boundaries
+    return np.zeros(xx.shape)
 
 
 def C_uw(T, C, I, J, K, dh):
@@ -46,7 +54,8 @@ def C_uw(T, C, I, J, K, dh):
     return u.reshape((3, -1)).T
 
 
-C_bnd_types = ['n', 'n', 'n', 'n', 'd', 'n']
+#C_bnd_types = ['n', 'n', 'n', 'n', 'd', 'n']
+C_bnd_types = []
 
 
 C_conf = {

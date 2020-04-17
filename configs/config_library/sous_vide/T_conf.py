@@ -1,4 +1,5 @@
 ## T_conf
+## sous_vide
 
 import numpy as np
 import constants as c
@@ -39,9 +40,9 @@ def T_beta(T, C, shape, xx, yy, zz, t):
 
 
 def T_gamma(T, C, shape, xx, yy, zz, t):
-    temp = (1 - c.f) * c.h_air * (c.T_oven - T)
-    # Bottom has a different heat transfer than the rest
-    temp[:,:,0] *= c.h_plate / c.h_air
+    temp = c.h_water * (c.T_oven - T)
+    # Bottom may now be assumed to have the same heat transfer as the rest (?)
+    # Symmetric B.C.
     temp[-1,:,:] = 0
     temp[:,-1,:] = 0
     return temp.flatten()
