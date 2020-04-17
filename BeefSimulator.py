@@ -263,6 +263,7 @@ class BeefSimulator:
         C1_z = bh2 + c2h * uz
         C2_z = bh2 - c2h * uz
 
+        u = np.array([ux, ux, uy, uy, uz, uz]).transpose()
         C_u = np.array([C1_x, -C2_x, C1_y, -C2_y, C1_z, -C2_z]).transpose()
 
         C3 = 6 * self.b(self.ii) / self.dh**2
@@ -287,9 +288,8 @@ class BeefSimulator:
         # - tested with neuman boundary = 0 -> behaves correctly
         # - need to validate with non-zero values / functions
 
-        # add u_w to prod
         prod = af.dotND(
-            self.boundaries[:, 1:], C_u[self.boundaries[:, 0]], axis=1)
+            self.boundaries[:, 1:], (C_u*u)[self.boundaries[:, 0]], axis=1)
         d0[self.boundaries[:, 0]] -= prod * C4[self.boundaries[:, 0]] * \
             self.beta(self.ii)[self.boundaries[:, 0]]
 
@@ -502,6 +502,7 @@ class BeefSimulator:
         (0, 0, Z) -> [1, 0, 1, 0, 0, 1] \n
         (0, 4, Z) -> [1, 0, 0, 0, 0, 1]
         """
+        # TODO: can remove int
         x0 = int(i == 0)
         xn = int(i == self.I - 1)
         y0 = int(j == 0)
