@@ -134,11 +134,11 @@ class BeefSimulator:
 
         self.T_file = self.path.joinpath("T.dat")
         self.T_data = np.memmap(
-            self.T_file, dtype="float64", mode="w+", shape=self.shape)
+            self.T_file, dtype="float64", mode="r+", shape=self.shape)
 
         self.C_file = self.path.joinpath("C.dat")
         self.C_data = np.memmap(
-            self.C_file, dtype="float64", mode="w+", shape=self.shape)
+            self.C_file, dtype="float64", mode="r+", shape=self.shape)
 
     def setup_additionals(self, conf, T_conf, C_conf):
         self.plotter = BP.Plotter(self, name=Path(
