@@ -212,8 +212,11 @@ class BeefSimulator:
                 self.C_data.flush()
 
             self.u = self.uw(self.T0, self.C0, *self.space, self.dh)
-
-            self.ii[3] = t
+            
+            # Update ii
+            self.ii[ 0 ] = self.T0
+            self.ii[ 1 ] = self.C0
+            self.ii[ -1 ] = t
             self.logg("tn", f't: {t:.3f}')
 
             self.set_vars("T")
