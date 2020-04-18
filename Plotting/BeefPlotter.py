@@ -3,6 +3,7 @@ import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 from matplotlib import cm
 import matplotlib.animation as animation
+from matplotlib import rc
 from pathlib import Path
 from typing import Union
 import json
@@ -112,8 +113,9 @@ class Plotter:
                 if isinstance(x, list):
                     init_3d(fig, axes)
                     axes[0].text2D(
-                        0.5, 0.95, f"Temperature @ $t =$ {t:.3g}", transform=axes[0].transAxes)
+                        0.5, 0.95, f"Temperature distribution @ $t =$ {t:.3g}", transform=axes[0].transAxes)
                     axes[0].set_xlim3d(x[0], x[len(x) - 1])
+                    axes[0].view_init(15, - 107)
                     for x_ in x:
                         i = int(round((x_ / self.dh)))
                         cs.append(axes[0].contourf(T[n, i, :, :], yz, zy, zdir='x', offset=x_, levels=self.levels_T,
@@ -122,7 +124,8 @@ class Plotter:
 
                 else:
                     axes.append(fig.add_subplot(1, 1, 1))
-                    plt.title(f'Temperature @ $x={x:.3g}$ and $t =$ {t:.3g}')
+                    plt.title(
+                        f'Temperature distribution @ $x={x:.3g}$ and $t =$ {t:.3g}')
                     i = int(round((x_ / self.dh)))
                     cs = [axes[0].contourf(yz, zy, T[n, i, :, :], levels=self.levels_T,
                                            cmap=cm.get_cmap('magma'))]
@@ -134,9 +137,10 @@ class Plotter:
                 xz, zx = np.meshgrid(self.x, self.z, indexing='ij')
                 if isinstance(y, list):
                     init_3d(fig, axes)
-                    axes[0].text2D(0.5, 0.95, f"Temperature @ $t =$ {t:.3g}",
+                    axes[0].text2D(0.5, 0.95, f"Temperature distribution @ $t =$ {t:.3g}",
                                    transform=axes[0].transAxes)
                     axes[0].set_ylim3d(y[0], y[len(y) - 1])
+                    axes[0].view_init(15, - 16)
                     for y_ in y:
                         j = int(round(y_ / self.dh))
                         cs.append(axes[0].contourf(xz, T[n, :, j, :], zx,  offset=y_, zdir='y', levels=self.levels_T,
@@ -144,7 +148,8 @@ class Plotter:
                     cbarlab = r'$T(x,y,z)$'
                 else:
                     axes.append(fig.add_subplot(1, 1, 1))
-                    plt.title(f'Temperature @ $y={y:.3g}$ and $t =$ {t:.3g}')
+                    plt.title(
+                        f'Temperature distribution @ $y={y:.3g}$ and $t =$ {t:.3g}')
                     j = int(y // self.dh)
                     cs = [axes[0].contourf(xz, zx, T[n, :, j, :], levels=self.levels_T,
                                            cmap=cm.get_cmap('magma'))]
@@ -156,9 +161,10 @@ class Plotter:
                 xy, yx = np.meshgrid(self.x, self.y, indexing='ij')
                 if isinstance(z, list):
                     init_3d(fig, axes)
-                    axes[0].text2D(0.5, 0.95, f"Temperature @ $t =$ {t:.3g}",
+                    axes[0].text2D(0.5, 0.95, f"Temperature distribution @ $t =$ {t:.3g}",
                                    transform=axes[0].transAxes)
                     axes[0].set_zlim3d(z[0], z[len(z) - 1])
+                    axes[0].view_init(12, - 30)
                     for z_ in z:
                         k = int(round((z_ / self.dh)))
                         cs.append(axes[0].contourf(xy, yx, T[n, :, :, k], zdir='z', offset=z_, levels=self.levels_T,
@@ -166,7 +172,8 @@ class Plotter:
                     cbarlab = r'$T(x,y,z)$'
                 else:
                     axes.append(fig.add_subplot(1, 1, 1))
-                    plt.title(f'Temperature @ $z={z:.3g}$ and $t =$ {t:.3g}')
+                    plt.title(
+                        f'Temperature distribution @ $z={z:.3g}$ and $t =$ {t:.3g}')
                     k = int(z // self.dh)
                     cs = [axes[0].contourf(xy, yx, T[n, :, :, k], levels=self.levels_T,
                                            cmap=cm.get_cmap('magma'))]
@@ -206,9 +213,10 @@ class Plotter:
                 yz, zy = np.meshgrid(self.y, self.z, indexing='ij')
                 if isinstance(x, list):
                     init_3d(fig, axes)
-                    axes[0].text2D(0.5, 0.95, f"Concentration @ $t =$ {t:.3g}",
+                    axes[0].text2D(0.5, 0.95, f"Concentration distribution @ $t =$ {t:.3g}",
                                    transform=axes[0].transAxes)
                     axes[0].set_xlim3d(x[0], x[len(x) - 1])
+                    axes[0].view_init(15, - 107)
                     for x_ in x:
                         i = int(round((x_ / self.dh)))
                         cs.append(axes[0].contourf(C[n, i, :, :], yz, zy, zdir='x', offset=x_, levels=self.levels_C,
@@ -217,7 +225,8 @@ class Plotter:
 
                 else:
                     axes.append(fig.add_subplot(1, 1, 1))
-                    plt.title(f'Concentration @ $x={x:.3g}$ and $t =$ {t:.3g}')
+                    plt.title(
+                        f'Concentration distribution @ $x={x:.3g}$ and $t =$ {t:.3g}')
                     i = int(round((x_ / self.dh)))
                     cs = [axes[0].contourf(yz, zy, C[n, i, :, :], levels=self.levels_C,
                                            cmap=cm.get_cmap('viridis'))]
@@ -229,9 +238,10 @@ class Plotter:
                 xz, zx = np.meshgrid(self.x, self.z, indexing='ij')
                 if isinstance(y, list):
                     init_3d(fig, axes)
-                    axes[0].text2D(0.5, 0.95, f"Concentration @ $t =$ {t:.3g}",
+                    axes[0].text2D(0.5, 0.95, f"Concentration distribution @ $t =$ {t:.3g}",
                                    transform=axes[0].transAxes)
                     axes[0].set_ylim3d(y[0], y[len(y) - 1])
+                    axes[0].view_init(15, - 16)
                     for y_ in y:
                         j = int(round(y_ / self.dh))
                         cs.append(axes[0].contourf(xz, C[n, :, j, :], zx,  offset=y_, zdir='y', levels=self.levels_C,
@@ -239,7 +249,8 @@ class Plotter:
                     cbarlab = r'$C(x,y,z)$'
                 else:
                     axes.append(fig.add_subplot(1, 1, 1))
-                    plt.title(f'Concentration @ $y={y:.3g}$ and $t =$ {t:.3g}')
+                    plt.title(
+                        f'Concentration distribution @ $y={y:.3g}$ and $t =$ {t:.3g}')
                     j = int(y // self.dh)
                     cs = [axes[0].contourf(xz, zx, C[n, :, j, :], levels=self.levels_C,
                                            cmap=cm.get_cmap('viridis'))]
@@ -251,9 +262,10 @@ class Plotter:
                 xy, yx = np.meshgrid(self.x, self.y, indexing='ij')
                 if isinstance(z, list):
                     init_3d(fig, axes)
-                    axes[0].text2D(0.5, 0.95, f"Concentration @ $t =$ {t:.3g}",
+                    axes[0].text2D(0.5, 0.95, f"Concentration distribution @ $t =$ {t:.3g}",
                                    transform=axes[0].transAxes)
                     axes[0].set_zlim3d(z[0], z[len(z) - 1])
+                    axes[0].view_init(12, - 30)
                     for z_ in z:
                         k = int(round((z_ / self.dh)))
                         cs.append(axes[0].contourf(xy, yx, C[n, :, :, k], zdir='z', offset=z_, levels=self.levels_C,
@@ -261,7 +273,8 @@ class Plotter:
                     cbarlab = r'$C(x,y,z)$'
                 else:
                     axes.append(fig.add_subplot(1, 1, 1))
-                    plt.title(f'Concentration @ $z={z:.3g}$ and $t =$ {t:.3g}')
+                    plt.title(
+                        f'Concentration distribution @ $z={z:.3g}$ and $t =$ {t:.3g}')
                     k = int(z // self.dh)
                     cs = [axes[0].contourf(xy, yx, C[n, :, :, k], levels=self.levels_C,
                                            cmap=cm.get_cmap('viridis'))]
@@ -281,16 +294,6 @@ class Plotter:
                     f'consmap_{coordlab}_t={t:.3g}.pdf')
                 plt.savefig(filename)
             plt.show()
-
-    def show_boundary_cond(self):
-        plt.figure()
-        plt.xlabel(r"$x$", fontsize=16)
-        plt.ylabel(r"$y$", fontsize=16)
-        plt.legend()
-        plt.grid()
-        if self.save_fig:
-            plt.savefig(self.name + "_BC.png")
-        plt.show()
 
     def convert_to_array(self, A):
         if isinstance(A, np.ndarray):
@@ -327,7 +330,7 @@ class Plotter:
 
         init_3d(fig, axes)
         axes[0].text2D(
-            0.5, 0.95, f"Temperature @ $t =$ {t:.3g}", transform=axes[0].transAxes)
+            0.5, 0.95, f"Temperature distribution @ $t =$ {t:.3g}", transform=axes[0].transAxes)
 
         axes[0].set_xlim3d(self.x[0], self.x[-1])
         axes[0].set_ylim3d(self.y[0], self.y[-1])
@@ -352,6 +355,11 @@ class Plotter:
                 f'tempmap_{coordlab}_t={t:.3g}.pdf')
             plt.savefig(filename)
         plt.show()
+
+    def set_latex(self, usetex):
+        # Latex font rendering
+        rc('font', **{'family': 'serif', 'serif': ['Palatino']})
+        rc('text', usetex=usetex)
 
 
 '''

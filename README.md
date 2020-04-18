@@ -78,7 +78,7 @@ bs.plotter.save_fig = False # Figures will not be saved to disk anymore (the plo
 bs.plot([0.0, 2.0, 4.0, 8.0], z=0.5, 'C') # Concentration heat xy-crossections at z=0.5 at times t=0.0, 2.0, 4.0, and 8.0.
 ```
 
-The plots are saved in the same directory as the data is stored as png files.
+The plots are saved in the same directory as the data is stored as pdf files. You can also enable LaTeX typesetting by including the line `bs.plotter.set_latex(True)` before plotting. The installation requirements must be fulfilled in order to make it work. See https://matplotlib.org/3.2.1/tutorials/text/usetex.html for more information.
 
 ---
 
