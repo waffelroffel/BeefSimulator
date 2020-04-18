@@ -20,19 +20,11 @@ def C_a(T, C, shape, xx, yy, zz, t):
 
 
 def C_b(T, C, shape, xx, yy, zz, t):
-<<<<<<< HEAD
-    return c.D * np.ones( xx.size )
-
-
-def C_c(T, C, shape, xx, yy, zz, t):
-    return - np.ones( xx.size )
-=======
     return c.D
 
 
 def C_c(T, C, shape, xx, yy, zz, t):
     return -1
->>>>>>> b746a06dadf5d77db4606bad596d94a11d7c26b5
 
 
 def C_alpha(T, C, shape, xx, yy, zz, t):

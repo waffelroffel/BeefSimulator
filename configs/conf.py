@@ -16,17 +16,10 @@ dh = 1e-3
 dt = 1e-5
 
 # -1: only the last
-<<<<<<< HEAD
-t_jump = 100 # Save progress each 100 time step
-
-t0 = 0
-tlen = 1e-1
-=======
-t_jump = -1  # Save progress each full second
+t_jump = -1
 
 t0 = 0
 tlen = 0.001
->>>>>>> b746a06dadf5d77db4606bad596d94a11d7c26b5
 tn = t0+tlen
 
 # Actual beef size split symmetrically along xy-axes. Implement symmetric B.C.s
