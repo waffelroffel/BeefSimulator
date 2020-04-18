@@ -10,25 +10,25 @@ import json
 
 
 def init_3d(fig, axes):
-    axes.append(fig.gca(projection='3d'))
-    axes[0].set_xlabel('$x$')
-    axes[0].set_ylabel('$y$')
-    axes[0].set_zlabel('$z$')
+    axes.append(fig.gca(projection="3d"))
+    axes[0].set_xlabel("$x$")
+    axes[0].set_ylabel("$y$")
+    axes[0].set_zlabel("$z$")
 
 
 class Plotter:
     MODES = {"S", "M"}
     IDS = {"T", "C"}
-    CMAPS = {"T": cm.get_cmap('magma'),
-             "C": cm.get_cmap('viridis')}
+    CMAPS = {"T": cm.get_cmap("magma"),
+             "C": cm.get_cmap("viridis")}
     TYPES = {"T": "Temperature",
              "C": "Concentration"}
 
-    def __init__(self, beefsim=None, name='untitled', save_fig=False):
+    def __init__(self, beefsim=None, name="untitled", save_fig=False):
         """
         beefsim: A BeefSimulator object with axis and stepping data for plotting.
-        name: Filename for saved plots. Default: 'untitled'
-        save_fig: Determines whether the plots will be saved. Default: 'False'
+        name: Filename for saved plots. Default: "untitled"
+        save_fig: Determines whether the plots will be saved. Default: "False"
         """
         if beefsim is None:
             self.load_from_file(name)
@@ -89,14 +89,14 @@ class Plotter:
         self.vmin_C = np.min(self.C_data)
         self.vmax_C = np.max(self.C_data)
 
-    def show_heat_map2(self, t, id, x=None, y=None, z=None):
-        U_data = self.T_data if id == "T" else self.C_data
-        self.show_heat_map(U_data, t, id, x, y, z)
+    def show_heat_map2(self, id, T, X=[], Y=[], Z=[]):
+        U = self.T_data if id == "T" else self.C_data
+        self.show_heat_map(U, id, T, X, Y, Z)
 
     def show_heat_map(self, U, id, T, X=[], Y=[], Z=[]):
         if id not in self.IDS:
             raise ValueError(
-                'Trying to aquire a quantity that does not exist.')
+                "Trying to aquire a quantity that does not exist.")
         mode, extra = self.get_mode(X, Y, Z)
 
         if mode not in self.MODES:
@@ -104,26 +104,26 @@ class Plotter:
 
         for t, n in self.index_t(T):
             if mode == "S":
-                self.singlecross(U, t, n, extra[0], extra[1], id)
+                self.singlecross(U, t, n, extra[0], extra[1], extra[2], id)
             elif mode == "M":
-                self.multicross((U, t, n, X, Y, Z, id))
+                self.multicross(U, t, n, X, Y, Z, id)
             else:
                 raise Exception("Mode not implemented!")
 
     def multicross(self, U, t, n, X, Y, Z, id):
-        yz, zy = np.meshgrid(self.y, self.z, indexing='ij')
-        xz, zx = np.meshgrid(self.x, self.z, indexing='ij')
-        xy, yx = np.meshgrid(self.x, self.y, indexing='ij')
+        yz, zy = np.meshgrid(self.y, self.z, indexing="ij")
+        xz, zx = np.meshgrid(self.x, self.z, indexing="ij")
+        xy, yx = np.meshgrid(self.x, self.y, indexing="ij")
 
         fig = plt.figure()
         axes = []
         cs = []
-        cbarlab = ''
-        coordlab = ''
+        cbarlab = ""
+        coordlab = ""
 
         init_3d(fig, axes)
         axes[0].text2D(
-            0.5, 0.95, f"{self.TYPES[id]} distribution @ $t =$ {t:.3g}", transform=axes[0].transAxes)
+            0.5, 0.95, f'{self.TYPES[id]} distribution @ $t=$ {t: .3g}', transform=axes[0].transAxes)
 
         axes[0].set_xlim3d(self.x[0], self.x[-1])
         axes[0].set_ylim3d(self.y[0], self.y[-1])
@@ -131,14 +131,14 @@ class Plotter:
 
         for x, i in self.index_h(X):
             cs.append(axes[0].contourf(U[n, i, :, :], yz, zy,
-                                       zdir='x', offset=x, levels=self.LEVELS[id], cmap=self.CMAPS[id]))
+                                       zdir="x", offset=x, levels=self.LEVELS[id], cmap=self.CMAPS[id]))
         for y, j in self.index_h(Y):
             cs.append(axes[0].contourf(xz, U[n, :, j, :], zx,
-                                       zdir='y', offset=y, levels=self.LEVELS[id], cmap=self.CMAPS[id]))
+                                       zdir="y", offset=y, levels=self.LEVELS[id], cmap=self.CMAPS[id]))
         for z, k in self.index_h(Z):
             cs.append(axes[0].contourf(xy, yx, U[n, :, :, k],
-                                       zdir='z', offset=z, levels=self.LEVELS[id], cmap=self.CMAPS[id]))
-        cbarlab = f'${id}(x,y,z)$'
+                                       zdir="z", offset=z, levels=self.LEVELS[id], cmap=self.CMAPS[id]))
+        cbarlab = f'${id}(x, y, z)$'
         cbar1 = fig.colorbar(cs[0], ax=axes[0], shrink=0.9)
         cbar1.ax.set_ylabel(cbarlab, fontsize=14)
 
@@ -149,42 +149,42 @@ class Plotter:
             plt.savefig(filename)
         plt.show()
 
-    def singlecross(self, U, t, n, d, axis, id):
-        yz, zy = np.meshgrid(self.y, self.z, indexing='ij')
-        xz, zx = np.meshgrid(self.x, self.z, indexing='ij')
-        xy, yx = np.meshgrid(self.x, self.y, indexing='ij')
+    def singlecross(self, U, t, n, x, d, axis, id):
+        yz, zy = np.meshgrid(self.y, self.z, indexing="ij")
+        xz, zx = np.meshgrid(self.x, self.z, indexing="ij")
+        xy, yx = np.meshgrid(self.x, self.y, indexing="ij")
 
         fig = plt.figure()
         axes = []
         cs = []
-        cbarlab = ''
-        coordlab = ''
+        cbarlab = ""
+        coordlab = ""
 
         axes.append(fig.add_subplot(1, 1, 1))
         plt.title(
-            f'{self.TYPES[id]} distribution @ ${axis}={d:.3g}$ and $t =$ {t:.3g}')
+            f'{self.TYPES[id]} distribution @ ${axis}={x:.3g}$ and $t =$ {t:.3g}')
         if axis == "x":
             cs = [axes[0].contourf(yz, zy, U[n, d, :, :],
                                    levels=self.LEVELS[id], cmap=self.CMAPS[id])]
             plt.xlabel(r"$y$", fontsize=16)
             plt.ylabel(r"$z$", fontsize=16)
-            cbarlab = f'${id}(y,z)$'
+            cbarlab = f'${id}(y, z)$'
         elif axis == "y":
             cs = [axes[0].contourf(xz, zx, U[n, :, d, :],
                                    levels=self.LEVELS[id], cmap=self.CMAPS[id])]
             plt.xlabel(r"$x$", fontsize=16)
             plt.ylabel(r"$z$", fontsize=16)
-            cbarlab = f'${id}(x,z)$'
+            cbarlab = f'${id}(x, z)$'
         elif axis == "z":
             cs = [axes[0].contourf(xy, yx, U[n, :, :, d],
                                    levels=self.LEVELS[id], cmap=self.CMAPS[id])]
             plt.xlabel(r"$x$", fontsize=16)
             plt.ylabel(r"$y$", fontsize=16)
-            cbarlab = f'${id}(x,y)$'
+            cbarlab = f'${id}(x, y)$'
         else:
             raise Exception()
 
-        coordlab = f'{axis}={d:.3g}'
+        coordlab = f'{axis} = {d: .3g}'
         cbar1 = fig.colorbar(cs[0], ax=axes[0], shrink=0.9)
         cbar1.ax.set_ylabel(cbarlab, fontsize=14)
 
@@ -209,22 +209,22 @@ class Plotter:
             fig = plt.figure()
             axes = []
             cs = []
-            cbarlab = ''
-            coordlab = ''
+            cbarlab = ""
+            coordlab = ""
 
             if x is None:
-                yz, zy = np.meshgrid(self.y, self.z, indexing='ij')
+                yz, zy = np.meshgrid(self.y, self.z, indexing="ij")
                 if isinstance(x, list):
                     init_3d(fig, axes)
                     axes[0].text2D(
-                        0.5, 0.95, f"Temperature distribution @ $t =$ {t:.3g}", transform=axes[0].transAxes)
+                        0.5, 0.95, f'Temperature distribution @ $t =$ {t:.3g}', transform=axes[0].transAxes)
                     axes[0].set_xlim3d(x[0], x[len(x) - 1])
                     axes[0].view_init(15, - 107)
                     for x_ in x:
                         i = int(round((x_ / self.dh)))
-                        cs.append(axes[0].contourf(T[n, i, :, :], yz, zy, zdir='x', offset=x_, levels=self.levels_T,
-                                                   cmap=cm.get_cmap('magma')))
-                    cbarlab = r'$T(x,y,z)$'
+                        cs.append(axes[0].contourf(T[n, i, :, :], yz, zy, zdir="x", offset=x_, levels=self.levels_T,
+                                                   cmap=cm.get_cmap("magma")))
+                    cbarlab = r"$T(x,y,z)$"
 
                 else:
                     axes.append(fig.add_subplot(1, 1, 1))
@@ -232,58 +232,58 @@ class Plotter:
                         f'Temperature distribution @ $x={x:.3g}$ and $t =$ {t:.3g}')
                     i = int(round((x_ / self.dh)))
                     cs = [axes[0].contourf(yz, zy, T[n, i, :, :], levels=self.levels_T,
-                                           cmap=cm.get_cmap('magma'))]
+                                           cmap=cm.get_cmap("magma"))]
                     plt.xlabel(r"$y$", fontsize=16)
                     plt.ylabel(r"$z$", fontsize=16)
-                    cbarlab = r'$T(y,z)$'
+                    cbarlab = r"$T(y,z)$"
                     coordlab = f'x={x:.3g}'
             elif y is not None:
-                xz, zx = np.meshgrid(self.x, self.z, indexing='ij')
+                xz, zx = np.meshgrid(self.x, self.z, indexing="ij")
                 if isinstance(y, list):
                     init_3d(fig, axes)
-                    axes[0].text2D(0.5, 0.95, f"Temperature distribution @ $t =$ {t:.3g}",
+                    axes[0].text2D(0.5, 0.95, f'Temperature distribution @ $t =$ {t:.3g}',
                                    transform=axes[0].transAxes)
                     axes[0].set_ylim3d(y[0], y[len(y) - 1])
                     axes[0].view_init(15, - 16)
                     for y_ in y:
                         j = int(round(y_ / self.dh))
-                        cs.append(axes[0].contourf(xz, T[n, :, j, :], zx,  offset=y_, zdir='y', levels=self.levels_T,
-                                                   cmap=cm.get_cmap('magma')))
-                    cbarlab = r'$T(x,y,z)$'
+                        cs.append(axes[0].contourf(xz, T[n, :, j, :], zx,  offset=y_, zdir="y", levels=self.levels_T,
+                                                   cmap=cm.get_cmap("magma")))
+                    cbarlab = r"$T(x,y,z)$"
                 else:
                     axes.append(fig.add_subplot(1, 1, 1))
                     plt.title(
                         f'Temperature distribution @ $y={y:.3g}$ and $t =$ {t:.3g}')
                     j = int(y // self.dh)
                     cs = [axes[0].contourf(xz, zx, T[n, :, j, :], levels=self.LEVELS["T"],
-                                           cmap=cm.get_cmap('magma'))]
+                                           cmap=cm.get_cmap("magma"))]
                     plt.xlabel(r"$x$", fontsize=16)
                     plt.ylabel(r"$z$", fontsize=16)
-                    cbarlab = r'$T(x,z)$'
+                    cbarlab = r"$T(x,z)$"
                     coordlab = f'y={y:.3g}'
             elif z is not None:
-                xy, yx = np.meshgrid(self.x, self.y, indexing='ij')
+                xy, yx = np.meshgrid(self.x, self.y, indexing="ij")
                 if isinstance(z, list):
                     init_3d(fig, axes)
-                    axes[0].text2D(0.5, 0.95, f"Temperature distribution @ $t =$ {t:.3g}",
+                    axes[0].text2D(0.5, 0.95, f'Temperature distribution @ $t =$ {t:.3g}',
                                    transform=axes[0].transAxes)
                     axes[0].set_zlim3d(z[0], z[len(z) - 1])
                     axes[0].view_init(12, - 30)
                     for z_ in z:
                         k = int(round((z_ / self.dh)))
-                        cs.append(axes[0].contourf(xy, yx, T[n, :, :, k], zdir='z', offset=z_, levels=self.levels_T,
-                                                   cmap=cm.get_cmap('magma')))
-                    cbarlab = r'$T(x,y,z)$'
+                        cs.append(axes[0].contourf(xy, yx, T[n, :, :, k], zdir="z", offset=z_, levels=self.levels_T,
+                                                   cmap=cm.get_cmap("magma")))
+                    cbarlab = r"$T(x,y,z)$"
                 else:
                     axes.append(fig.add_subplot(1, 1, 1))
                     plt.title(
                         f'Temperature distribution @ $z={z:.3g}$ and $t =$ {t:.3g}')
                     k = int(z // self.dh)
                     cs = [axes[0].contourf(xy, yx, T[n, :, :, k], levels=self.levels_T,
-                                           cmap=cm.get_cmap('magma'))]
+                                           cmap=cm.get_cmap("magma"))]
                     plt.xlabel(r"$x$", fontsize=16)
                     plt.ylabel(r"$y$", fontsize=16)
-                    cbarlab = r'$T(x,y)$'
+                    cbarlab = r"$T(x,y)$"
                     coordlab = f'z={z:.3g}'
             else:
                 raise Exception("No crossection coordinate given.")
@@ -310,80 +310,80 @@ class Plotter:
             fig = plt.figure()
             axes = []
             cs = []
-            cbarlab = ''
-            coordlab = ''
+            cbarlab = ""
+            coordlab = ""
 
             if x is not None:
-                yz, zy = np.meshgrid(self.y, self.z, indexing='ij')
+                yz, zy = np.meshgrid(self.y, self.z, indexing="ij")
                 if isinstance(x, list):
                     init_3d(fig, axes)
-                    axes[0].text2D(0.5, 0.95, f"Concentration distribution @ $t =$ {t:.3g}",
+                    axes[0].text2D(0.5, 0.95, f'Concentration distribution @ $t =$ {t:.3g}',
                                    transform=axes[0].transAxes)
                     axes[0].set_xlim3d(x[0], x[len(x) - 1])
                     axes[0].view_init(15, - 107)
                     for x_ in x:
                         i = int(round((x_ / self.dh)))
-                        cs.append(axes[0].contourf(C[n, i, :, :], yz, zy, zdir='x', offset=x_, levels=self.levels_C,
-                                                   cmap=cm.get_cmap('viridis')))
-                    cbarlab = r'$C(x,y,z)$'
+                        cs.append(axes[0].contourf(C[n, i, :, :], yz, zy, zdir="x", offset=x_, levels=self.levels_C,
+                                                   cmap=cm.get_cmap("viridis")))
+                    cbarlab = r"$C(x,y,z)$"
                 else:
                     axes.append(fig.add_subplot(1, 1, 1))
                     plt.title(
                         f'Concentration distribution @ $x={x:.3g}$ and $t =$ {t:.3g}')
                     i = int(round((x_ / self.dh)))
                     cs = [axes[0].contourf(yz, zy, C[n, i, :, :], levels=self.levels_C,
-                                           cmap=cm.get_cmap('viridis'))]
+                                           cmap=cm.get_cmap("viridis"))]
                     plt.xlabel(r"$y$", fontsize=16)
                     plt.ylabel(r"$z$", fontsize=16)
-                    cbarlab = r'$C(y,z)$'
+                    cbarlab = r"$C(y,z)$"
                     coordlab = f'x={x:.3g}'
             elif y is not None:
-                xz, zx = np.meshgrid(self.x, self.z, indexing='ij')
+                xz, zx = np.meshgrid(self.x, self.z, indexing="ij")
                 if isinstance(y, list):
                     init_3d(fig, axes)
-                    axes[0].text2D(0.5, 0.95, f"Concentration distribution @ $t =$ {t:.3g}",
+                    axes[0].text2D(0.5, 0.95, f'Concentration distribution @ $t =$ {t:.3g}',
                                    transform=axes[0].transAxes)
                     axes[0].set_ylim3d(y[0], y[len(y) - 1])
                     axes[0].view_init(15, - 16)
                     for y_ in y:
                         j = int(round(y_ / self.dh))
-                        cs.append(axes[0].contourf(xz, C[n, :, j, :], zx,  offset=y_, zdir='y', levels=self.levels_C,
-                                                   cmap=cm.get_cmap('viridis')))
-                    cbarlab = r'$C(x,y,z)$'
+                        cs.append(axes[0].contourf(xz, C[n, :, j, :], zx,  offset=y_, zdir="y", levels=self.levels_C,
+                                                   cmap=cm.get_cmap("viridis")))
+                    cbarlab = r"$C(x,y,z)$"
                 else:
                     axes.append(fig.add_subplot(1, 1, 1))
                     plt.title(
                         f'Concentration distribution @ $y={y:.3g}$ and $t =$ {t:.3g}')
                     j = int(y // self.dh)
                     cs = [axes[0].contourf(xz, zx, C[n, :, j, :], levels=self.levels_C,
-                                           cmap=cm.get_cmap('viridis'))]
+                                           cmap=cm.get_cmap("viridis"))]
                     plt.xlabel(r"$x$", fontsize=16)
                     plt.ylabel(r"$z$", fontsize=16)
-                    cbarlab = r'$C(x,z)$'
+                    cbarlab = r"$C(x,z)$"
                     coordlab = f'y={y:.3g}'
             elif z is not None:
-                xy, yx = np.meshgrid(self.x, self.y, indexing='ij')
+                xy, yx = np.meshgrid(self.x, self.y, indexing="ij")
                 if isinstance(z, list):
                     init_3d(fig, axes)
-                    axes[0].text2D(0.5, 0.95, f"Concentration distribution @ $t =$ {t:.3g}",
+                    axes[0].text2D(0.5, 0.95, f'Concentration distribution @ $t =$ {t:.3g}',
                                    transform=axes[0].transAxes)
                     axes[0].set_zlim3d(z[0], z[len(z) - 1])
                     axes[0].view_init(12, - 30)
                     for z_ in z:
                         k = int(round((z_ / self.dh)))
-                        cs.append(axes[0].contourf(xy, yx, C[n, :, :, k], zdir='z', offset=z_, levels=self.levels_C,
-                                                   cmap=cm.get_cmap('viridis')))
-                    cbarlab = r'$C(x,y,z)$'
+                        cs.append(axes[0].contourf(xy, yx, C[n, :, :, k], zdir="z", offset=z_, levels=self.levels_C,
+                                                   cmap=cm.get_cmap("viridis")))
+                    cbarlab = r"$C(x,y,z)$"
                 else:
                     axes.append(fig.add_subplot(1, 1, 1))
                     plt.title(
                         f'Concentration distribution @ $z={z:.3g}$ and $t =$ {t:.3g}')
                     k = int(z // self.dh)
                     cs = [axes[0].contourf(xy, yx, C[n, :, :, k], levels=self.levels_C,
-                                           cmap=cm.get_cmap('viridis'))]
+                                           cmap=cm.get_cmap("viridis"))]
                     plt.xlabel(r"$x$", fontsize=16)
                     plt.ylabel(r"$y$", fontsize=16)
-                    cbarlab = r'$C(x,y)$'
+                    cbarlab = r"$C(x,y)$"
                     coordlab = f'z={z:.3g}'
             else:
                 raise Exception("No crossection coordinate given.")
@@ -417,14 +417,14 @@ class Plotter:
 
     def get_mode(self, X, Y, Z):
         if type(X) == int or type(X) == float:
-            return "S", (round(X/self.dh), "x")
+            return "S", (X, round(X/self.dh), "x")
         if type(Y) == int or type(Y) == float:
-            return "S", (round(Y/self.dh), "y")
+            return "S", (Y, round(Y/self.dh), "y")
         if type(Z) == int or type(Z) == float:
-            return "S", (round(Z/self.dh), "z")
+            return "S", (Z, round(Z/self.dh), "z")
         return "M", None
 
     def set_latex(self, usetex):
         # Latex font rendering
-        rc('font', **{'family': 'serif', 'serif': ['Palatino']})
-        rc('text', usetex=usetex)
+        rc("font", **{"family": "serif", "serif": ["Palatino"]})
+        rc("text", usetex=usetex)

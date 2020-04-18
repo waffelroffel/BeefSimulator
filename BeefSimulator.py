@@ -349,16 +349,16 @@ class BeefSimulator:
 
     # -------------------- Plotter --------------------
 
-    def plot(self, t, id, x=None, y=None, z=None, multi=False):
+    def plot(self, t, id, x=[], y=[], z=[], multi=False):
         """
         Plot the current state
         param id: Either 'T' or 'C'
         params x, y, z: perpendicular cross-section of beef to plot.
         """
         if id == 'T':
-            self.plotter.show_heat_map(self.T_data, t, id, x, y, z, multi)
+            self.plotter.show_heat_map(self.T_data, id, t, x, y, z)
         elif id == 'C':
-            self.plotter.show_heat_map(self.C_data, t, id, x, y, z, multi)
+            self.plotter.show_heat_map(self.C_data, id, t, x, y, z)
         else:
             raise ValueError(
                 'Trying to aquire a quantity that does not exist.')
