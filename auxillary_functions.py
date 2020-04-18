@@ -73,7 +73,7 @@ def dotND(A: np.array, B: np.array, axis=0):
 
 
 def f_func(T: float) -> float:
-    if T >= 100:
+    if T.any() >= 100:
         return 0
     else:
         return co.f
