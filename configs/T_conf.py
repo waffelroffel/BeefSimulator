@@ -4,6 +4,7 @@
 import numpy as np
 import constants as c
 from auxillary_functions import u_w
+from auxillary_functions import f_func
 
 
 def T_initial(T, C, shape, xx, yy, zz, t):
@@ -44,7 +45,7 @@ def T_gamma(T, C, shape, xx, yy, zz, t):
     # temp[:,:,0] *= c.h_plate / c.h_air ## No; assume heat transfer is material independent
     temp[-1,:,:] = 0
     temp[:,-1,:] = 0
-    return temp.flatten() * (1 - c.f) * c.h * (c.T_oven - T)
+    return temp.flatten() * (1 - f_func(T)) * c.h * (c.T_oven - T)
 
 
 def T_uw(T, C, I, J, K, dh):

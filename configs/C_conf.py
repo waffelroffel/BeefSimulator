@@ -4,6 +4,7 @@
 import numpy as np
 from auxillary_functions import u_w, C_eq
 import constants as c
+from auxillary_functions import f_func
 
 
 def C(xx, yy, zz, t):
@@ -52,7 +53,7 @@ def C_gamma(T, C, shape, xx, yy, zz, t):
     # Symmetric B.C.
     temp[-1,:,:] = 0
     temp[:,-1,:] = 0
-    return temp.flatten() * c.f * c.h * (c.T_oven - T)/(c.H_evap * c.rho_w) * (C - C_eq(T))
+    return temp.flatten() * f_func(T) * c.h * (c.T_oven - T)/(c.H_evap * c.rho_w) * (C - C_eq(T))
     
 
 
