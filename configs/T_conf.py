@@ -54,5 +54,5 @@ T_conf = {
     "uw": uw,
     "bnd_types": T_bnd_types,
     "initial": T_initial,
-    "analytic": T
+    # "analytic": T
 }

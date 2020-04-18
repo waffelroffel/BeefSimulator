@@ -72,5 +72,5 @@ C_conf = {
     "uw": C_uw,
     "bnd_types": C_bnd_types,
     "initial": C_initial,
-    "analytic": C
+    # "analytic": C
 }

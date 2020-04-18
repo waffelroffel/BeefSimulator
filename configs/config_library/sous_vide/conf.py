@@ -55,5 +55,6 @@ conf = {
         "zn": zn,
     },
     "logging": logging,
-    "folder": folder
+    "folder": folder,
+    "t_jump": t_jump
 }
