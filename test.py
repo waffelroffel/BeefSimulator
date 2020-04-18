@@ -28,9 +28,6 @@ if __name__ == "__main__":
     
     print(bs.T0)
     # print(analytic)
-    
     """
     np.savetxt("test.csv", bs.T0)
-    """
-    np.savetxt("analytic.csv", analytic)
-    """
+    #np.savetxt("analytic.csv", analytic)

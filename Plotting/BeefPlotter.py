@@ -40,9 +40,9 @@ class Plotter:
         self.t_jump = beefsim.t_jump
         self.dt = beefsim.dt
         self.dh = beefsim.dh
-        # TODO: not garanteed to get min max from first timestep
+        # TODO: not guaranteed to get min max from first timestep
         # np.min(beefsim.T0), np.max(beefsim.T0)
-        self.vmin_T, self.vmax_T = 12.9999, 13.0001
+        self.vmin_T, self.vmax_T = 12, 14
         # np.min(beefsim.C0), np.max(beefsim.C0)
         self.vmin_C, self.vmax_C = 10, 50
 
@@ -341,13 +341,13 @@ class Plotter:
 
         for x, i in self.index_h(X):
             cs.append(axes[0].contourf(U[n, i, :, :], yz, zy,
-                                       levels=levels, zdir='x', offset=x, cmap=cm.get_cmap('RdBu')))
+                                       levels=levels, zdir='x', offset=x, cmap=cm.get_cmap('magma')))
         for y, j in self.index_h(Y):
             cs.append(axes[0].contourf(xz, U[n, :, j, :], zx,
-                                       levels=levels, zdir='y', offset=y, cmap=cm.get_cmap('RdBu')))
+                                       levels=levels, zdir='y', offset=y, cmap=cm.get_cmap('magma')))
         for z, k in self.index_h(Z):
             cs.append(axes[0].contourf(xy, yx, U[n, :, :, k],
-                                       levels=levels, zdir='z', offset=z, cmap=cm.get_cmap('RdBu')))
+                                       levels=levels, zdir='z', offset=z, cmap=cm.get_cmap('magma')))
         cbarlab = r'$T(x,y,z)$'
         cbar1 = fig.colorbar(cs[0], ax=axes[0], shrink=0.9)
         cbar1.ax.set_ylabel(cbarlab, fontsize=14)
