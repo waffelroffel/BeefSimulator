@@ -16,7 +16,7 @@ dh = 1e-3
 dt = 1e-4
 
 # -1: only the last
-t_jump = 1e4 # Save progress each full second
+t_jump = 10000 # Save progress each full second
 
 t0 = 0
 tlen = 10
