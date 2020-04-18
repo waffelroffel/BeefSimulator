@@ -17,6 +17,13 @@ def init_3d(fig, axes):
 
 
 class Plotter:
+    MODES = {"S", "M"}
+    IDS = {"T", "C"}
+    CMAPS = {"T": cm.get_cmap('magma'),
+             "C": cm.get_cmap('viridis')}
+    TYPES = {"T": "Temperature",
+             "C": "Concentration"}
+
     def __init__(self, beefsim=None, name='untitled', save_fig=False):
         """
         beefsim: A BeefSimulator object with axis and stepping data for plotting.
@@ -28,10 +35,14 @@ class Plotter:
         else:
             self.load_from_class(beefsim)
 
-        self.levels_T = np.linspace(self.vmin_T, self.vmax_T, 65)
-        self.levels_C = np.linspace(self.vmin_C, self.vmax_C, 65)
+        levels_T = np.linspace(self.vmin_T, self.vmax_T, 65)
+        levels_C = np.linspace(self.vmin_C, self.vmax_C, 65)
+        self.LEVELS = {"T": levels_T, "C": levels_C}
         self.name = name
         self.save_fig = save_fig
+
+        self.MODES = {"S": self.singlecross,
+                      "M": self.multicross}
 
     def load_from_class(self, beefsim):
         self.t = beefsim.t
@@ -70,27 +81,117 @@ class Plotter:
             temp_path, dtype="float64", mode="r", shape=shape)
         self.C_data = np.memmap(
             cons_path, dtype="float64", mode="r", shape=shape)
-        self.vmin_T = np.min(self.T_data[0])
-        self.vmax_T = np.max(self.T_data[0])
-        self.vmin_C = np.min(self.C_data[0])
-        self.vmax_C = np.max(self.C_data[0])
+        self.vmin_T = np.min(self.T_data)
+        self.vmax_T = np.max(self.T_data)
+        self.vmin_C = np.min(self.C_data)
+        self.vmax_C = np.max(self.C_data)
 
     def show_heat_map2(self, t, id, x=None, y=None, z=None):
         U_data = self.T_data if id == "T" else self.C_data
         self.show_heat_map(U_data, t, id, x, y, z)
 
-    def show_heat_map(self, U_data, t, id, x=None, y=None, z=None, multi=False):
-        if id == 'T':
-            if multi:
-                self.multicross(U_data, t, x, y, z)
-            else:
-                self.__shm_temp(U_data, t, x, y, z)
-        elif id == 'C':
-            self.__shm_cons(U_data, t, x, y, z)
-        else:
+    def show_heat_map(self, U, id, T, X=[], Y=[], Z=[]):
+        if id not in self.IDS:
             raise ValueError(
                 'Trying to aquire a quantity that does not exist.')
+        mode, extra = self.get_mode(X, Y, Z)
 
+        if mode not in self.MODES:
+            raise Exception("Invalid mode given")
+
+        for t, n in self.index_t(T):
+            if mode == "S":
+                self.singlecross(U, t, n, extra[0], extra[1], id)
+            elif mode == "M":
+                self.multicross((U, t, n, X, Y, Z, id))
+            else:
+                raise Exception("Mode not implemented!")
+
+    def multicross(self, U, t, n, X, Y, Z, id):
+        yz, zy = np.meshgrid(self.y, self.z, indexing='ij')
+        xz, zx = np.meshgrid(self.x, self.z, indexing='ij')
+        xy, yx = np.meshgrid(self.x, self.y, indexing='ij')
+
+        fig = plt.figure()
+        axes = []
+        cs = []
+        cbarlab = ''
+        coordlab = ''
+
+        init_3d(fig, axes)
+        axes[0].text2D(
+            0.5, 0.95, f"{self.TYPES[id]} distribution @ $t =$ {t:.3g}", transform=axes[0].transAxes)
+
+        axes[0].set_xlim3d(self.x[0], self.x[-1])
+        axes[0].set_ylim3d(self.y[0], self.y[-1])
+        axes[0].set_zlim3d(self.z[0], self.z[-1])
+
+        for x, i in self.index_h(X):
+            cs.append(axes[0].contourf(U[n, i, :, :], yz, zy,
+                                       zdir='x', offset=x, levels=self.LEVELS[id], cmap=self.CMAPS[id]))
+        for y, j in self.index_h(Y):
+            cs.append(axes[0].contourf(xz, U[n, :, j, :], zx,
+                                       zdir='y', offset=y, levels=self.LEVELS[id], cmap=self.CMAPS[id]))
+        for z, k in self.index_h(Z):
+            cs.append(axes[0].contourf(xy, yx, U[n, :, :, k],
+                                       zdir='z', offset=z, levels=self.LEVELS[id], cmap=self.CMAPS[id]))
+        cbarlab = f'${id}(x,y,z)$'
+        cbar1 = fig.colorbar(cs[0], ax=axes[0], shrink=0.9)
+        cbar1.ax.set_ylabel(cbarlab, fontsize=14)
+
+        plt.tight_layout()
+        if self.save_fig:
+            filename = self.name.joinpath(
+                f'{self.TYPES[id]}_{coordlab}_t={t:.3g}.pdf')
+            plt.savefig(filename)
+        plt.show()
+
+    def singlecross(self, U, t, n, d, axis, id):
+        yz, zy = np.meshgrid(self.y, self.z, indexing='ij')
+        xz, zx = np.meshgrid(self.x, self.z, indexing='ij')
+        xy, yx = np.meshgrid(self.x, self.y, indexing='ij')
+
+        fig = plt.figure()
+        axes = []
+        cs = []
+        cbarlab = ''
+        coordlab = ''
+
+        axes.append(fig.add_subplot(1, 1, 1))
+        plt.title(
+            f'{self.TYPES[id]} distribution @ ${axis}={d:.3g}$ and $t =$ {t:.3g}')
+        if axis == "x":
+            cs = [axes[0].contourf(yz, zy, U[n, d, :, :],
+                                   levels=self.LEVELS[id], cmap=self.CMAPS[id])]
+            plt.xlabel(r"$y$", fontsize=16)
+            plt.ylabel(r"$z$", fontsize=16)
+            cbarlab = f'${id}(y,z)$'
+        elif axis == "y":
+            cs = [axes[0].contourf(xz, zx, U[n, :, d, :],
+                                   levels=self.LEVELS[id], cmap=self.CMAPS[id])]
+            plt.xlabel(r"$x$", fontsize=16)
+            plt.ylabel(r"$z$", fontsize=16)
+            cbarlab = f'${id}(x,z)$'
+        elif axis == "z":
+            cs = [axes[0].contourf(xy, yx, U[n, :, :, d],
+                                   levels=self.LEVELS[id], cmap=self.CMAPS[id])]
+            plt.xlabel(r"$x$", fontsize=16)
+            plt.ylabel(r"$y$", fontsize=16)
+            cbarlab = f'${id}(x,y)$'
+        else:
+            raise Exception()
+
+        coordlab = f'{axis}={d:.3g}'
+        cbar1 = fig.colorbar(cs[0], ax=axes[0], shrink=0.9)
+        cbar1.ax.set_ylabel(cbarlab, fontsize=14)
+
+        plt.tight_layout()
+        if self.save_fig:
+            filename = self.name.joinpath(
+                f'{self.TYPES[id]}__{coordlab}_t={t:.3g}.pdf')
+            plt.savefig(filename)
+        plt.show()
+    """
     def __shm_temp(self, U_data, t, x=None, y=None, z=None):
         T = U_data
 
@@ -108,7 +209,7 @@ class Plotter:
             cbarlab = ''
             coordlab = ''
 
-            if x is not None:
+            if x is None:
                 yz, zy = np.meshgrid(self.y, self.z, indexing='ij')
                 if isinstance(x, list):
                     init_3d(fig, axes)
@@ -151,7 +252,7 @@ class Plotter:
                     plt.title(
                         f'Temperature distribution @ $y={y:.3g}$ and $t =$ {t:.3g}')
                     j = int(y // self.dh)
-                    cs = [axes[0].contourf(xz, zx, T[n, :, j, :], levels=self.levels_T,
+                    cs = [axes[0].contourf(xz, zx, T[n, :, j, :], levels=self.LEVELS["T"],
                                            cmap=cm.get_cmap('magma'))]
                     plt.xlabel(r"$x$", fontsize=16)
                     plt.ylabel(r"$z$", fontsize=16)
@@ -222,7 +323,6 @@ class Plotter:
                         cs.append(axes[0].contourf(C[n, i, :, :], yz, zy, zdir='x', offset=x_, levels=self.levels_C,
                                                    cmap=cm.get_cmap('viridis')))
                     cbarlab = r'$C(x,y,z)$'
-
                 else:
                     axes.append(fig.add_subplot(1, 1, 1))
                     plt.title(
@@ -294,6 +394,7 @@ class Plotter:
                     f'consmap_{coordlab}_t={t:.3g}.pdf')
                 plt.savefig(filename)
             plt.show()
+    """
 
     def convert_to_array(self, A):
         if isinstance(A, np.ndarray):
@@ -311,100 +412,16 @@ class Plotter:
         X = self.convert_to_array(X)
         return zip(X, (X/self.dh).round().astype(int))
 
-    def multicross(self, U, T, X, Y, Z):
-        for t, n in self.index_t(T):
-            self._multicross(U, t, n, X, Y, Z)
-
-    def _multicross(self, U, t, n, X, Y, Z):
-        # TODO: move outside
-        # change cmap color pallett
-        yz, zy = np.meshgrid(self.y, self.z, indexing='ij')
-        xz, zx = np.meshgrid(self.x, self.z, indexing='ij')
-        xy, yx = np.meshgrid(self.x, self.y, indexing='ij')
-
-        fig = plt.figure()
-        axes = []
-        cs = []
-        cbarlab = ''
-        coordlab = ''
-
-        init_3d(fig, axes)
-        axes[0].text2D(
-            0.5, 0.95, f"Temperature distribution @ $t =$ {t:.3g}", transform=axes[0].transAxes)
-
-        axes[0].set_xlim3d(self.x[0], self.x[-1])
-        axes[0].set_ylim3d(self.y[0], self.y[-1])
-        axes[0].set_zlim3d(self.z[0], self.z[-1])
-
-        for x, i in self.index_h(X):
-            cs.append(axes[0].contourf(U[n, i, :, :], yz, zy,
-                                       levels=self.levels_T, zdir='x', offset=x, cmap=cm.get_cmap('RdBu')))
-        for y, j in self.index_h(Y):
-            cs.append(axes[0].contourf(xz, U[n, :, j, :], zx,
-                                       levels=self.levels_T, zdir='y', offset=y, cmap=cm.get_cmap('RdBu')))
-        for z, k in self.index_h(Z):
-            cs.append(axes[0].contourf(xy, yx, U[n, :, :, k],
-                                       levels=self.levels_T, zdir='z', offset=z, cmap=cm.get_cmap('RdBu')))
-        cbarlab = r'$T(x,y,z)$'
-        cbar1 = fig.colorbar(cs[0], ax=axes[0], shrink=0.9)
-        cbar1.ax.set_ylabel(cbarlab, fontsize=14)
-
-        plt.tight_layout()
-        if self.save_fig:
-            filename = self.name.joinpath(
-                f'tempmap_{coordlab}_t={t:.3g}.pdf')
-            plt.savefig(filename)
-        plt.show()
+    def get_mode(self, X, Y, Z):
+        if type(X) == int or type(X) == float:
+            return "S", (round(X/self.dh), "x")
+        if type(Y) == int or type(Y) == float:
+            return "S", (round(Y/self.dh), "y")
+        if type(Z) == int or type(Z) == float:
+            return "S", (round(Z/self.dh), "z")
+        return "M", None
 
     def set_latex(self, usetex):
         # Latex font rendering
         rc('font', **{'family': 'serif', 'serif': ['Palatino']})
         rc('text', usetex=usetex)
-
-
-'''
-class Animation:
-    def __init__(self, system, duration_irl, duration, fps):
-        self.system = system
-        self.duration_irl = duration_irl
-        self.duration = duration
-        self.fps = fps
-        self.cut_n = int(duration/system.dt/duration_irl/fps)
-
-        # Set up the figure and axes
-        self.fig, self.ax1 = plt.subplots()
-
-        # Initialize the line object
-        self.line, = self.ax1.plot(
-            [], [], lw=1.0, color='g', label=r"")
-
-        # Set limits and labels for the axes
-        # self.ax1.set_xlim(left=0, right=)
-        # self.ax1.set_ylim(bottom=-1, top=1)
-        self.ax1.grid()
-
-        # Actually do the animation
-        self.anim = animation.FuncAnimation(self.fig, self.animate, repeat=False, frames=int(self.fps * self.duration_irl),
-                                            interval=1000 / self.fps, blit=False)
-        self.filename = "default.mp4"
-
-    def animate(self, i):
-        print(i, "out of", self.fps * self.duration_irl)
-        # Math that gets recalculated each iteration
-        if (i != 0):
-            for j in range(self.cut_n):
-                self.system.calc_next()
-
-        # Assigning the line object a set of values
-        self.lines[0].set_data(self.system.x, self.system.reArrEven)
-
-
-        # Uncomment the following line to save a hi-res version of each frame (mind the filenames though, they'll overwrite each other)
-        # plt.savefig('test.png',format='png',dpi=600)
-
-        return self.lines
-
-    def run_no_threading(self):
-        self.anim.save(self.filename, fps=self.fps, extra_args=[
-                       '-vcodec', 'libx264'], dpi=200, bitrate=-1)
-'''
