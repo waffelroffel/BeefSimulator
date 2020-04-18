@@ -1,5 +1,5 @@
-## T_conf
-## conv_oven
+# T_conf
+# conv_oven
 
 import numpy as np
 import constants as c
@@ -8,34 +8,34 @@ from auxillary_functions import f_func
 
 
 def T_initial(T, C, shape, xx, yy, zz, t):
-    return c.T_init * np.ones(xx.size)
+    return c.T_init
 
 
 def T_a(T, C, shape, xx, yy, zz, t):
-    return c.rho_m * c.cp_m * np.ones(xx.size)
+    return c.rho_m * c.cp_m
 
 
 def T_b(T, C, shape, xx, yy, zz, t):
-    return c.k_m * np.ones(xx.size)
+    return c.k_m
 
 
 def T_c(T, C, shape, xx, yy, zz, t):
-    return - c.rho_w * c.cp_w * np.ones(xx.size)
+    return - c.rho_w * c.cp_w
 
 
 def T_alpha(T, C, shape, xx, yy, zz, t):
     temp = -c.k_m * np.ones(shape)
     # Symmetric B.C.
-    temp[-1,:,:] = 1
-    temp[:,-1,:] = 1
+    temp[-1, :, :] = 1
+    temp[:, -1, :] = 1
     return temp.flatten()
 
 
 def T_beta(T, C, shape, xx, yy, zz, t):
     temp = - c.cp_w * c.rho_w * np.ones(shape)
     # Symmetric B.C.
-    temp[-1,:,:] = 0
-    temp[:,-1,:] = 0
+    temp[-1, :, :] = 0
+    temp[:, -1, :] = 0
     return temp.flatten()
 
 
@@ -43,8 +43,8 @@ def T_gamma(T, C, shape, xx, yy, zz, t):
     temp = np.ones(shape)
     # Bottom has a different heat transfer than the rest
     # temp[:,:,0] *= c.h_plate / c.h_air ## No; assume heat transfer is material independent
-    temp[-1,:,:] = 0
-    temp[:,-1,:] = 0
+    temp[-1, :, :] = 0
+    temp[:, -1, :] = 0
     return temp.flatten() * (1 - f_func(T)) * c.h * (c.T_oven - T)
 
 

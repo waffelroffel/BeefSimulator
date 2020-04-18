@@ -40,8 +40,11 @@ class Plotter:
         self.t_jump = beefsim.t_jump
         self.dt = beefsim.dt
         self.dh = beefsim.dh
-        self.vmin_T, self.vmax_T = np.min(beefsim.T0), np.max(beefsim.T0)
-        self.vmin_C, self.vmax_C = np.min(beefsim.C0), np.max(beefsim.C0)
+        # TODO: not guaranteed to get min max from first timestep
+        # np.min(beefsim.T0), np.max(beefsim.T0)
+        self.vmin_T, self.vmax_T = 12, 14
+        # np.min(beefsim.C0), np.max(beefsim.C0)
+        self.vmin_C, self.vmax_C = 10, 50
 
     def load_from_file(self, path: Path):
         if not isinstance(path, Path):
@@ -81,11 +84,14 @@ class Plotter:
     def show_heat_map(self, U_data, t, id, x=None, y=None, z=None, multi=False):
         if id == 'T':
             if multi:
-                self.multicross(U_data, t, x, y, z)
+                self.multicross(U_data, t, x, y, z, self.levels_T)
             else:
                 self.__shm_temp(U_data, t, x, y, z)
         elif id == 'C':
-            self.__shm_cons(U_data, t, x, y, z)
+            if multi:
+                self.multicross(U_data, t, x, y, z, self.levels_C)
+            else:
+                self.__shm_cons(U_data, t, x, y, z)
         else:
             raise ValueError(
                 'Trying to aquire a quantity that does not exist.')
@@ -308,11 +314,11 @@ class Plotter:
         X = self.convert_to_array(X)
         return zip(X, (X/self.dh).round().astype(int))
 
-    def multicross(self, U, T, X, Y, Z):
+    def multicross(self, U, T, X, Y, Z, levels):
         for t, n in self.index_t(T):
-            self._multicross(U, t, n, X, Y, Z)
+            self._multicross(U, t, n, X, Y, Z, levels)
 
-    def _multicross(self, U, t, n, X, Y, Z):
+    def _multicross(self, U, t, n, X, Y, Z, levels):
         # TODO: move outside
         # change cmap color pallett
         yz, zy = np.meshgrid(self.y, self.z, indexing='ij')
@@ -335,13 +341,13 @@ class Plotter:
 
         for x, i in self.index_h(X):
             cs.append(axes[0].contourf(U[n, i, :, :], yz, zy,
-                                       levels=self.levels_T, zdir='x', offset=x, cmap=cm.get_cmap('RdBu')))
+                                       levels=levels, zdir='x', offset=x, cmap=cm.get_cmap('magma')))
         for y, j in self.index_h(Y):
             cs.append(axes[0].contourf(xz, U[n, :, j, :], zx,
-                                       levels=self.levels_T, zdir='y', offset=y, cmap=cm.get_cmap('RdBu')))
+                                       levels=levels, zdir='y', offset=y, cmap=cm.get_cmap('magma')))
         for z, k in self.index_h(Z):
             cs.append(axes[0].contourf(xy, yx, U[n, :, :, k],
-                                       levels=self.levels_T, zdir='z', offset=z, cmap=cm.get_cmap('RdBu')))
+                                       levels=levels, zdir='z', offset=z, cmap=cm.get_cmap('magma')))
         cbarlab = r'$T(x,y,z)$'
         cbar1 = fig.colorbar(cs[0], ax=axes[0], shrink=0.9)
         cbar1.ax.set_ylabel(cbarlab, fontsize=14)

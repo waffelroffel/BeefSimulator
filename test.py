@@ -14,7 +14,9 @@ if __name__ == "__main__":
     #np.savetxt("final.csv", bs.T0)
 
     tt = np.linspace(conf["t0"], conf["tn"], 11)
-    bs.plot(tt, 'T', x=[], y=[], z=[0, 0.025, 0.05], multi=True)
+
+    bs.plot(0, 'T', x=[0.01], y=[0.01], z=[0.01], multi=True)
+
     """
     dims = conf["dims"]
     x = np.linspace(dims["x0"], dims["xn"], int(dims["xlen"]/conf["dh"])+1)
@@ -25,10 +27,9 @@ if __name__ == "__main__":
     T = T_conf["analytic"]
     analytic = T(xx, yy, zz, conf["tn"]).flatten()
     analytic[bs.d_bnd_indices] = 0
-
+    
     print(bs.T0)
-    print(analytic)
-
-    np.savetxt("test.csv", bs.T0)
-    np.savetxt("analytic.csv", analytic)
+    # print(analytic)
     """
+    np.savetxt("test.csv", bs.T0)
+    #np.savetxt("analytic.csv", analytic)
