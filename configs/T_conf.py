@@ -1,48 +1,59 @@
+## T_conf
+## conv_oven
+
 import numpy as np
+import constants as c
 from auxillary_functions import u_w
 
-alp = 0.01  # 0.125e-6
+
+def T_initial(T, C, shape, xx, yy, zz, t):
+    return c.T_init * np.ones(xx.size)
 
 
-def T(xx, yy, zz, t):
-    return 3 * np.exp(-4*alp*(np.pi)**2*(1+1+4) * t) * \
-        np.sin(2*np.pi * xx) * np.sin(2*np.pi * yy) * np.sin(4*np.pi * zz)
+def T_a(T, C, shape, xx, yy, zz, t):
+    return c.rho_m * c.cp_m * np.ones(xx.size)
 
 
-def T_initial(xx, yy, zz, t):
-    return T(xx, yy, zz, t)
+def T_b(T, C, shape, xx, yy, zz, t):
+    return c.k_m * np.ones(xx.size)
 
 
-def T_a(xx, yy, zz, t):
-    return np.ones(xx.size)/alp
+def T_c(T, C, shape, xx, yy, zz, t):
+    return - c.rho_w * c.cp_w * u_w * np.ones(xx.size)
 
 
-def T_b(xx, yy, zz, t):
-    return 1
+def T_alpha(T, C, shape, xx, yy, zz, t):
+    temp = -c.k_m * np.ones(xx.shape)
+    # Symmetric B.C.
+    temp[-1,:,:] = 1
+    temp[:,-1,:] = 1
+    return temp.flatten()
 
 
-def T_c(xx, yy, zz, t):
-    return np.zeros(xx.size)
+def T_beta(T, C, shape, xx, yy, zz, t):
+    temp = - c.cp_w * c.rho_w * np.ones(xx.shape)
+    # Symmetric B.C.
+    temp[-1,:,:] = 0
+    temp[:,-1,:] = 0
+    return temp.flatten()
 
 
-def T_alpha(xx, yy, zz, t):
-    return 0
+def T_gamma(T, C, shape, xx, yy, zz, t):
+    temp = (1 - c.f) * c.h * (c.T_oven - T)
+    # Bottom has a different heat transfer than the rest
+    # temp[:,:,0] *= c.h_plate / c.h_air ## No; assume heat transfer is material independent
+    temp[-1,:,:] = 0
+    temp[:,-1,:] = 0
+    return temp.flatten()
 
 
-def T_beta(xx, yy, zz, t):
-    return np.ones(xx.size)
-
-
-def T_gamma(xx, yy, zz, t):
-    return np.zeros(xx.size)
-
-
-def uw(T, C, I, J, K, dh):
+def T_uw(T, C, I, J, K, dh):
     u = u_w(T.reshape((I, J, K)), C.reshape((I, J, K)), dh)
     return u.reshape((3, -1)).T
 
 
-T_bnd_types = ["d", "d", "d", "d", "d", "d"]
+#T_bnd_types = ["n", "r", "n", "r", "r", "r"]
+T_bnd_types = []
 
 T_conf = {
     "pde": {"a": T_a,

@@ -38,7 +38,6 @@ def T_beta(T, C, shape, xx, yy, zz, t):
     return temp.flatten()
 
 
-
 def T_gamma(T, C, shape, xx, yy, zz, t):
     temp = (1 - c.f) * c.h * (c.T_oven - T)
     # Bottom has a different heat transfer than the rest

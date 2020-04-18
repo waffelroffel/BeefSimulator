@@ -1,37 +1,57 @@
+## C_conf
+## conv_oven
+
 import numpy as np
-from auxillary_functions import u_w
+from auxillary_functions import u_w, C_eq
 
 
 def C(xx, yy, zz, t):
     return 1
 
 
-def C_initial(xx, yy, zz, t):
-    return C(xx, yy, zz, t)
+def C_initial(T, C, shape, xx, yy, zz, t):
+    return 0.75 * np.ones(xx.size) # kg water/kg beef
 
-
-def C_a(xx, yy, zz, t):
+def C_a(T, C, shape, xx, yy, zz, t):
     return np.ones(xx.size)
 
 
-def C_b(xx, yy, zz, t):
-    return np.ones(xx.size)
+def C_b(T, C, shape, xx, yy, zz, t):
+    return - u_w * np.ones(xx.size)
 
 
-def C_c(xx, yy, zz, t):
-    return np.zeros(xx.size)
+def C_c(T, C, shape, xx, yy, zz, t):
+    return c.D * np.ones(xx.size)
 
 
-def C_alpha(xx, yy, zz, t):
-    return np.zeros(xx.size)
+def C_alpha(T, C, shape, xx, yy, zz, t):
+    temp = - c.D * np.ones(xx.size)
+    # No flux through bottom
+    temp[:,:,0] = 1
+    # Symmetric B.C.
+    temp[-1,:,:] = 1
+    temp[:,-1,:] = 1
+    return temp.flatten()
 
 
-def C_beta(xx, yy, zz, t):
-    return np.ones(xx.size)
+def C_beta(T, C, shape, xx, yy, zz, t):
+    temp = 1 * np.ones(xx.shape)
+    # No flux through bottom
+    temp[:,:,0] = 0
+    # Symmetric B.C.
+    temp[-1,:,:] = 0
+    temp[:,-1,:] = 0
+    return temp.flatten()
 
 
-def C_gamma(xx, yy, zz, t):
-    return np.zeros(xx.size)
+def C_gamma(T, C, shape, xx, yy, zz, t):
+    temp = c.f * c.h * (c.T_oven - T)/(c.H_evp * c.rho_w) * (C - C_eq(T))
+    # No flux through bottom
+    temp[:,:,0] = 0
+    # Symmetric B.C.
+    temp[-1,:,:] = 0
+    temp[:,-1,:] = 0
+    return temp.flatten()
 
 
 def C_uw(T, C, I, J, K, dh):
@@ -39,7 +59,7 @@ def C_uw(T, C, I, J, K, dh):
     return u.reshape((3, -1)).T
 
 
-C_bnd_types = []
+C_bnd_types = ['n', 'n', 'n', 'n', 'd', 'n']
 
 
 C_conf = {

@@ -112,17 +112,19 @@ class BeefSimulator:
 
         self.uw = T_conf["uw"] or C_conf["uw"]
 
-    def setup_mesh(self, conf, T_conf, C_conf):
-        xx, yy, zz = np.meshgrid(self.x, self.y, self.z)
-        self.ii = [xx, yy, zz, self.t[0]]
-
-    def setup_files(self, conf, T_conf, C_conf):
         self.T1 = np.zeros(self.num_nodes)
         self.T0 = np.zeros(self.num_nodes)
-        self.T0[...] = self.T_initial(self.ii)
-
         self.C1 = np.zeros(self.num_nodes)
         self.C0 = np.zeros(self.num_nodes)
+
+    def setup_mesh(self, conf, T_conf, C_conf):
+        xx, yy, zz = np.meshgrid(self.x, self.y, self.z)
+        self.ii = [self.T0, self.C0, self.space, xx, yy, zz, self.t[0]]
+
+    def setup_files(self, conf, T_conf, C_conf):
+
+        self.T0[...] = self.T_initial(self.ii)
+
         self.C0[...] = self.C_initial(self.ii)
 
         self.path = Path("data").joinpath(conf["folder"])
