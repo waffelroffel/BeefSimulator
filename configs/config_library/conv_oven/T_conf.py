@@ -19,7 +19,7 @@ def T_b(T, C, shape, xx, yy, zz, t):
 
 
 def T_c(T, C, shape, xx, yy, zz, t):
-    return - c.rho_w * c.cp_w * u_w * np.ones(xx.size)
+    return - c.rho_w * c.cp_w * np.ones(xx.size)
 
 
 def T_alpha(T, C, shape, xx, yy, zz, t):

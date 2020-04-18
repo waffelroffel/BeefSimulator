@@ -17,7 +17,7 @@ def C_a(T, C, shape, xx, yy, zz, t):
 
 
 def C_b(T, C, shape, xx, yy, zz, t):
-    return - u_w * np.ones(xx.size)
+    return - np.ones(xx.size)
 
 
 def C_c(T, C, shape, xx, yy, zz, t):
