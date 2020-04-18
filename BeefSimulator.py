@@ -133,12 +133,17 @@ class BeefSimulator:
         self.save_header(conf)
 
         self.T_file = self.path.joinpath("T.dat")
-        self.T_data = np.memmap(
-            self.T_file, dtype="float64", mode="r+", shape=self.shape)
-
         self.C_file = self.path.joinpath("C.dat")
+
+        if (self.T_file.exists() or self.C_file.exists()):
+            raise Exception(
+                "Data for T and/or C already exists! Delete them or define a new directory in configuration.")
+
+        self.T_data = np.memmap(
+            self.T_file, dtype="float64", mode="w+", shape=self.shape)
+
         self.C_data = np.memmap(
-            self.C_file, dtype="float64", mode="r+", shape=self.shape)
+            self.C_file, dtype="float64", mode="w+", shape=self.shape)
 
     def setup_additionals(self, conf, T_conf, C_conf):
         self.plotter = BP.Plotter(self, name=Path(
@@ -191,14 +196,6 @@ class BeefSimulator:
         Iterate through from t0 -> tn
         solve for both temp. and conc.
         """
-
-        del self.T_data
-        del self.C_data
-        self.T_data = np.memmap(
-            self.T_file, dtype="float64", mode="w+", shape=self.shape)
-        self.C_data = np.memmap(
-            self.C_file, dtype="float64", mode="w+", shape=self.shape)
-
         self.logg("stage", "Iterating...", )
         for step, t in enumerate(self.t):
             # save each "step"
