@@ -212,11 +212,11 @@ class BeefSimulator:
                 self.C_data.flush()
 
             self.u = self.uw(self.T0, self.C0, *self.space, self.dh)
-            
+
             # Update ii
-            self.ii[ 0 ] = self.T0
-            self.ii[ 1 ] = self.C0
-            self.ii[ -1 ] = t
+            self.ii[0] = self.T0
+            self.ii[1] = self.C0
+            self.ii[-1] = t
             self.logg("tn", f't: {t:.3f}')
 
             self.set_vars("T")
@@ -269,7 +269,7 @@ class BeefSimulator:
         C2_z = bh2 - c2h * uz
 
         u = np.array([ux, ux, uy, uy, uz, uz]).transpose()
-        C_u = np.array([C1_x, -C2_x, C1_y, -C2_y, C1_z, -C2_z]).transpose()
+        C_u = np.array([-C2_x, C1_x, -C2_y, C1_y, -C2_z, C1_z]).transpose()
 
         C3 = 6 * self.b(self.ii) / self.dh**2
 
