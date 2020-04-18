@@ -40,7 +40,7 @@ def T_beta(T, C, shape, xx, yy, zz, t):
 
 
 def T_gamma(T, C, shape, xx, yy, zz, t):
-    temp = c.h_water * (c.T_oven - T)
+    temp = c.h * (c.T_oven - T)
     # Bottom may now be assumed to have the same heat transfer as the rest (?)
     # Symmetric B.C.
     temp[-1,:,:] = 0

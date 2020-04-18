@@ -45,7 +45,7 @@ def C_beta(T, C, shape, xx, yy, zz, t):
 
 
 def C_gamma(T, C, shape, xx, yy, zz, t):
-    temp = c.f * c.h_air * (c.T_oven - T)/(c.H_evp * c.rho_w) * (C - C_eq(T))
+    temp = c.f * c.h * (c.T_oven - T)/(c.H_evp * c.rho_w) * (C - C_eq(T))
     # No flux through bottom
     temp[:,:,0] = 0
     # Symmetric B.C.

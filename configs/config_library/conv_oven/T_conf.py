@@ -40,9 +40,9 @@ def T_beta(T, C, shape, xx, yy, zz, t):
 
 
 def T_gamma(T, C, shape, xx, yy, zz, t):
-    temp = (1 - c.f) * c.h_air * (c.T_oven - T)
+    temp = (1 - c.f) * c.h * (c.T_oven - T)
     # Bottom has a different heat transfer than the rest
-    temp[:,:,0] *= c.h_plate / c.h_air
+    # temp[:,:,0] *= c.h_plate / c.h_air ## No; assume heat transfer is material independent
     temp[-1,:,:] = 0
     temp[:,-1,:] = 0
     return temp.flatten()
