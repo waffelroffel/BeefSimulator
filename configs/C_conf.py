@@ -54,7 +54,7 @@ def C_gamma(T, C, shape, xx, yy, zz, t):
     temp[-1,:,:] = 0
     temp[:,-1,:] = 0
     return temp.flatten() * f_func(T) * c.h * (c.T_oven - T)/(c.H_evap * c.rho_w) * (C - C_eq(T))
-    
+
 
 
 def C_uw(T, C, I, J, K, dh):
@@ -62,8 +62,8 @@ def C_uw(T, C, I, J, K, dh):
     return u.reshape((3, -1)).T
 
 
-C_bnd_types = ['n', 'n', 'n', 'n', 'd', 'n']
-
+# C_bnd_types = ['n', 'n', 'n', 'n', 'd', 'n']
+C_bnd_types = []
 
 C_conf = {
     "pde": {"a": C_a,
