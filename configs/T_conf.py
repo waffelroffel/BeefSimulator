@@ -23,7 +23,7 @@ def T_c(T, C, shape, xx, yy, zz, t):
 
 
 def T_alpha(T, C, shape, xx, yy, zz, t):
-    temp = -c.k_m * np.ones(xx.shape)
+    temp = -c.k_m * np.ones(shape)
     # Symmetric B.C.
     temp[-1,:,:] = 1
     temp[:,-1,:] = 1
@@ -31,7 +31,7 @@ def T_alpha(T, C, shape, xx, yy, zz, t):
 
 
 def T_beta(T, C, shape, xx, yy, zz, t):
-    temp = - c.cp_w * c.rho_w * np.ones(xx.shape)
+    temp = - c.cp_w * c.rho_w * np.ones(shape)
     # Symmetric B.C.
     temp[-1,:,:] = 0
     temp[:,-1,:] = 0
@@ -39,12 +39,12 @@ def T_beta(T, C, shape, xx, yy, zz, t):
 
 
 def T_gamma(T, C, shape, xx, yy, zz, t):
-    temp = (1 - c.f) * c.h * (c.T_oven - T)
+    temp = np.ones(shape)
     # Bottom has a different heat transfer than the rest
     # temp[:,:,0] *= c.h_plate / c.h_air ## No; assume heat transfer is material independent
     temp[-1,:,:] = 0
     temp[:,-1,:] = 0
-    return temp.flatten()
+    return temp.flatten() * (1 - c.f) * c.h * (c.T_oven - T)
 
 
 def T_uw(T, C, I, J, K, dh):

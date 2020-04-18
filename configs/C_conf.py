@@ -3,6 +3,7 @@
 
 import numpy as np
 from auxillary_functions import u_w, C_eq
+import constants as c
 
 
 def C(xx, yy, zz, t):
@@ -25,7 +26,7 @@ def C_c(T, C, shape, xx, yy, zz, t):
 
 
 def C_alpha(T, C, shape, xx, yy, zz, t):
-    temp = - c.D * np.ones(xx.size)
+    temp = - c.D * np.ones(shape)
     # No flux through bottom
     temp[:,:,0] = 1
     # Symmetric B.C.
@@ -35,7 +36,7 @@ def C_alpha(T, C, shape, xx, yy, zz, t):
 
 
 def C_beta(T, C, shape, xx, yy, zz, t):
-    temp = 1 * np.ones(xx.shape)
+    temp = 1 * np.ones(shape)
     # No flux through bottom
     temp[:,:,0] = 0
     # Symmetric B.C.
@@ -45,13 +46,14 @@ def C_beta(T, C, shape, xx, yy, zz, t):
 
 
 def C_gamma(T, C, shape, xx, yy, zz, t):
-    temp = c.f * c.h * (c.T_oven - T)/(c.H_evp * c.rho_w) * (C - C_eq(T))
+    temp = np.ones(shape)
     # No flux through bottom
     temp[:,:,0] = 0
     # Symmetric B.C.
     temp[-1,:,:] = 0
     temp[:,-1,:] = 0
-    return temp.flatten()
+    return temp.flatten() * c.f * c.h * (c.T_oven - T)/(c.H_evap * c.rho_w) * (C - C_eq(T))
+    
 
 
 def C_uw(T, C, I, J, K, dh):
