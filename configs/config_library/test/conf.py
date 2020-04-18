@@ -1,6 +1,3 @@
-# conf
-# conv_oven
-
 logging = {
     "init": True,  # print the configuration of beefsimulator
     "init_state": False,  # print the initial state of T
@@ -10,36 +7,35 @@ logging = {
     "final": False  # print the final state of T
 }
 
-folder = "conv_oven_test"
+folder = "beef1"
 
-dh = 1e-3
-dt = 1e-5
+dh = 0.1
+dt = 0.001
 
+# plotter need to handle the last step being less than t_jump
 # -1: only the last
-t_jump = -1
+t_jump = 10
 
 t0 = 0
-tlen = 0.001
+tlen = 2
 tn = t0+tlen
 
-# Actual beef size split symmetrically along xy-axes. Implement symmetric B.C.s
-# to compensate.
-
 x0 = 0
-xlen = 0.075
+xlen = 1
 xn = x0+xlen
 
 y0 = 0
-ylen = 0.04
+ylen = 1
 yn = y0+ylen
 
 z0 = 0
-zlen = 0.055
+zlen = 1
 zn = z0+zlen
 
 conf = {
     "dh": dh,
     "dt": dt,
+    "t_jump": t_jump,
     "t0": t0,
     "tlen": tlen,
     "tn": tn,
@@ -55,6 +51,5 @@ conf = {
         "zn": zn,
     },
     "logging": logging,
-    "folder": folder,
-    "t_jump": t_jump
+    "folder": folder
 }

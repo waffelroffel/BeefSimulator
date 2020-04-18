@@ -52,8 +52,11 @@ class Plotter:
         self.t_jump = beefsim.t_jump
         self.dt = beefsim.dt
         self.dh = beefsim.dh
-        self.vmin_T, self.vmax_T = np.min(beefsim.T0), np.max(beefsim.T0)
-        self.vmin_C, self.vmax_C = np.min(beefsim.C0), np.max(beefsim.C0)
+        # TODO: not guaranteed to get min max from first timestep
+        # np.min(beefsim.T0), np.max(beefsim.T0)
+        self.vmin_T, self.vmax_T = 12, 14
+        # np.min(beefsim.C0), np.max(beefsim.C0)
+        self.vmin_C, self.vmax_C = 10, 50
 
     def load_from_file(self, path: Path):
         if not isinstance(path, Path):

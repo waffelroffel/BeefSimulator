@@ -62,13 +62,13 @@ class BeefSimulator:
 
         dims = conf["dims"]
         self.x = np.linspace(dims["x0"], dims["xn"],
-                             int(dims["xlen"] / self.dh) + 1)
+                             round(dims["xlen"] / self.dh) + 1)
         self.y = np.linspace(dims["y0"], dims["yn"],
-                             int(dims["ylen"] / self.dh) + 1)
+                             round(dims["ylen"] / self.dh) + 1)
         self.z = np.linspace(dims["z0"], dims["zn"],
-                             int(dims["zlen"] / self.dh) + 1)
+                             round(dims["zlen"] / self.dh) + 1)
         self.t = np.linspace(conf["t0"], conf["tn"],
-                             int(conf["tlen"] / self.dt) + 1)
+                             round(conf["tlen"] / self.dt) + 1)
 
         self.t_jump = conf["t_jump"]
         t_steps = 1 if self.t_jump == - \
@@ -112,17 +112,19 @@ class BeefSimulator:
 
         self.uw = T_conf["uw"] or C_conf["uw"]
 
-    def setup_mesh(self, conf, T_conf, C_conf):
-        xx, yy, zz = np.meshgrid(self.x, self.y, self.z)
-        self.ii = [xx, yy, zz, self.t[0]]
-
-    def setup_files(self, conf, T_conf, C_conf):
         self.T1 = np.zeros(self.num_nodes)
         self.T0 = np.zeros(self.num_nodes)
-        self.T0[...] = self.T_initial(self.ii)
-
         self.C1 = np.zeros(self.num_nodes)
         self.C0 = np.zeros(self.num_nodes)
+
+    def setup_mesh(self, conf, T_conf, C_conf):
+        xx, yy, zz = np.meshgrid(self.x, self.y, self.z)
+        self.ii = [self.T0, self.C0, self.space, xx, yy, zz, self.t[0]]
+
+    def setup_files(self, conf, T_conf, C_conf):
+
+        self.T0[...] = self.T_initial(self.ii)
+
         self.C0[...] = self.C_initial(self.ii)
 
         self.path = Path("data").joinpath(conf["folder"])
@@ -133,12 +135,17 @@ class BeefSimulator:
         self.save_header(conf)
 
         self.T_file = self.path.joinpath("T.dat")
-        self.T_data = np.memmap(
-            self.T_file, dtype="float64", mode="r+", shape=self.shape)
-
         self.C_file = self.path.joinpath("C.dat")
+
+        if (self.T_file.exists() or self.C_file.exists()):
+            raise Exception(
+                "Data for T and/or C already exists! Delete them or define a new directory in configuration.")
+
+        self.T_data = np.memmap(
+            self.T_file, dtype="float64", mode="w+", shape=self.shape)
+
         self.C_data = np.memmap(
-            self.C_file, dtype="float64", mode="r+", shape=self.shape)
+            self.C_file, dtype="float64", mode="w+", shape=self.shape)
 
     def setup_additionals(self, conf, T_conf, C_conf):
         self.plotter = BP.Plotter(self, name=Path(
@@ -154,13 +161,13 @@ class BeefSimulator:
         self.logg("init", f'Inner nodes:         {self.num_nodes_inner}')
         self.logg("init", f'Boundary nodes:      {self.num_nodes_border}')
         self.logg("init",
-                  f'x linspace:          dx: {self.dh}, \t x: {self.x[ 0 ]} -> {self.x[ -1 ]}, \t steps: {self.x.size}')
+                  f'x linspace:          dx: {self.dh}, \t x: {self.x[0]} -> {self.x[-1]}, \t steps: {self.x.size}')
         self.logg("init",
-                  f'y linspace:          dy: {self.dh}, \t y: {self.y[ 0 ]} -> {self.y[ -1 ]}, \t steps: {self.y.size}')
+                  f'y linspace:          dy: {self.dh}, \t y: {self.y[0]} -> {self.y[-1]}, \t steps: {self.y.size}')
         self.logg("init",
-                  f'z linspace:          dz: {self.dh}, \t z: {self.z[ 0 ]} -> {self.z[ -1 ]}, \t steps: {self.z.size}')
+                  f'z linspace:          dz: {self.dh}, \t z: {self.z[0]} -> {self.z[-1]}, \t steps: {self.z.size}')
         self.logg("init",
-                  f'time steps:          dt: {self.dt}, \t t: {self.t[ 0 ]} -> {self.t[ -1 ]}, \t steps: {self.t.size}')
+                  f'time steps:          dt: {self.dt}, \t t: {self.t[0]} -> {self.t[-1]}, \t steps: {self.t.size}')
         self.logg("init", "T1 = T0 + ( A @ T0 + b )")
         self.logg("init",
                   f'{self.T1.shape} = {self.T0.shape} + ( {(self.num_nodes, self.num_nodes)} @ {self.T0.shape} + {(self.num_nodes,)} )')
@@ -191,14 +198,6 @@ class BeefSimulator:
         Iterate through from t0 -> tn
         solve for both temp. and conc.
         """
-
-        del self.T_data
-        del self.C_data
-        self.T_data = np.memmap(
-            self.T_file, dtype="float64", mode="w+", shape=self.shape)
-        self.C_data = np.memmap(
-            self.C_file, dtype="float64", mode="w+", shape=self.shape)
-
         self.logg("stage", "Iterating...", )
         for step, t in enumerate(self.t):
             # save each "step"
@@ -211,7 +210,10 @@ class BeefSimulator:
 
             self.u = self.uw(self.T0, self.C0, *self.space, self.dh)
 
-            self.ii[3] = t
+            # Update ii
+            self.ii[0] = self.T0
+            self.ii[1] = self.C0
+            self.ii[-1] = t
             self.logg("tn", f't: {t:.3f}')
 
             self.set_vars("T")
@@ -264,7 +266,7 @@ class BeefSimulator:
         C2_z = bh2 - c2h * uz
 
         u = np.array([ux, ux, uy, uy, uz, uz]).transpose()
-        C_u = np.array([C1_x, -C2_x, C1_y, -C2_y, C1_z, -C2_z]).transpose()
+        C_u = np.array([-C2_x, C1_x, -C2_y, C1_y, -C2_z, C1_z]).transpose()
 
         C3 = 6 * self.b(self.ii) / self.dh**2
 
@@ -273,11 +275,7 @@ class BeefSimulator:
         _alpha[_alpha == 0] = 1  # dummy
         C4 = 2 * self.dh / _alpha
 
-        d = np.ones(self.num_nodes)
-        d0, d1, d2, d3, d4, d5, d6 = [-C3 * d,
-                                      C1_x * d, C1_y * d,
-                                      C1_z * d, C2_x * d,
-                                      C2_y * d, C2_z * d]
+        d0, d1, d2, d3, d4, d5, d6 = [-C3, C1_x, C1_y, C1_z, C2_x, C2_y, C2_z]
 
         # --------------- modify the boundaries ---------------
         # see project report
@@ -299,15 +297,15 @@ class BeefSimulator:
 
         d1[i1] = (C1_x + C2_x)[i1]
         d1[i1 + k4] = 0
-        d1 = d1[k1:]
+        d1 = d1[:-k1]
 
         d2[i2] = (C1_y + C2_y)[i2]
         d2[i2 + k5] = 0
-        d2 = d2[k2:]
+        d2 = d2[:-k2]
 
         d3[i3] = (C1_z + C2_z)[i3]
         d3[i3 + k6] = 0
-        d3 = d3[k3:]
+        d3 = d3[:-k3]
 
         d4[i4 + k4] = (C1_x + C2_x)[i4 + k4]
         d4[i1 + k4] = 0
