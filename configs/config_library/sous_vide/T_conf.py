@@ -63,7 +63,7 @@ T_conf = {
     "bnd": {"alpha": T_alpha,
             "beta": T_beta,
             "gamma": T_gamma},
-    "uw": uw,
+    "uw": T_uw,
     "bnd_types": T_bnd_types,
     "initial": T_initial,
     # "analytic": T
