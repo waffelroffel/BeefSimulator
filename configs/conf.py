@@ -10,13 +10,14 @@ logging = {
     "final": False  # print the final state of T
 }
 
-folder = "conv_oven_test_3"
+folder = "conv_oven_test_4"
+# Should be 1e-3 and 1e-4
 
 dh = 1e-3
-dt = 1e-3
+dt = 1e-4
 
 # -1: only the last
-t_jump = 1000
+t_jump = 10000
 
 t0 = 0
 tlen = 10
