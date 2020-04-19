@@ -40,12 +40,12 @@ def T_beta(T, C, shape, xx, yy, zz, t):
 
 
 def T_gamma(T, C, shape, xx, yy, zz, t):
-    temp = c.h * (c.T_oven - T)
+    temp = np.ones(shape)
     # Bottom may now be assumed to have the same heat transfer as the rest (?)
     # Symmetric B.C.
     temp[-1,:,:] = 0
     temp[:,-1,:] = 0
-    return temp.flatten()
+    return temp.flatten() * c.h * (c.T_oven - T)
 
 
 def T_uw(T, C, I, J, K, dh):
