@@ -202,6 +202,7 @@ class BeefSimulator:
         for step, t in enumerate(self.t):
             # save each "step"
             if self.t_jump != -1 and step % self.t_jump == 0:
+                self.logg( "tn", f't: {t:.3f}' )
                 i = int(step / self.t_jump)
                 self.T_data[i] = self.T0.reshape(self.shape[1:])
                 self.C_data[i] = self.C0.reshape(self.shape[1:])
@@ -214,7 +215,6 @@ class BeefSimulator:
             self.ii[0] = self.T0
             self.ii[1] = self.C0
             self.ii[-1] = t
-            self.logg("tn", f't: {t:.3f}')
 
             self.set_vars("T")
             self.solve_next(self.T0, self.T1, method)
