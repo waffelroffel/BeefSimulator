@@ -58,14 +58,20 @@ def load_from_file( path: Path ):
                         mode="r",
                         shape=tuple( shape ) )
     
-    return [ dt, dh, t, x, y, z, T_data, C_data ]
+    t_jump = header[ "t_jump" ]
+    
+    return [ dt, dh, t, x, y, z, T_data, C_data, t_jump ]
 
 
 # Collect data without initializing beef object
 def collect_data( quantity: str, t: float, path: Path ):
     stuff = load_from_file( path )
-    n = int( t / stuff[ 0 ] )
+    tj = stuff[ 8 ]
+    if tj == -1:
+        n = -1
+    else:
+        n = int( t / tj )
     if quantity == 'T':
-        return stuff[ 7 ][ n ]
+        return stuff[ 6 ][ n ]
     elif quantity == 'C':
-        return stuff[ 8 ][ n ]
+        return stuff[ 7 ][ n ]
