@@ -72,8 +72,7 @@ def dotND(A: np.array, B: np.array, axis=0):
 #     return co.f_max + (co.f0-co.f_max) / (1+np.exp((T-co.f1)/co.f2))
 
 
-def f_func(T: float) -> float:
-    if T.any() >= 100:
-        return co.f
-    else:
-        return 0
+def f_func(T: np.array) -> np.array:
+    f = np.zeros(T.shape)
+    f[T >= 100] = co.f
+    return f
