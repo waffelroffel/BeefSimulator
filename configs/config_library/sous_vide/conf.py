@@ -10,17 +10,17 @@ logging = {
     "final": False  # print the final state of T
 }
 
-folder = "sous_vide_10sec"
-
 dh = 1e-3
 dt = 1e-4
 
-# -1: only the last
+# -1: only the last step is saved
 t_jump = 10000 # Save progress each full second
 
 t0 = 0
-tlen = 10
+tlen = 100
 tn = t0+tlen
+
+folder = f"sous_vide_{tlen}sec"
 
 # Actual beef size split symmetrically along xy-axes. Implement symmetric B.C.s
 # to compensate.

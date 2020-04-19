@@ -1,26 +1,26 @@
-## conf
-## conv_oven
+# conf
+# conv_oven
 
 logging = {
     "init": True,  # print the configuration of beefsimulator
     "init_state": False,  # print the initial state of T
     "stage": True,  # print the different stages of beefsimulator
-    "tn": True,  # print the current time step
+    "tn": False,  # print the current time step
     "Ab": False,  # print the A matrix and b vector
     "final": False  # print the final state of T
 }
 
-folder = "conv_oven_10sec"
-
 dh = 1e-3
 dt = 1e-4
 
-# -1: only the last
+# -1: only the last step is saved
 t_jump = 10000 # Save progress each full second
 
 t0 = 0
-tlen = 10
+tlen = 100
 tn = t0+tlen
+
+folder = f"conv_oven_{tlen}sec"
 
 # Actual beef size split symmetrically along xy-axes. Implement symmetric B.C.s
 # to compensate.

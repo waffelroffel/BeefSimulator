@@ -3,6 +3,7 @@
 
 import numpy as np
 from auxillary_functions import u_w, C_eq
+import constants as c
 
 
 def C(xx, yy, zz, t):
@@ -10,18 +11,18 @@ def C(xx, yy, zz, t):
 
 
 def C_initial(T, C, shape, xx, yy, zz, t):
-    return 0.75 * np.ones(xx.size) # kg water/kg beef
+    return 0.75 # kg water/kg beef
 
 def C_a(T, C, shape, xx, yy, zz, t):
-    return np.ones(xx.size)
+    return 1
 
 
 def C_b(T, C, shape, xx, yy, zz, t):
-    return c.D * np.ones(xx.size)
+    return c.D
 
 
 def C_c(T, C, shape, xx, yy, zz, t):
-    return - np.ones(xx.size)
+    return - 1
 
 
 def C_alpha(T, C, shape, xx, yy, zz, t):
@@ -31,22 +32,22 @@ def C_alpha(T, C, shape, xx, yy, zz, t):
     # Symmetric B.C.
     temp[-1,:,:] = 1
     temp[:,-1,:] = 1
-    return temp.flatten()
+    return temp
 
 
 def C_beta(T, C, shape, xx, yy, zz, t):
-    temp = 1 * np.ones(xx.shape)
+    temp = np.ones(shape)
     # No flux through bottom
     temp[:,:,0] = 0
     # Symmetric B.C.
     temp[-1,:,:] = 0
     temp[:,-1,:] = 0
-    return temp.flatten()
+    return temp
 
 
 def C_gamma(T, C, shape, xx, yy, zz, t):
     # Moisture does not escape at the boundaries
-    return np.zeros(xx.shape)
+    return 0
 
 
 def C_uw(T, C, I, J, K, dh):

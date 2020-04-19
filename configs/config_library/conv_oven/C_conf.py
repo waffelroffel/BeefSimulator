@@ -1,8 +1,10 @@
-## C_conf
-## conv_oven
+# C_conf
+# conv_oven
 
 import numpy as np
 from auxillary_functions import u_w, C_eq
+import constants as c
+from auxillary_functions import f_func
 
 
 def C(xx, yy, zz, t):
@@ -10,48 +12,49 @@ def C(xx, yy, zz, t):
 
 
 def C_initial(T, C, shape, xx, yy, zz, t):
-    return 0.75 * np.ones(xx.size) # kg water/kg beef
+    return 0.75  # kg water/kg beef
+
 
 def C_a(T, C, shape, xx, yy, zz, t):
-    return np.ones(xx.size)
+    return 1
 
 
 def C_b(T, C, shape, xx, yy, zz, t):
-    return c.D * np.ones(xx.size)
+    return c.D
 
 
 def C_c(T, C, shape, xx, yy, zz, t):
-    return - np.ones(xx.size)
+    return -1
 
 
 def C_alpha(T, C, shape, xx, yy, zz, t):
-    temp = - c.D * np.ones(xx.size)
+    temp = - c.D * np.ones(shape)
     # No flux through bottom
-    temp[:,:,0] = 1
+    temp[:, :, 0] = 1
     # Symmetric B.C.
-    temp[-1,:,:] = 1
-    temp[:,-1,:] = 1
-    return temp.flatten()
+    temp[-1, :, :] = 1
+    temp[:, -1, :] = 1
+    return temp
 
 
 def C_beta(T, C, shape, xx, yy, zz, t):
-    temp = 1 * np.ones(xx.shape)
+    temp = np.ones(shape)
     # No flux through bottom
-    temp[:,:,0] = 0
+    temp[:, :, 0] = 0
     # Symmetric B.C.
-    temp[-1,:,:] = 0
-    temp[:,-1,:] = 0
-    return temp.flatten()
+    temp[-1, :, :] = 0
+    temp[:, -1, :] = 0
+    return temp
 
 
 def C_gamma(T, C, shape, xx, yy, zz, t):
-    temp = c.f * c.h * (c.T_oven - T)/(c.H_evp * c.rho_w) * (C - C_eq(T))
+    temp = np.ones(shape)
     # No flux through bottom
-    temp[:,:,0] = 0
+    temp[:, :, 0] = 0
     # Symmetric B.C.
-    temp[-1,:,:] = 0
-    temp[:,-1,:] = 0
-    return temp.flatten()
+    temp[-1, :, :] = 0
+    temp[:, -1, :] = 0
+    return temp.flatten() * f_func(T) * c.h * (c.T_oven - T)/(c.H_evap * c.rho_w) * (C - C_eq(T))
 
 
 def C_uw(T, C, I, J, K, dh):
@@ -59,8 +62,8 @@ def C_uw(T, C, I, J, K, dh):
     return u.reshape((3, -1)).T
 
 
-C_bnd_types = ['n', 'n', 'n', 'n', 'd', 'n']
-
+# C_bnd_types = ['n', 'n', 'n', 'n', 'd', 'n']
+C_bnd_types = []
 
 C_conf = {
     "pde": {"a": C_a,
