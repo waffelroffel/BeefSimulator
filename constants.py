@@ -46,5 +46,4 @@ f0=0                #minimum fraction of energy that can be used for evaporation
 f1=47               #based on cooking of cod
 f2=15               #based on cooking of cod
 f_max=1             #maximum fraction of energy than can be used for evaporation
-'''This particular case - testing'''
-T_init = 13
+

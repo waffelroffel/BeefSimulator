@@ -5,21 +5,22 @@ logging = {
     "init": True,  # print the configuration of beefsimulator
     "init_state": False,  # print the initial state of T
     "stage": True,  # print the different stages of beefsimulator
-    "tn": False,  # print the current time step
+    "tn": True,  # print the current time step
     "Ab": False,  # print the A matrix and b vector
     "final": False  # print the final state of T
 }
 
-folder = "conv_oven_test"
+folder = "conv_oven_test_4"
+# Should be 1e-3 and 1e-4
 
 dh = 1e-3
-dt = 1e-5
+dt = 1e-4
 
 # -1: only the last
-t_jump = -1
+t_jump = 10000
 
 t0 = 0
-tlen = 0.001
+tlen = 10
 tn = t0+tlen
 
 # Actual beef size split symmetrically along xy-axes. Implement symmetric B.C.s
