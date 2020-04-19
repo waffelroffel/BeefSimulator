@@ -17,7 +17,7 @@ dt = 1e-4
 t_jump = 10000 # Save progress each full second
 
 t0 = 0
-tlen = 100
+tlen = 780 #13 min
 tn = t0+tlen
 
 folder = f"sous_vide_{tlen}sec"
