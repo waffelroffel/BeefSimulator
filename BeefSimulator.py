@@ -349,7 +349,7 @@ class BeefSimulator:
 
     # -------------------- Plotter --------------------
 
-    def plot(self, t, id, x=[], y=[], z=[], multi=False):
+    def plot(self, id, t, x=[], y=[], z=[], multi=False):
         """
         Plot the current state
         param id: Either 'T' or 'C'
