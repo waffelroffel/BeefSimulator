@@ -5,7 +5,7 @@ logging = {
     "init": True,  # print the configuration of beefsimulator
     "init_state": False,  # print the initial state of T
     "stage": True,  # print the different stages of beefsimulator
-    "tn": False,  # print the current time step
+    "tn": True,  # print the current time step
     "Ab": False,  # print the A matrix and b vector
     "final": False  # print the final state of T
 }
