@@ -22,7 +22,7 @@ class BeefSimulator:
         initial: scalar or function with parameter (x,y,z,t)
 
         bnd_types:
-         - d: direchet (only this do something)
+         - d: dirichlet (only this do something)
          - n: neumann
          - r: robin
 
@@ -32,20 +32,6 @@ class BeefSimulator:
          - 2: time steps
          - 3: A and b
          - 4: everything
-        """
-        """
-        TODO:
-        - [X] change 3D cordinates to 1D indexing: T1 = T0 + ( A @ T0 + b )
-        - [X] construct A and b
-        - [X] make it work with only direchet boundary: alpha = 0
-        - [X] change a, b, c, alpha, beta, gamma to functions
-        - [X] implement u_w
-        - [ ] validate with manufactured solution
-        - [X] implement C (concentration)
-        - [ ] T and C coupled
-        - [X] add plotter
-        - [ ] add data management
-        - [X] change logging to a config (dict)
         """
         self.pre_check(conf, T_conf, C_conf)
         self.setup_geometry(conf, T_conf, C_conf)
@@ -278,13 +264,6 @@ class BeefSimulator:
         d0, d1, d2, d3, d4, d5, d6 = [-C3, C1_x, C1_y, C1_z, C2_x, C2_y, C2_z]
 
         # --------------- modify the boundaries ---------------
-        # see project report
-        # TODO:
-        # [X] set C1+C2
-        # [X] set 0
-        # not sure if implemented correctly, need to validate with manufactored solutions
-        # - tested with neuman boundary = 0 -> behaves correctly
-        # - need to validate with non-zero values / functions
 
         prod = af.dotND(
             self.boundaries[:, 1:], (C_u*u)[self.boundaries[:, 0]], axis=1)
@@ -406,16 +385,6 @@ class BeefSimulator:
         Returns the 1D index from 3D coordinates
         """
         return i + self.I * j + self.I * self.J * k
-
-    # Unnecessary? TODO: remove?
-    def index_of_inverse(self, p):
-        """
-        Returns the 3D index from 1D coordinate
-        """
-        k = p // (self.I * self.J)
-        j = (p - k * self.I * self.J) // self.I
-        i = (p - k * self.I * self.J - j * self.I)
-        return i, j, k
 
     def get_ks(self):
         """
