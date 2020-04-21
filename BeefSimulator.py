@@ -90,6 +90,7 @@ class BeefSimulator:
         self.boundaries = self.find_border_indicies()
         # diagonal indices for make_Ab
         self.ks = self.get_ks()
+        self.ies = [self.diag_indicies(i + 1) for i in range(6)]
 
     def setup_TC(self, conf, T_conf, C_conf):
         # Defines the PDE and boundary conditions for T
@@ -202,7 +203,7 @@ class BeefSimulator:
         for step, t in enumerate(self.t):
             # save each "step"
             if self.t_jump != -1 and step % self.t_jump == 0:
-                self.logg( "tn", f't: {t:.3f}' )
+                self.logg("tn", f't: {t:.3f}')
                 i = int(step / self.t_jump)
                 self.T_data[i] = self.T0.reshape(self.shape[1:])
                 self.C_data[i] = self.C0.reshape(self.shape[1:])
@@ -218,11 +219,11 @@ class BeefSimulator:
 
             self.set_vars("T")
             self.solve_next(self.T0, self.T1, method)
-            self.T0, self.T1 = self.T1, np.empty(self.num_nodes)
-
+            self.T0, self.T1 = self.T1, self.T0
+            # self.T1[self.T1 < 10] = 10. # Ad-hoc! on BeefSimulator line 222
             self.set_vars("C")
             self.solve_next(self.C0, self.C1, method)
-            self.C0, self.C1 = self.C1, np.empty(self.num_nodes)
+            self.C0, self.C1 = self.C1, self.C0
 
         # save last step (anyway)
         self.T_data[-1] = self.T0.reshape(self.shape[1:])
@@ -253,22 +254,25 @@ class BeefSimulator:
         bh2 = self.b(self.ii) / self.dh**2
         c2h = self.c(self.ii) / (2 * self.dh)
 
-        u = self.u
-        ux = u[:, 0]
-        uy = u[:, 1]
-        uz = u[:, 2]
+        ux = self.u[:, 0]
+        uy = self.u[:, 1]
+        uz = self.u[:, 2]
 
-        C1_x = bh2 + c2h * ux
-        C2_x = bh2 - c2h * ux
-        C1_y = bh2 + c2h * uy
-        C2_y = bh2 - c2h * uy
-        C1_z = bh2 + c2h * uz
-        C2_z = bh2 - c2h * uz
+        c2hux = c2h * ux
+        c2huy = c2h * uy
+        c2huz = c2h * uz
+
+        C1_x = bh2 + c2hux
+        C2_x = bh2 - c2hux
+        C1_y = bh2 + c2huy
+        C2_y = bh2 - c2huy
+        C1_z = bh2 + c2huz
+        C2_z = bh2 - c2huz
 
         u = np.array([ux, ux, uy, uy, uz, uz]).transpose()
         C_u = np.array([-C2_x, C1_x, -C2_y, C1_y, -C2_z, C1_z]).transpose()
 
-        C3 = 6 * self.b(self.ii) / self.dh**2
+        C3 = (6 / self.dh**2) * self.b(self.ii)
 
         _alpha = self.alpha(self.ii).copy()
         _alpha[self.direchets] = 1  # dummy
@@ -291,9 +295,8 @@ class BeefSimulator:
         d0[self.boundaries[:, 0]] -= prod * C4[self.boundaries[:, 0]] * \
             self.beta(self.ii)[self.boundaries[:, 0]]
 
-        ks = self.ks
         k0, k1, k2, k3, k4, k5, k6 = self.ks
-        i1, i2, i3, i4, i5, i6 = [self.diag_indicies(i + 1) for i in range(6)]
+        i1, i2, i3, i4, i5, i6 = self.ies
 
         d1[i1] = (C1_x + C2_x)[i1]
         d1[i1 + k4] = 0
@@ -321,12 +324,13 @@ class BeefSimulator:
 
         # -----------------------------------------------------
         ds = [d0, d1, d2, d3, d4, d5, d6]
-        A = sp.diags(ds, ks)
+        A = sp.diags(ds, self.ks)
 
         b = np.zeros(self.num_nodes)
 
         prod = af.dotND(
             self.boundaries[:, 1:], C_u[self.boundaries[:, 0]], axis=1)
+
         b[self.boundaries[:, 0]] = prod * C4[self.boundaries[:, 0]] * \
             self.gamma(self.ii)[self.boundaries[:, 0]]
 
