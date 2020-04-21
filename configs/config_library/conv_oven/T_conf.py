@@ -8,7 +8,7 @@ from auxillary_functions import f_func
 
 
 def T_initial(T, C, shape, xx, yy, zz, t):
-    return c.T_init
+    return c.T_0
 
 
 def T_a(T, C, shape, xx, yy, zz, t):

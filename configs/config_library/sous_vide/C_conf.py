@@ -26,7 +26,7 @@ def C_c(T, C, shape, xx, yy, zz, t):
 
 
 def C_alpha(T, C, shape, xx, yy, zz, t):
-    temp = - c.D * np.ones(xx.size)
+    temp = - c.D * np.ones(shape)
     # No flux through bottom
     temp[:,:,0] = 1
     # Symmetric B.C.

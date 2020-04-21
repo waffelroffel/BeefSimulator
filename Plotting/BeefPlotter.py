@@ -84,9 +84,9 @@ class Plotter:
             temp_path, dtype="float64", mode="r", shape=shape)
         self.C_data = np.memmap(
             cons_path, dtype="float64", mode="r", shape=shape)
-        self.vmin_T = np.min(self.T_data)
+        self.vmin_T = 0
         self.vmax_T = np.max(self.T_data)
-        self.vmin_C = np.min(self.C_data)
+        self.vmin_C = 0
         self.vmax_C = np.max(self.C_data)
 
     def show_heat_map2(self, id, T, X=[], Y=[], Z=[]):
@@ -125,9 +125,19 @@ class Plotter:
         axes[0].text2D(
             0.5, 0.95, f'{self.TYPES[id]} distribution @ $t=$ {t: .3g}', transform=axes[0].transAxes)
 
-        axes[0].set_xlim3d(self.x[0], self.x[-1])
-        axes[0].set_ylim3d(self.y[0], self.y[-1])
-        axes[0].set_zlim3d(self.z[0], self.z[-1])
+        if (not Y and not Z):
+            axes[0].view_init(15, - 107)
+        elif (not X and not Z):
+            axes[0].view_init(15, - 16)
+        elif (not X and not Y):
+            axes[0].view_init(12, - 30)
+
+        axes[0].set_xlim3d(self.x[0] if not X else X[0],
+                           self.x[-1] if not X else X[-1])
+        axes[0].set_ylim3d(self.y[0] if not Y else Y[0],
+                           self.y[-1] if not Y else Y[-1])
+        axes[0].set_zlim3d(self.z[0] if not Z else Z[0],
+                           self.z[-1] if not Z else Z[-1])
 
         for x, i in self.index_h(X):
             cs.append(axes[0].contourf(U[n, i, :, :], yz, zy,
