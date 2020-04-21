@@ -84,9 +84,9 @@ class Plotter:
             temp_path, dtype="float64", mode="r", shape=shape)
         self.C_data = np.memmap(
             cons_path, dtype="float64", mode="r", shape=shape)
-        self.vmin_T = np.min(self.T_data)
+        self.vmin_T = 0
         self.vmax_T = np.max(self.T_data)
-        self.vmin_C = np.min(self.C_data)
+        self.vmin_C = 0
         self.vmax_C = np.max(self.C_data)
 
     def show_heat_map2(self, id, T, X=[], Y=[], Z=[]):
