@@ -101,8 +101,10 @@ class BeefSimulator:
 
         self.T1 = np.zeros(self.num_nodes)
         self.T0 = np.zeros(self.num_nodes)
+        self.b_T = np.zeros(self.num_nodes)
         self.C1 = np.zeros(self.num_nodes)
         self.C0 = np.zeros(self.num_nodes)
+        self.b_C = np.zeros(self.num_nodes)
 
     def setup_mesh(self, conf, T_conf, C_conf):
         xx, yy, zz = np.meshgrid(self.x, self.y, self.z)
@@ -204,11 +206,11 @@ class BeefSimulator:
             self.ii[-1] = t
 
             self.set_vars("T")
-            self.solve_next(self.T0, self.T1, method)
+            self.solve_next(self.T0, self.T1, self.b_T, method)
             self.T0, self.T1 = self.T1, self.T0
             # self.T1[self.T1 < 10] = 10. # Ad-hoc! on BeefSimulator line 222
             self.set_vars("C")
-            self.solve_next(self.C0, self.C1, method)
+            self.solve_next(self.C0, self.C1, self.b_C, method)
             self.C0, self.C1 = self.C1, self.C0
 
         # save last step (anyway)
@@ -220,20 +222,20 @@ class BeefSimulator:
         self.logg("stage", "Finished", )
         self.logg("final", f'Final state: {self.T0}')
 
-    def solve_next(self, U0, U1, method="cd"):
+    def solve_next(self, U0, U1, b_U, method="cd"):
         """
         Calculate the next time step (T1)
         """
         if method == "cd":
-            A, b = self.make_Ab()
-            U1[...] = U0 + (self.dt / self.a(self.ii)) * (A @ U0 + b)
+            A = self.make_Ab(b_U)
+            U1[...] = U0 + (self.dt / self.a(self.ii)) * (A @ U0 + b_U)
 
             U1[self.direchets] = self.gamma(self.ii)[self.direchets] / \
                 self.beta(self.ii)[self.direchets]
 
-    def make_Ab(self):
+    def make_Ab(self, b_U):
         """
-        Construct A and b
+        Construct A and update b_U
         """
         # ------- contruct all diagonals -------
 
@@ -305,17 +307,15 @@ class BeefSimulator:
         ds = [d0, d1, d2, d3, d4, d5, d6]
         A = sp.diags(ds, self.ks)
 
-        b = np.zeros(self.num_nodes)
-
         prod = af.dotND(
             self.boundaries[:, 1:], C_u[self.boundaries[:, 0]], axis=1)
 
-        b[self.boundaries[:, 0]] = prod * C4[self.boundaries[:, 0]] * \
+        b_U[self.boundaries[:, 0]] = prod * C4[self.boundaries[:, 0]] * \
             self.gamma(self.ii)[self.boundaries[:, 0]]
 
         self.logg("Ab", f'A = {A}')
-        self.logg("Ab", f'b = {b}')
-        return A, b
+        self.logg("Ab", f'b = {b_U}')
+        return A
 
     # -------------------- Logger --------------------
 
