@@ -21,6 +21,8 @@ C_0=0.75           #kg/kg      Initial moisture concentration
 D=4e-10            #m^2/s      Diffusion coefficient
 K = 1e-17          #m^2        Permeability - in range 1e-17 to 1e-19
 f = 0.88           #-          Fraction of energy used for evaporation # TODO: Must be adapted - may not be constant
+T_room = 20        #C          Room temperature for frying pan
+T_pan = 175        #C          Frying pan temperature
 '''Composite constants'''
 cp_m = (1.6*y_c+2*y_p+2*y_f+4.2*y_w)*1e3
 rho_m = 1 / (y_c/rho_c + y_p/rho_p + y_f/rho_f + y_w/rho_w)
@@ -46,4 +48,3 @@ f0=0                #minimum fraction of energy that can be used for evaporation
 f1=47               #based on cooking of cod
 f2=15               #based on cooking of cod
 f_max=1             #maximum fraction of energy than can be used for evaporation
-
