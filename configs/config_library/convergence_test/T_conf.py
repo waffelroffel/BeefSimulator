@@ -11,7 +11,7 @@ def T(xx, yy, zz, t):
         np.sin(2*np.pi * xx) * np.sin(2*np.pi * yy) * np.sin(4*np.pi * zz)
 
 
-def T_initial(xx, yy, zz, t):
+def T_initial(T, C, shape, xx, yy, zz, t):
     return T(xx, yy, zz, t)
 
 
@@ -22,16 +22,16 @@ T_b = alp
 T_c = 0
 
 
-def T_alpha(xx, yy, zz, t):
-    return np.zeros(xx.size)
+def T_alpha(T, C, shape, xx, yy, zz, t):
+    return 0
 
 
-def T_beta(xx, yy, zz, t):
-    return np.ones(xx.size)
+def T_beta(T, C, shape, xx, yy, zz, t):
+    return 1
 
 
-def T_gamma(xx, yy, zz, t):
-    return np.zeros(xx.size)
+def T_gamma(T, C, shape, xx, yy, zz, t):
+    return 0
 
 
 def uw(T, C, I, J, K, dh):

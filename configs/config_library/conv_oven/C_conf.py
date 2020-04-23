@@ -7,12 +7,8 @@ import constants as c
 from auxillary_functions import f_func
 
 
-def C(xx, yy, zz, t):
-    return 1
-
-
 def C_initial(T, C, shape, xx, yy, zz, t):
-    return 0.75  # kg water/kg beef
+    return c.C_0
 
 
 C_a = 1
