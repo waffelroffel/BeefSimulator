@@ -265,7 +265,8 @@ class BeefSimulator:
         C3 = 6 * bh2
 
         u = np.array([ux, ux, uy, uy, uz, uz]).transpose()
-        C_u = np.array([-C2_x, C1_x, -C2_y, C1_y, -C2_z, C1_z]).transpose()
+        C_u_d0 = np.array([-C2_x, C1_x, -C2_y, C1_y, -C2_z, C1_z]).transpose()
+        C_u_b = np.array([C2_x, C1_x, C2_y, C1_y, C2_z, C1_z]).transpose()
 
         _alpha = self.alpha(self.ii)
         _alpha[self.direchets] = 1  # dummy
@@ -276,7 +277,7 @@ class BeefSimulator:
         # --------------- modify the boundaries ---------------
         #toc = time.perf_counter()
         prod = af.dotND(
-            self.boundaries[:, 1:], (C_u*u)[self.boundaries[:, 0]], axis=1)
+            self.boundaries[:, 1:], (C_u_d0*u)[self.boundaries[:, 0]], axis=1)
         d0[self.boundaries[:, 0]] -= prod * C4[self.boundaries[:, 0]] * \
             self.beta(self.ii)[self.boundaries[:, 0]]
 
@@ -312,7 +313,7 @@ class BeefSimulator:
         A = sp.diags(ds, self.ks)
 
         prod = af.dotND(
-            self.boundaries[:, 1:], C_u[self.boundaries[:, 0]], axis=1)
+            self.boundaries[:, 1:], C_u_b[self.boundaries[:, 0]], axis=1)
 
         b_U[self.boundaries[:, 0]] = prod * C4[self.boundaries[:, 0]] * \
             self.gamma(self.ii)[self.boundaries[:, 0]]

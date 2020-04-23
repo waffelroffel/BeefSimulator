@@ -9,7 +9,6 @@ import matplotlib.pyplot as plt
 
 def plot_scalar_error(id, numerical_data, analytic_f, mesh, t_linscape, dt, t_jump=1):
     MSE = []
-    print(t_linscape)
     for t, n in zip(tt, (tt/(dt*t_jump)).round().astype(int)):
         numerical = numerical_data[n]
         analytical = analytic_f(None, None, None, *mesh, t)

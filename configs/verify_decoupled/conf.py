@@ -12,11 +12,11 @@ logging = {
 
 folder = "verify_decoupled"
 
-dh = 0.05
+dh = 0.1
 dt = 0.001
 
 # -1: only the last
-t_jump = 1
+t_jump = 10
 
 t0 = 0
 tlen = 1
