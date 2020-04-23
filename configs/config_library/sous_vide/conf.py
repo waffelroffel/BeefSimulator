@@ -20,7 +20,7 @@ t0 = 0
 tlen = 780 #13 min
 tn = t0+tlen
 
-folder = f"sous_vide_{tlen}sec"
+folder = f"sous_vide_t{tlen}_dt{dt:.2g}_dh{dh:.2g}"
 
 # Actual beef size split symmetrically along xy-axes. Implement symmetric B.C.s
 # to compensate.
