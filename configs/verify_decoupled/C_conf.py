@@ -17,16 +17,11 @@ def C_initial(T, C, shape, xx, yy, zz, t):
     return C_analytic(T, C, shape, xx, yy, zz, t)
 
 
-def C_a(T, C, shape, xx, yy, zz, t):
-    return 1/mu
+C_a = 1 / mu
 
+C_b = 1
 
-def C_b(T, C, shape, xx, yy, zz, t):
-    return 1
-
-
-def C_c(T, C, shape, xx, yy, zz, t):
-    return 0
+C_c = 0
 
 
 def C_alpha(T, C, shape, xx, yy, zz, t):

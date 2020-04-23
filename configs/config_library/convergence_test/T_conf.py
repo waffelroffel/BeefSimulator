@@ -5,6 +5,7 @@ alp = 0.125e-6
 # All sidelengths are 1
 # alp = alpha = heat transfer coeff. This produces the eq. dT/dt = alpha*grad^2(T)
 
+
 def T(xx, yy, zz, t):
     return 3 * np.exp(-4*alp*(np.pi)**2*(1+1+4) * t) * \
         np.sin(2*np.pi * xx) * np.sin(2*np.pi * yy) * np.sin(4*np.pi * zz)
@@ -14,16 +15,11 @@ def T_initial(xx, yy, zz, t):
     return T(xx, yy, zz, t)
 
 
-def T_a(xx, yy, zz, t):
-    return np.ones(xx.size)
+T_a = 1
 
+T_b = alp
 
-def T_b(xx, yy, zz, t):
-    return np.ones(xx.size) * alp
-
-
-def T_c(xx, yy, zz, t):
-    return np.zeros(xx.size)
+T_c = 0
 
 
 def T_alpha(xx, yy, zz, t):

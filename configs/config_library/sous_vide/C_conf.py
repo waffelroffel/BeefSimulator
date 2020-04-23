@@ -1,5 +1,5 @@
-## C_conf
-## sous_vide
+# C_conf
+# sous_vide
 
 import numpy as np
 from auxillary_functions import u_w, C_eq
@@ -11,37 +11,33 @@ def C(xx, yy, zz, t):
 
 
 def C_initial(T, C, shape, xx, yy, zz, t):
-    return 0.75 # kg water/kg beef
-
-def C_a(T, C, shape, xx, yy, zz, t):
-    return 1
+    return 0.75  # kg water/kg beef
 
 
-def C_b(T, C, shape, xx, yy, zz, t):
-    return c.D
+C_a = 1
 
+C_b = c.D
 
-def C_c(T, C, shape, xx, yy, zz, t):
-    return - 1
+C_c = -1
 
 
 def C_alpha(T, C, shape, xx, yy, zz, t):
     temp = - c.D * np.ones(shape)
     # No flux through bottom
-    temp[:,:,0] = 1
+    temp[:, :, 0] = 1
     # Symmetric B.C.
-    temp[-1,:,:] = 1
-    temp[:,-1,:] = 1
+    temp[-1, :, :] = 1
+    temp[:, -1, :] = 1
     return temp
 
 
 def C_beta(T, C, shape, xx, yy, zz, t):
     temp = np.ones(shape)
     # No flux through bottom
-    temp[:,:,0] = 0
+    temp[:, :, 0] = 0
     # Symmetric B.C.
-    temp[-1,:,:] = 0
-    temp[:,-1,:] = 0
+    temp[-1, :, :] = 0
+    temp[:, -1, :] = 0
     return temp
 
 

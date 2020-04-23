@@ -82,18 +82,18 @@ class BeefSimulator:
 
     def setup_TC(self, conf, T_conf, C_conf):
         # Defines the PDE and boundary conditions for T
-        self.T_a = self.wrap(T_conf["pde"]["a"])
-        self.T_b = self.wrap(T_conf["pde"]["b"])
-        self.T_c = self.wrap(T_conf["pde"]["c"])
+        self.T_a = T_conf["pde"]["a"]
+        self.T_b = T_conf["pde"]["b"]
+        self.T_c = T_conf["pde"]["c"]
         self.T_alpha = self.wrap(T_conf["bnd"]["alpha"])
         self.T_beta = self.wrap(T_conf["bnd"]["beta"])
         self.T_gamma = self.wrap(T_conf["bnd"]["gamma"])
         self.T_initial = self.wrap(T_conf["initial"])
 
         # Defines the PDE and boundary conditions for C
-        self.C_a = self.wrap(C_conf["pde"]["a"])
-        self.C_b = self.wrap(C_conf["pde"]["b"])
-        self.C_c = self.wrap(C_conf["pde"]["c"])
+        self.C_a = C_conf["pde"]["a"]
+        self.C_b = C_conf["pde"]["b"]
+        self.C_c = C_conf["pde"]["c"]
         self.C_alpha = self.wrap(C_conf["bnd"]["alpha"])
         self.C_beta = self.wrap(C_conf["bnd"]["beta"])
         self.C_gamma = self.wrap(C_conf["bnd"]["gamma"])
@@ -233,7 +233,7 @@ class BeefSimulator:
 
             A = self.make_Ab(b_U)
 
-            U1 = U0 + (self.dt / self.a(self.ii)) * (A @ U0 + b_U)
+            U1 = U0 + (self.dt / self.a) * (A @ U0 + b_U)
             U1[self.direchets] = self.gamma(self.ii)[self.direchets] / \
                 self.beta(self.ii)[self.direchets]
 
@@ -244,9 +244,9 @@ class BeefSimulator:
         # ------- contruct all diagonals -------
 
         #tic = time.perf_counter()
-        bh2 = self.b(self.ii) / self.dh**2
+        bh2 = self.b / self.dh**2
 
-        c2h = self.c(self.ii) / (2 * self.dh)
+        c2h = self.c / (2 * self.dh)
 
         ux = self.u[:, 0]
         uy = self.u[:, 1]
@@ -262,7 +262,7 @@ class BeefSimulator:
         C2_y = bh2 - c2huy
         C1_z = bh2 + c2huz
         C2_z = bh2 - c2huz
-        C3 = 6 * bh2
+        C3 = 6 * bh2 * np.ones_like(c2hux)
 
         u = np.array([ux, ux, uy, uy, uz, uz]).transpose()
         C_u_d0 = np.array([-C2_x, C1_x, -C2_y, C1_y, -C2_z, C1_z]).transpose()
@@ -273,9 +273,8 @@ class BeefSimulator:
         C4 = 2 * self.dh / _alpha
 
         d0, d1, d2, d3, d4, d5, d6 = [-C3, C1_x, C1_y, C1_z, C2_x, C2_y, C2_z]
-
-        # --------------- modify the boundaries ---------------
         #toc = time.perf_counter()
+        # --------------- modify the boundaries ---------------
         prod = af.dotND(
             self.boundaries[:, 1:], (C_u_d0*u)[self.boundaries[:, 0]], axis=1)
         d0[self.boundaries[:, 0]] -= prod * C4[self.boundaries[:, 0]] * \

@@ -14,10 +14,10 @@ dh = 1e-3
 dt = 1e-4
 
 # -1: only the last step is saved
-t_jump = 10000 # Save progress each 10 seconds
+t_jump = 10000  # Save progress each 10 seconds
 
 t0 = 0
-tlen = 780 #13 min
+tlen = 780  # 13 min
 tn = t0+tlen
 
 folder = f"conv_oven_{tlen}sec"

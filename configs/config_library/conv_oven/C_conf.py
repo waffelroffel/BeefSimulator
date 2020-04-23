@@ -15,16 +15,11 @@ def C_initial(T, C, shape, xx, yy, zz, t):
     return 0.75  # kg water/kg beef
 
 
-def C_a(T, C, shape, xx, yy, zz, t):
-    return 1
+C_a = 1
 
+C_b = c.D
 
-def C_b(T, C, shape, xx, yy, zz, t):
-    return c.D
-
-
-def C_c(T, C, shape, xx, yy, zz, t):
-    return -1
+C_c = -1
 
 
 def C_alpha(T, C, shape, xx, yy, zz, t):

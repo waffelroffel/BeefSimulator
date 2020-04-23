@@ -13,16 +13,11 @@ def T_initial(xx, yy, zz, t):
     return T(xx, yy, zz, t)
 
 
-def T_a(xx, yy, zz, t):
-    return np.ones(xx.size)/alp
+T_a = 1/alp
 
+T_b = 1
 
-def T_b(xx, yy, zz, t):
-    return 1
-
-
-def T_c(xx, yy, zz, t):
-    return np.zeros(xx.size)
+T_c = 0
 
 
 def T_alpha(xx, yy, zz, t):
