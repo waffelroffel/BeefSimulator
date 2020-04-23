@@ -6,7 +6,7 @@ import datetime
 
 if __name__ == "__main__":
     start = datetime.datetime.now()
-    print("Running BeefSimulator for convention oven.")
+    print("Running BeefSimulator for convection oven.")
     print("Started at:", start, "\n")
     bs = BeefSimulator(conf, T_conf, C_conf)
 
