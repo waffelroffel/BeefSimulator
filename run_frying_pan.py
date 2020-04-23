@@ -12,5 +12,6 @@ if __name__ == "__main__":
 
     bs.solver()
     end = datetime.datetime.now()
-    print("Started at:", start, "\tFinished at:", end)
+    print("Frying pan - Started at:", start, "\tFinished at:", end)
     print("Total elapsed time:", end - start)
+    print()

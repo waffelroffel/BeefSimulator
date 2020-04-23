@@ -1,5 +1,5 @@
-## conf
-## sous_vide
+# conf
+# sous_vide
 
 logging = {
     "init": True,  # print the configuration of beefsimulator
@@ -10,14 +10,14 @@ logging = {
     "final": False  # print the final state of T
 }
 
-dh = 1e-3
+dh = 3e-3
 dt = 1e-4
 
 # -1: only the last step is saved
-t_jump = 10000 # Save progress each 10 seconds
+t_jump = 10000  # Save progress each 10 seconds
 
 t0 = 0
-tlen = 780 #13 min
+tlen = 780  # 13 min
 tn = t0+tlen
 
 folder = f"sous_vide_t{tlen}_dt{dt:.2g}_dh{dh:.2g}"
