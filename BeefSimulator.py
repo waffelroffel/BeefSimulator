@@ -4,6 +4,7 @@ import Plotting.BeefPlotter as BP
 from pathlib import Path
 import auxillary_functions as af
 import json
+import time
 
 
 class BeefSimulator:
@@ -56,7 +57,8 @@ class BeefSimulator:
         self.t = np.linspace(conf["t0"], conf["tn"],
                              round(conf["tlen"] / self.dt) + 1)
 
-        self.t_jump = conf["t_jump"]
+        self.t_jump = conf["t_jump"] if conf["t_jump"] != - \
+            1 else self.t.size  # if -1, t_jump is unreachable by the loop in solver
         t_steps = 1 if self.t_jump == - \
             1 else int(self.t.size / self.t_jump) + 1
 
@@ -188,10 +190,11 @@ class BeefSimulator:
         solve for both temp. and conc.
         """
         self.logg("stage", "Iterating...", )
+
         for step, t in enumerate(self.t):
+            self.logg("tn", f't: {t:.3f}')
             # save each "step"
-            if self.t_jump != -1 and step % self.t_jump == 0:
-                self.logg("tn", f't: {t:.3f}')
+            if step % self.t_jump == 0:
                 i = int(step / self.t_jump)
                 self.T_data[i] = self.T0.reshape(self.shape[1:])
                 self.C_data[i] = self.C0.reshape(self.shape[1:])
@@ -227,9 +230,10 @@ class BeefSimulator:
         Calculate the next time step (T1)
         """
         if method == "cd":
-            A = self.make_Ab(b_U)
-            U1[...] = U0 + (self.dt / self.a(self.ii)) * (A @ U0 + b_U)
 
+            A = self.make_Ab(b_U)
+
+            U1 = U0 + (self.dt / self.a(self.ii)) * (A @ U0 + b_U)
             U1[self.direchets] = self.gamma(self.ii)[self.direchets] / \
                 self.beta(self.ii)[self.direchets]
 
@@ -239,7 +243,9 @@ class BeefSimulator:
         """
         # ------- contruct all diagonals -------
 
+        #tic = time.perf_counter()
         bh2 = self.b(self.ii) / self.dh**2
+
         c2h = self.c(self.ii) / (2 * self.dh)
 
         ux = self.u[:, 0]
@@ -256,21 +262,19 @@ class BeefSimulator:
         C2_y = bh2 - c2huy
         C1_z = bh2 + c2huz
         C2_z = bh2 - c2huz
+        C3 = 6 * bh2
 
         u = np.array([ux, ux, uy, uy, uz, uz]).transpose()
         C_u = np.array([-C2_x, C1_x, -C2_y, C1_y, -C2_z, C1_z]).transpose()
 
-        C3 = (6 / self.dh**2) * self.b(self.ii)
-
-        _alpha = self.alpha(self.ii).copy()
+        _alpha = self.alpha(self.ii)
         _alpha[self.direchets] = 1  # dummy
-        _alpha[_alpha == 0] = 1  # dummy
         C4 = 2 * self.dh / _alpha
 
         d0, d1, d2, d3, d4, d5, d6 = [-C3, C1_x, C1_y, C1_z, C2_x, C2_y, C2_z]
 
         # --------------- modify the boundaries ---------------
-
+        #toc = time.perf_counter()
         prod = af.dotND(
             self.boundaries[:, 1:], (C_u*u)[self.boundaries[:, 0]], axis=1)
         d0[self.boundaries[:, 0]] -= prod * C4[self.boundaries[:, 0]] * \
@@ -302,8 +306,8 @@ class BeefSimulator:
         d6[i6 + k6] = (C1_z + C2_z)[i6 + k6]
         d6[i3 + k6] = 0
         d6 = d6[:k6]
-
         # -----------------------------------------------------
+        #tec = time.perf_counter()
         ds = [d0, d1, d2, d3, d4, d5, d6]
         A = sp.diags(ds, self.ks)
 
@@ -312,9 +316,13 @@ class BeefSimulator:
 
         b_U[self.boundaries[:, 0]] = prod * C4[self.boundaries[:, 0]] * \
             self.gamma(self.ii)[self.boundaries[:, 0]]
-
+        #tac = time.perf_counter()
         self.logg("Ab", f'A = {A}')
         self.logg("Ab", f'b = {b_U}')
+        #print(f"{(toc - tic)/(tac - tic):0.4g}", end=';')
+        #print(f"{(tec - toc)/(tac - tic):0.4g}", end=";")
+        #print(f"{(tac - tec)/(tac - tic):0.4g}", end=";")
+        #print(f"\t {tac - tic:0.4g}")
         return A
 
     # -------------------- Logger --------------------
