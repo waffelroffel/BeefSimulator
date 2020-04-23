@@ -30,11 +30,11 @@ xlen = 0.075
 xn = x0+xlen
 
 y0 = 0
-ylen = 0.04
+ylen = 0.039
 yn = y0+ylen
 
 z0 = 0
-zlen = 0.055
+zlen = 0.054
 zn = z0+zlen
 
 conf = {
