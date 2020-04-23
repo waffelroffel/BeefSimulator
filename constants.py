@@ -23,6 +23,7 @@ K = 1e-17          #m^2        Permeability - in range 1e-17 to 1e-19
 f = 0.88           #-          Fraction of energy used for evaporation # TODO: Must be adapted - may not be constant
 T_room = 20        #C          Room temperature for frying pan
 T_pan = 175        #C          Frying pan temperature
+T_sousvide = 70    #C          Sous vide oven temperature
 '''Composite constants'''
 cp_m = (1.6*y_c+2*y_p+2*y_f+4.2*y_w)*1e3
 rho_m = 1 / (y_c/rho_c + y_p/rho_p + y_f/rho_f + y_w/rho_w)
