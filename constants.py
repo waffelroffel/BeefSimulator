@@ -38,12 +38,6 @@ a2 = 0.345
 a3 = 30
 a4 = 0.25
 T_sig = 52         # ⁰C
-'''Discretization constants'''
-dx = 0.01          #m
-dt = 0.1           #s
-Lx = 0.10          #m			X-length of beef
-Ly = 0.20          #m			Y-length of beef
-Lz = 0.15          #m			X-length of beef
 '''Constants for fraction of energy used for evaporation'''
 f0=0                #minimum fraction of energy that can be used for evaporation
 f1=47               #based on cooking of cod
