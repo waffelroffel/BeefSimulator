@@ -40,11 +40,15 @@ def T_gamma(T, C, shape, xx, yy, zz, t):
     temp[-1, :, :] = 0
     temp[:, -1, :] = 0
     T_shape = T.reshape(shape)
+
     # Air facing edges compare to room temperature
-    temp *= (1 - f_func(T)) * c.h * (c.T_room - T_shape)
+    temp[:, :, 1:] *= (1 - f_func(T_shape[:, :, 1:])) * \
+        c.h * (c.T_room - T_shape[:, :, 1:])
+
     # Bottom facing edge compare to pan temperature
-    temp[:,:,0] = (1-f_func(T_shape)) * c.h * (c.T_pan - T_shape[:,:,0])
-    #TODO: Check if h should be different for the pan (or sous vide)
+    temp[:, :, 0] = (1-f_func(T_shape[:, :, 0])) * \
+        c.h * (c.T_pan - T_shape[:, :, 0])
+    # TODO: Check if h should be different for the pan (or sous vide)
     return temp.flatten()
 
 
