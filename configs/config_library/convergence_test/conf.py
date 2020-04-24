@@ -9,13 +9,13 @@ logging = {
 
 # Example
 dt_list = [ 0.001, 0.000316228, 0.0001, 0.000031623, 0.00001 ]
-dh_list = [ 0.1, 0.031622777, 0.01, 0.003162278, 0.001 ]
+dh_list = [ 0.03, 0.0094868331, 0.003, 0.00094868331, 0.0003 ]
 dt_default = 0.0001
-dh_default = 0.01
+dh_default = 0.003
 
 # Must be changed for each dataset
-dh = 1e-2
-dt = 1e-3
+dt = dt_default
+dh = dh_default
 folder = f"convtest_T_dt{:.2g}_dh{dh:.2g}"
 
 # -1: only the last
@@ -26,15 +26,15 @@ tlen = 10
 tn = t0+tlen
 
 x0 = 0
-xlen = Lx
+xlen = 0.075
 xn = x0+xlen
 
 y0 = 0
-ylen = Ly
+ylen = 0.039
 yn = y0+ylen
 
 z0 = 0
-zlen = Lz
+zlen = 0.054
 zn = z0+zlen
 
 conf = {

@@ -2,9 +2,9 @@ import numpy as np
 from auxillary_functions import u_w
 
 D = 4e-10
-Lx = 1
-Ly = 1
-Lz = 1
+Lx = 0.075
+Ly = 0.039
+Lz = 0.054
 # D = diffusion coeff. This produces the eq. dC/dt = D*grad^2(D)
 
 

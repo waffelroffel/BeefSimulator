@@ -3,9 +3,9 @@ from auxillary_functions import u_w
 
 # alp = 0.125e-6
 alp = 1e-4
-Lx = 1
-Ly = 1
-Lz = 1
+Lx = 0.075
+Ly = 0.039
+Lz = 0.054
 # alp = alpha = heat transfer coeff. This produces the eq. dT/dt = alpha*grad^2(T)
 
 
