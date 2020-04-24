@@ -7,28 +7,34 @@ logging = {
     "final": False  # print the final state of T
 }
 
-folder = "conv_dt_T_1_1e-3"
+# Example
+dt_list = [ 0.001, 0.000316228, 0.0001, 0.000031623, 0.00001 ]
+dh_list = [ 0.1, 0.031622777, 0.01, 0.003162278, 0.001 ]
+dt_default = 0.0001
+dh_default = 0.01
 
+# Must be changed for each dataset
 dh = 1e-2
 dt = 1e-3
+folder = f"convtest_T_dt{:.2g}_dh{dh:.2g}"
 
 # -1: only the last
 t_jump = -1
 
 t0 = 0
-tlen = 0.3
+tlen = 10
 tn = t0+tlen
 
 x0 = 0
-xlen = 1
+xlen = Lx
 xn = x0+xlen
 
 y0 = 0
-ylen = 1
+ylen = Ly
 yn = y0+ylen
 
 z0 = 0
-zlen = 1
+zlen = Lz
 zn = z0+zlen
 
 conf = {

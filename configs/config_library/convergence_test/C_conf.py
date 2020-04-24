@@ -2,13 +2,15 @@ import numpy as np
 from auxillary_functions import u_w
 
 D = 4e-10
-# All sidelengths are 1
+Lx = 1
+Ly = 1
+Lz = 1
 # D = diffusion coeff. This produces the eq. dC/dt = D*grad^2(D)
 
 
 def C(xx, yy, zz, t):
-    return 3 * np.exp(-4*D*(np.pi)**2*(1+1+4) * t) * \
-        np.sin(2*np.pi * xx) * np.sin(2*np.pi * yy) * np.sin(4*np.pi * zz)
+    return 3 * np.exp(-4*D*(np.pi)**2*(1/Lx+1/Ly+4/Lz) * t) * \
+        np.sin(2*np.pi/Lx * xx) * np.sin(2*np.pi/Ly * yy) * np.sin(4*np.pi/Lz * zz)
 
 
 def C_initial(T, C, shape, xx, yy, zz, t):

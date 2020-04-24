@@ -1,14 +1,17 @@
 import numpy as np
 from auxillary_functions import u_w
 
-alp = 0.125e-6
-# All sidelengths are 1
+# alp = 0.125e-6
+alp = 1e-4
+Lx = 1
+Ly = 1
+Lz = 1
 # alp = alpha = heat transfer coeff. This produces the eq. dT/dt = alpha*grad^2(T)
 
 
 def T(xx, yy, zz, t):
-    return 3 * np.exp(-4*alp*(np.pi)**2*(1+1+4) * t) * \
-        np.sin(2*np.pi * xx) * np.sin(2*np.pi * yy) * np.sin(4*np.pi * zz)
+    return 3 * np.exp(-4*alp*(np.pi)**2*(1/Lx+1/Ly+4/Lz) * t) * \
+        np.sin(2*np.pi/Lx * xx) * np.sin(2*np.pi/Ly * yy) * np.sin(4*np.pi/Lz * zz)
 
 
 def T_initial(T, C, shape, xx, yy, zz, t):
