@@ -16,7 +16,7 @@ dh_default = 0.003
 # Must be changed for each dataset
 dt = dt_default
 dh = dh_default
-folder = f"convtest_T_dt{:.2g}_dh{dh:.2g}"
+folder = f"convtest_T_dt{dt:.2g}_dh{dh:.2g}"
 
 # -1: only the last
 t_jump = -1
