@@ -233,7 +233,7 @@ class BeefSimulator:
 
             A = self.make_Ab(b_U)
 
-            U1 = U0 + (self.dt / self.a) * (A @ U0 + b_U)
+            U1[...] = U0 + (self.dt / self.a) * (A @ U0 + b_U)
             U1[self.direchets] = self.gamma(self.ii)[self.direchets] / \
                 self.beta(self.ii)[self.direchets]
 

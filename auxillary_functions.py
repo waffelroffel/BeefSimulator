@@ -40,7 +40,7 @@ def u_w(T: np.array, C: np.array, dh) -> np.array:
     :param C: np.array: Water holding capacity distribution (x,y,z)
     :return: np.array: Water velocity vector [(x,y,z), (x,y,z), (x,y,z)]
     '''
-    return np.asfortranarray(-co.K * E(T) / mu_w(T) * np.array(np.gradient(C - C_eq(T), dh)))
+    return -co.K * E(T) / mu_w(T) * np.array(np.gradient(C - C_eq(T), dh))
 
 
 def div(A: np.array, dr: float = 1) -> np.array:
