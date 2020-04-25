@@ -15,7 +15,7 @@ def T(xx, yy, zz, t):
 
 
 def T_initial(T, C, shape, xx, yy, zz, t):
-    return T(xx, yy, zz, t)
+    return T(xx, yy, zz, 0)
 
 
 T_a = 1

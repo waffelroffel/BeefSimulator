@@ -7,15 +7,16 @@ logging = {
     "final": False  # print the final state of T
 }
 
-# Example
+# approximately equal log spacing
 dt_list = [ 0.001, 0.000316228, 0.0001, 0.000031623, 0.00001 ]
 dh_list = [ 0.03, 0.0094868331, 0.003, 0.00094868331, 0.0003 ]
 dt_default = 0.0001
 dh_default = 0.003
 
-# Must be changed for each dataset
-dt = dt_default
-dh = dh_default
+# NB!!! - Must be changed for each dataset
+dt = dt_default # = dt_list[i]
+dh = dh_default # = dh_list[i]
+
 folder = f"convtest_T_dt{dt:.2g}_dh{dh:.2g}"
 
 # -1: only the last
