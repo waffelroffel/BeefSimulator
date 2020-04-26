@@ -18,10 +18,11 @@ dh_default = 0.003
 # dt_list = [ 1e-3, 6.77323522e-4, 4.58767154e-4, 3.10733784e-4, 2.10467301e-4, 1.42554454e-4, 9.65554847e-5, 6.53993010e-5, 4.42964849e-5, 3.00030511e-5 ]
 
 # NB!!! - Must be changed for each dataset
-dt = dt_list[0] # = dt_list[i]
+dt = dt_default # = dt_list[i]
 dh = dh_default # = dh_list[i]
 
-folder = f"convtest_T_dt{dt:.2g}_dh{dh:.2g}"
+# T for temperature test, neu for neumann boundaries specified
+folder = f"convtest_neu_T_dt{dt:.2g}_dh{dh:.2g}"
 
 # -1: only the last
 t_jump = -1
