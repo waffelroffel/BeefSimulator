@@ -14,7 +14,7 @@ def C(xx, yy, zz, t):
 
 
 def C_initial(T, C, shape, xx, yy, zz, t):
-    # return C(xx, yy, zz, t)
+    # return 3 * np.sin(2*np.pi/Lx * xx) * np.sin(2*np.pi/Ly * yy) * np.sin(4*np.pi/Lz * zz)
     return 0
 
 

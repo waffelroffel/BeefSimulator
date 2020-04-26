@@ -7,11 +7,15 @@ logging = {
     "final": False  # print the final state of T
 }
 
-# approximately equal log spacing
-dt_list = [ 0.001, 0.000316228, 0.0001, 0.000031623, 0.00001 ]
-dh_list = [ 0.03, 0.0094868331, 0.003, 0.00094868331, 0.0003 ]
+# numpy logspace
+dt_list = [ 1e-3, 4.16189726e-4, 1.73213888e-44, 7.20898408e-5, 3.00030511e-5 ]
+dh_list = [ 0.01, 0.00562341, 0.00316228, 0.00177828, 0.001 ]
 dt_default = 0.0001
 dh_default = 0.003
+
+# If you want length 10, use these instead
+# dh_list = [ 0.01, 0.00774264, 0.00599484, 0.00464159, 0.00359381, 0.00278256, 0.00215443, 0.0016681 , 0.00129155, 0.001 ]
+# dt_list = [ 1e-3, 6.77323522e-4, 4.58767154e-4, 3.10733784e-4, 2.10467301e-4, 1.42554454e-4, 9.65554847e-5, 6.53993010e-5, 4.42964849e-5, 3.00030511e-5 ]
 
 # NB!!! - Must be changed for each dataset
 dt = dt_default # = dt_list[i]

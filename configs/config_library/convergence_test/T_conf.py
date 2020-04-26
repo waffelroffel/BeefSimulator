@@ -15,7 +15,7 @@ def T(xx, yy, zz, t):
 
 
 def T_initial(T, C, shape, xx, yy, zz, t):
-    return T(xx, yy, zz, 0)
+    return 3 * np.sin(2*np.pi/Lx * xx) * np.sin(2*np.pi/Ly * yy) * np.sin(4*np.pi/Lz * zz)
 
 
 T_a = 1
