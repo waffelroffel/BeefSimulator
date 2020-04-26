@@ -10,7 +10,7 @@ logging = {
     "final": False  # print the final state of T
 }
 
-dh = 1e-3
+dh = 3e-3
 dt = 1e-4
 
 # -1: only the last step is saved
@@ -26,15 +26,15 @@ folder = f"uncoupled_t{tlen}_dt{dt:.2g}_dh{dh:.2g}"
 # to compensate.
 
 x0 = 0
-xlen = 0.047
+xlen = 0.045
 xn = x0+xlen
 
 y0 = 0
-ylen = 0.025
+ylen = 0.024
 yn = y0+ylen
 
 z0 = 0
-zlen = 0.016
+zlen = 0.015
 zn = z0+zlen
 
 conf = {
