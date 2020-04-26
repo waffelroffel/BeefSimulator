@@ -2,112 +2,101 @@
 
 from BeefSimulator import BeefSimulator
 import numpy as np
-import beef_functions
 import matplotlib.pyplot as plt
-import data_management
-import typing
-from configs.convTest_conf import convTest_conf
-
-# Advanced type hints, just for fun
-beef_list = typing.List[ BeefSimulator ]
-float_list = typing.List[ float ]
+from pathlib import Path
+import json
+from configs.config_library.convergence_test.conf import conf, dt_list, dh_list, dt_default, dh_default
+from configs.config_library.convergence_test.T_conf import alp, Lx, Ly, Lz, T
 
 
-# WIP:
-def produce_datasets( ):
-    # Produced with numpy logspace
-    dt_list = [ 0.01, 0.00316228, 0.001, 0.00031623, 0.0001 ]
-    dh_list = [ 1., 0.31622777, 0.1, 0.03162278, 0.01 ]
-    dt_default = 0.001
-    dh_default = 0.1
-    folder_names = [f'conv_T_dt_{i}' for i in dt_list] + [f'conv_T_dh_{j}' for j in dh_list]
-    ...
+def find_single_dataset_abs_diff( data: np.array, analytical_sol, meshg: np.array, time: float ) -> float:
+    analytical_data = analytical_sol( meshg[0], meshg[1], meshg[2], time )
+    # Frobenius matrix norm
+    return abs(np.linalg.norm(data - analytical_data))
 
 
-# A function that parses config file and initializes beef objects with the data corresponding to the parsed folder names
-# TODO: Implement stuff that does not exist
-def initialize_conv_beefs( conf: dict ) -> [ beef_list, beef_list ]:
-    du_list: float_list = conf[ 'du_list' ]
-    N: int = len( du_list )
-    beef_names = [ f'beef{n}' for n in range( N ) ]
-    calc_beefs = [
-        ... ]  # Lists of beefs to be initialized with appropriate config files (may become unnecessary if
-    # functionality to extract data without configing the beef object is ever added
-    exact_beefs = [
-        ...  # List (may be of length one) of the beef objects initialized with analytic solution
-    ]
-    
-    ...
-    
-    return [ calc_beefs, exact_beefs ]
+def get_data_from_foldername( foldername: str, time: float ):
+    path = Path(foldername)
+    head_path = path.joinpath("header.json")
+    T_path = path.joinpath("T.dat")
+    C_path = path.joinpath("C.dat")
 
+    header = None
+    with open(head_path) as f:
+        header = json.load(f)
 
-def produce_conv_plotdata( calc_beefs: beef_list, analytic_beefs: beef_list, t: float, du_list: float_list,
-                           u_id: str, pprty: str ) -> np.array:
-    '''
-    Produces np.array that can be fed to plt.plot(data[0], data[1]) to plot the results of the convergence test
-    :param calc_beefs: list of numerically iterated beef objects. Must all have produced data up to time t
-    :param analytic_beefs: list of analytic beef objects at time t. If u_id='dt', the beef list has length 1. If,
-    u_id='dh', this list has the same length as du_list, and each analytic solution has the same dimension as the
-    corresponding calc_beef-objects
-    :param t: the time at which the beef objects are evaluated
-    :param du_list: the steps of du used (du may refer to dt or dh=dx,dy,dz)
-    :param u_id: identifying which parameter we are convergence testing. Must be either 'dt' or 'dh'
-    :param pprty: which property we are comparing. Must be either 'T' or 'C'
-    :return: The calculated absolute norms for the differential values specified in du_list after iterating to time t
-    '''
-    
-    N = len( du_list )
-    norms = np.zeros( N )
-    
-    if (pprty == 'T' or pprty == 'C'):
-        
-        if u_id == 'dt':
-            # Analytic data list has length 1
-            for n in range( N ):
-                norms[ n ] = abs( beef_functions.compare_beefs( calc_beefs[ n ], analytic_beefs[ 0 ], t, pprty ) )
-        
-        elif u_id == 'dh':
-            # Analytic data has the same length as du_list
-            for n in range( N ):
-                norms[ n ] = abs( beef_functions.compare_beefs( calc_beefs[ n ], analytic_beefs[ n ], t, pprty ) )
-        
-        else:
-            raise ValueError( f'I can only produce convergence tests for "dt" and "dh", but you fed me "{u_id}"!' )
-    
+    t_jump = header["t_jump"]
+    dt = header["dt"]
+    dh = header["dh"]
+
+    dims = header["dims"]
+    shape = tuple(header["shape"])
+    t = np.linspace(header["t0"], header["tn"], shape[0])
+    x = np.linspace(dims["x0"], dims["xn"], shape[1])
+    y = np.linspace(dims["y0"], dims["yn"], shape[2])
+    z = np.linspace(dims["z0"], dims["zn"], shape[3])
+
+    meshg = np.meshgrid(x, y, z, indexing='ij')
+
+    if t_jump == -1:
+        t_index = -1
     else:
-        raise ValueError( f'I can only test convergence for "T" and "C", but you fed me "{pprty}"!' )
-    
-    # This data may immediately be plotted data[0] vs data[1]
-    return np.array( [ du_list, norms ] )
+        t_index = int( (time / dt) / t_jump )
+
+    T_data = np.memmap(T_path, dtype="float64", mode="r", shape=shape)
+    C_data = np.memmap(C_path, dtype="float64", mode="r", shape=shape)
+
+    return meshg, T_data[t_index], C_data[t_index]
 
 
-# Much pseudo code
-def plot_convergencetest( data: list, config: dict ):
-    # Plot each dataset that is sent in
-    for d in data:
-        plt.plot( d[ 0 ], d[ 1 ], marker='o', lw=5, label='' )
-    plt.xlabel( config[ 'x_label' ] )
-    plt.ylabel( config[ 'y_label' ] )
-    plt.title( config[ 'title' ] )
-    plt.legend( )
-    plt.show( )
-    plt.savefig( fname=config[ 'plot_savefile' ], format='pdf' )
+def du_data( folder_names: list, time: float, analytic = T ) -> list:
+    l = len(folder_names)
+    diff = np.zeros(l)
+    for i in range(l):
+        meshg, Tdata, Cdata = get_data_from_foldername(folder_names[i], time)
+        diff[i] = find_single_dataset_abs_diff(Tdata, analytic, meshg, time)
+    return diff
 
 
-# Example: Producing convergence test for a single quantity (ex. T) over a single variable (ex. dt)
+def plot_convergencetest_dt( dt: list, diff: list, eval_time: float ) -> None:
+    plt.semilogx( dt, diff, marker='^', ms=10, lw=1, color='k' )
+    plt.xlabel(r'$\Delta t$')
+    plt.ylabel(r'Error')
+    plt.title(r'Error after '+str(eval_time)+r' seconds.')
+    plt.grid()
+    plt.gcf()
+    plt.savefig(fname='data/dt_convplot.pdf', format='pdf')
+    plt.show()
+
+
+def plot_convergencetest_dh( dh: list, diff: list, eval_time: float ) -> None:
+    plt.semilogx( dh, diff, marker='^', ms=10, lw=1, color='k' )
+    plt.xlabel(r'$\Delta h$')
+    plt.ylabel(r'Error')
+    plt.title(r'Error after '+str(eval_time)+r' seconds.')
+    plt.grid()
+    plt.gcf()
+    plt.savefig(fname='data/dh_convplot.pdf', format='pdf')
+    plt.show()
+
+
+
+# This only runs if all combinations of dt_list and dh_list convergence test data exists
 if __name__ == '__main__':
-    
-    config_filename = 'configs/convTest_conf.py'
-    beef_objects = initialize_conv_beefs( convTest_conf )
-    # Removed this to incentivise convergence test for T and C simultaneously
-    # plotdata = produce_conv_plotdata( beef_objects[ 0 ], beef_objects[ 1 ], convTest_conf[ 't' ],
-    #                                   convTest_conf[ 'du_list' ], convTest_conf[ 'du_type' ],
-    #                                   convTest_conf[ 'quantity' ] )
-    plotdata_T = produce_conv_plotdata( beef_objects[ 0 ], beef_objects[ 1 ], convTest_conf[ 't' ],
-                                        convTest_conf[ 'du_list' ], convTest_conf[ 'du_type' ], 'T' )
-    plotdata_C = produce_conv_plotdata( beef_objects[ 0 ], beef_objects[ 1 ], convTest_conf[ 't' ],
-                                        convTest_conf[ 'du_list' ], convTest_conf[ 'du_type' ], 'C' )
-    data_management.write_csv( plotdata_T, convTest_conf[ 'plot_data' ][ 'data_savefile_T' ], True )
-    data_management.write_csv( plotdata_C, convTest_conf[ 'plot_data' ][ 'data_savefile_C' ], True )
-    plot_convergencetest( [ plotdata_T, plotdata_C ], convTest_conf[ 'plot_data' ] )
+    dt_list.append(dt_default)
+    dt_list.sort()
+    dh_list.append(dh_default)
+    dh_list.sort()
+    dt_folders = []
+    dh_folders = []
+    for i in range(len(dt_list)):
+        dt_folders.append(f'data/convtest_neu_T_dt{dt_list[i]:.2g}_dh{dh_default:.2g}')
+    for j in range(len(dh_lsit)):
+        dh_folders.append(f'data/convtest_neu_T_dt{dt_default:.2g}_dh{dh_list[j]:.2g}')
+
+    convtime = conf['tlen']
+
+    diff_t = du_data( dt_folders, convtime, T )
+    diff_h = du_data( dh_folders, convtime, T )
+    plot_convergencetest_dt( dt_list, diff_t, convtime )
+    plot_convergencetest_dh( dh_list. diff_h, convtime )

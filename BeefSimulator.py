@@ -109,7 +109,7 @@ class BeefSimulator:
         self.b_C = np.zeros(self.num_nodes)
 
     def setup_mesh(self, conf, T_conf, C_conf):
-        xx, yy, zz = np.meshgrid(self.x, self.y, self.z)
+        xx, yy, zz = np.meshgrid(self.x, self.y, self.z, indexing='ij') #TODO: NB!! Changed indexing 26. april
         self.ii = [self.T0, self.C0, self.space, xx, yy, zz, self.t[0]]
 
     def setup_files(self, conf, T_conf, C_conf):
@@ -466,7 +466,7 @@ class BeefSimulator:
         j = (bnd == 5 and [self.J - 1]) or (bnd == 2 and [0]) or range(self.J)
         k = (bnd == 6 and [self.K - 1]) or (bnd == 3 and [0]) or range(self.K)
         # just ignore sort? it doesn't break without it
-        return np.sort(np.array(self.index_of(*np.meshgrid(i, j, k))).T.reshape(-1))
+        return np.sort(np.array(self.index_of(*np.meshgrid(i, j, k))).T.reshape(-1)) #TODO: should this be ij-indexing?
 
     def get_direchet_indices(self, bnd_types):
         uniques = set()

@@ -26,15 +26,15 @@ folder = f"frying_pan_t{tlen}_dt{dt:.2g}_dh{dh:.2g}"
 # to compensate.
 
 x0 = 0
-xlen = 0.075
+xlen = 0.045
 xn = x0+xlen
 
 y0 = 0
-ylen = 0.039
+ylen = 0.024
 yn = y0+ylen
 
 z0 = 0
-zlen = 0.054
+zlen = 0.015
 zn = z0+zlen
 
 conf = {

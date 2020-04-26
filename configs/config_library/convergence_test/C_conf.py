@@ -2,9 +2,9 @@ import numpy as np
 from auxillary_functions import u_w
 
 D = 4e-10
-Lx = 1
-Ly = 1
-Lz = 1
+Lx = 0.075
+Ly = 0.039
+Lz = 0.054
 # D = diffusion coeff. This produces the eq. dC/dt = D*grad^2(D)
 
 
@@ -14,7 +14,8 @@ def C(xx, yy, zz, t):
 
 
 def C_initial(T, C, shape, xx, yy, zz, t):
-    return C(xx, yy, zz, t)
+    # return 3 * np.sin(2*np.pi/Lx * xx) * np.sin(2*np.pi/Ly * yy) * np.sin(4*np.pi/Lz * zz)
+    return 0
 
 
 C_a = 1
@@ -25,11 +26,11 @@ C_c = 0
 
 
 def C_alpha(T, C, shape, xx, yy, zz, t):
-    return 0
+    return 1
 
 
 def C_beta(T, C, shape, xx, yy, zz, t):
-    return 1
+    return 0
 
 
 def C_gamma(T, C, shape, xx, yy, zz, t):
