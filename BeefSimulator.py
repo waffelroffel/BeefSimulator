@@ -225,6 +225,40 @@ class BeefSimulator:
         self.logg("stage", "Finished", )
         self.logg("final", f'Final state: {self.T0}')
 
+    def solver_uncoupled(self, method="cd"):
+        """
+        Iterate through from t0 -> tn
+        solve for both temp. and conc.
+        """
+        self.logg("stage", "Iterating...", )
+
+        del self.C_data
+        self.set_vars("T")
+
+        for step, t in enumerate(self.t):
+            self.logg("tn", f't: {t:.3f}')
+            # save each "step"
+            if step % self.t_jump == 0:
+                i = int(step / self.t_jump)
+                self.T_data[i] = self.T0.reshape(self.shape[1:])
+                self.T_data.flush()
+
+            self.u = self.uw(self.T0, self.C0, *self.space, self.dh)
+
+            # Update ii
+            self.ii[0] = self.T0
+            self.ii[-1] = t
+
+            self.solve_next(self.T0, self.T1, self.b_T, method)
+            self.T0, self.T1 = self.T1, self.T0
+
+        # save last step (anyway)
+        self.T_data[-1] = self.T0.reshape(self.shape[1:])
+        self.T_data.flush()
+
+        self.logg("stage", "Finished", )
+        self.logg("final", f'Final state: {self.T0}')
+
     def solve_next(self, U0, U1, b_U, method="cd"):
         """
         Calculate the next time step (T1)
