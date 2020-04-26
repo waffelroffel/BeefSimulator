@@ -11,7 +11,7 @@ def C_initial(T, C, shape, xx, yy, zz, t):
     return c.C_0
 
 
-C_a = 0
+C_a = 1
 
 C_b = 0
 
