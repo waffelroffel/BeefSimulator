@@ -26,11 +26,11 @@ C_c = 0
 
 
 def C_alpha(T, C, shape, xx, yy, zz, t):
-    return 0
+    return 1
 
 
 def C_beta(T, C, shape, xx, yy, zz, t):
-    return 1
+    return 0
 
 
 def C_gamma(T, C, shape, xx, yy, zz, t):
