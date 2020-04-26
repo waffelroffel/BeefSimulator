@@ -109,7 +109,7 @@ class BeefSimulator:
         self.b_C = np.zeros(self.num_nodes)
 
     def setup_mesh(self, conf, T_conf, C_conf):
-        xx, yy, zz = np.meshgrid(self.x, self.y, self.z, indexing='ij')
+        xx, yy, zz = np.meshgrid(self.x, self.y, self.z, indexing='ij') #TODO: NB!! Changed indexing 26. april
         self.ii = [self.T0, self.C0, self.space, xx, yy, zz, self.t[0]]
 
     def setup_files(self, conf, T_conf, C_conf):
