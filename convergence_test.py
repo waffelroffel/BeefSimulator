@@ -64,6 +64,7 @@ def plot_convergencetest_dt( dt: list, diff: list, eval_time: float ) -> None:
     plt.ylabel(r'Error')
     plt.title(r'Error after '+str(eval_time)+r' seconds.')
     plt.grid()
+    plt.gca().invert_xaxis()
     plt.gcf()
     plt.savefig(fname='data/dt_convplot.pdf', format='pdf')
     plt.show()
@@ -75,6 +76,7 @@ def plot_convergencetest_dh( dh: list, diff: list, eval_time: float ) -> None:
     plt.ylabel(r'Error')
     plt.title(r'Error after '+str(eval_time)+r' seconds.')
     plt.grid()
+    plt.gca().invert_xaxis()
     plt.gcf()
     plt.savefig(fname='data/dh_convplot.pdf', format='pdf')
     plt.show()
@@ -91,7 +93,7 @@ if __name__ == '__main__':
     dh_folders = []
     for i in range(len(dt_list)):
         dt_folders.append(f'data/convtest_neu_T_dt{dt_list[i]:.2g}_dh{dh_default:.2g}')
-    for j in range(len(dh_lsit)):
+    for j in range(len(dh_list)):
         dh_folders.append(f'data/convtest_neu_T_dt{dt_default:.2g}_dh{dh_list[j]:.2g}')
 
     convtime = conf['tlen']
@@ -99,4 +101,4 @@ if __name__ == '__main__':
     diff_t = du_data( dt_folders, convtime, T )
     diff_h = du_data( dh_folders, convtime, T )
     plot_convergencetest_dt( dt_list, diff_t, convtime )
-    plot_convergencetest_dh( dh_list. diff_h, convtime )
+    plot_convergencetest_dh( dh_list, diff_h, convtime )
