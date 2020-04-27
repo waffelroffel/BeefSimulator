@@ -11,6 +11,7 @@ logging = {
 }
 
 folder = "verify_decoupled"
+# folder = "verify_decoupled_10s"
 
 dh = 0.1
 dt = 0.001
@@ -20,6 +21,7 @@ t_jump = 10
 
 t0 = 0
 tlen = 1
+# tlen = 10
 tn = t0+tlen
 
 # Actual beef size split symmetrically along xy-axes. Implement symmetric B.C.s
