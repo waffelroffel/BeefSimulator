@@ -45,7 +45,7 @@ def C_gamma(T, C, shape, xx, yy, zz, t):
     # Symmetric B.C.
     temp[-1, :, :] = 0
     temp[:, -1, :] = 0
-    return temp.flatten() * f_func(T) * c.h * (c.T_oven - T)/(c.H_evap * c.rho_w) * (C - C_eq(T))
+    return temp.ravel() * f_func(T) * c.h * (c.T_oven - T)/(c.H_evap * c.rho_w) * (C - C_eq(T))
 
 
 def C_uw(T, C, I, J, K, dh):

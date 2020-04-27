@@ -531,7 +531,7 @@ class BeefSimulator:
     def wrap(self, fun):
         def _wrap(ii):
             res = fun(*ii) if callable(fun) else fun
-            return res.flatten() if isinstance(res, np.ndarray) else np.ones(ii[1].size) * res
+            return res.ravel() if isinstance(res, np.ndarray) else np.ones(ii[1].size) * res
         return _wrap
 
     def pre_check(self, conf, T_conf, C_conf):

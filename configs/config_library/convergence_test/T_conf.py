@@ -11,7 +11,8 @@ Lz = 0.054
 
 def T(xx, yy, zz, t):
     return 3 * np.exp(-4*alp*(np.pi)**2*(1/Lx+1/Ly+4/Lz) * t) * \
-        np.sin(2*np.pi/Lx * xx) * np.sin(2*np.pi/Ly * yy) * np.sin(4*np.pi/Lz * zz)
+        np.sin(2*np.pi/Lx * xx) * np.sin(2*np.pi /
+                                         Ly * yy) * np.sin(4*np.pi/Lz * zz)
 
 
 def T_initial(T, C, shape, xx, yy, zz, t):
@@ -36,17 +37,36 @@ dT/dz|_Lz = f_zL
 T(x,y,z,0) =  3*sin(2*pi*x/Lx)*sin(2*pi*y/Ly)*sin(4*pi*z/Lz)
 '''
 
-xi = lambda x: np.sin( 2 * np.pi / Lx * x )
-eta = lambda y: np.sin( 2 * np.pi / Ly * y )
-zeta = lambda z: np.sin( 4 * np.pi / Lz * z )
-tau = lambda t: np.exp( -4 * alp * t * np.pi**2 * (1 / Lx**2 + 1 / Ly**2 + 4 / Lz**2) )
 
-f_x0 = lambda y, z, t: 2 * np.pi / Lx * eta( y ) * zeta( z ) * tau( t )
-f_xL = lambda y, z, t: 2 * np.pi / Lx * eta( y ) * zeta( z ) * tau( t )
-f_y0 = lambda x, z, t: xi( x ) * 2 * np.pi / Ly * zeta( z ) * tau( t )
-f_yL = lambda x, z, t: xi( x ) * 2 * np.pi / Ly * zeta( z ) * tau( t )
-f_z0 = lambda x, y, t: xi( x ) * eta( y ) * 4 * np.pi / Lz * tau( t )
-f_zL = lambda x, y, t: xi( x ) * eta( y ) * 4 * np.pi / Lz * tau( t )
+def xi(x): return np.sin(2 * np.pi / Lx * x)
+
+
+def eta(y): return np.sin(2 * np.pi / Ly * y)
+
+
+def zeta(z): return np.sin(4 * np.pi / Lz * z)
+
+
+def tau(t): return np.exp(-4 * alp * t * np.pi **
+                          2 * (1 / Lx**2 + 1 / Ly**2 + 4 / Lz**2))
+
+
+def f_x0(y, z, t): return 2 * np.pi / Lx * eta(y) * zeta(z) * tau(t)
+
+
+def f_xL(y, z, t): return 2 * np.pi / Lx * eta(y) * zeta(z) * tau(t)
+
+
+def f_y0(x, z, t): return xi(x) * 2 * np.pi / Ly * zeta(z) * tau(t)
+
+
+def f_yL(x, z, t): return xi(x) * 2 * np.pi / Ly * zeta(z) * tau(t)
+
+
+def f_z0(x, y, t): return xi(x) * eta(y) * 4 * np.pi / Lz * tau(t)
+
+
+def f_zL(x, y, t): return xi(x) * eta(y) * 4 * np.pi / Lz * tau(t)
 
 
 def T_alpha(T, C, shape, xx, yy, zz, t):
@@ -59,13 +79,13 @@ def T_beta(T, C, shape, xx, yy, zz, t):
 
 def T_gamma(T, C, shape, xx, yy, zz, t):
     temp = np.zeros(shape)
-    temp[0,:,:] = f_x0(yy, zz, t)[0,:,:]
-    temp[-1,:,:] = f_xL(yy, zz, t)[-1,:,:]
-    temp[:,0,:] = f_y0(xx, zz, t)[:,0,:]
-    temp[:,-1,:] = f_yL(xx, zz, t)[:,-1,:]
-    temp[:,:,0] = f_z0(xx, yy, t)[:,:,0]
-    temp[:,:,-1] = f_zL(xx,yy,t)[:,:,-1]
-    return temp.flatten()
+    temp[0, :, :] = f_x0(yy, zz, t)[0, :, :]
+    temp[-1, :, :] = f_xL(yy, zz, t)[-1, :, :]
+    temp[:, 0, :] = f_y0(xx, zz, t)[:, 0, :]
+    temp[:, -1, :] = f_yL(xx, zz, t)[:, -1, :]
+    temp[:, :, 0] = f_z0(xx, yy, t)[:, :, 0]
+    temp[:, :, -1] = f_zL(xx, yy, t)[:, :, -1]
+    return temp.ravel()
 
 
 def uw(T, C, I, J, K, dh):
