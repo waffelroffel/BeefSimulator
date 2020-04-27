@@ -27,10 +27,7 @@ def T_alpha(T, C, shape, xx, yy, zz, t):
 
 
 def T_beta(T, C, shape, xx, yy, zz, t):
-    temp = c.cp_w * c.rho_w * np.ones(shape)
-    # Symmetric B.C.
-    temp[-1, :, :] = 0
-    temp[:, -1, :] = 0
+    temp = np.zeros(shape)
     return temp.flatten()
 
 
