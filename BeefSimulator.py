@@ -62,9 +62,9 @@ class BeefSimulator:
         t_steps = 1 if self.t_jump == - \
             1 else int(self.t.size / self.t_jump) + 1
 
-        self.space = (self.x.size, self.y.size, self.z.size)
         self.shape = (t_steps, self.x.size, self.y.size, self.z.size)
-        self.I, self.J, self.K = self.shape[1:]
+        self.space = self.shape[1:]
+        self.I, self.J, self.K = self.space
         self.num_nodes = self.I * self.J * self.K
         self.num_nodes_inner = (self.I - 2) * (self.J - 2) * (self.K - 2)
         self.num_nodes_border = self.num_nodes - self.num_nodes_inner
@@ -197,8 +197,8 @@ class BeefSimulator:
             # save each "step"
             if step % self.t_jump == 0:
                 i = int(step / self.t_jump)
-                self.T_data[i] = self.T0.reshape(self.shape[1:])
-                self.C_data[i] = self.C0.reshape(self.shape[1:])
+                self.T_data[i] = self.T0.reshape(self.space)
+                self.C_data[i] = self.C0.reshape(self.space)
                 self.T_data.flush()
                 self.C_data.flush()
 
@@ -218,8 +218,8 @@ class BeefSimulator:
             self.C0, self.C1 = self.C1, self.C0
 
         # save last step (anyway)
-        self.T_data[-1] = self.T0.reshape(self.shape[1:])
-        self.C_data[-1] = self.C0.reshape(self.shape[1:])
+        self.T_data[-1] = self.T0.reshape(self.space)
+        self.C_data[-1] = self.C0.reshape(self.space)
         self.T_data.flush()
         self.C_data.flush()
 
@@ -241,7 +241,7 @@ class BeefSimulator:
             # save each "step"
             if step % self.t_jump == 0:
                 i = int(step / self.t_jump)
-                self.T_data[i] = self.T0.reshape(self.shape[1:])
+                self.T_data[i] = self.T0.reshape(self.space)
                 self.T_data.flush()
 
             self.u = self.uw(self.T0, self.C0, *self.space, self.dh)
@@ -254,7 +254,7 @@ class BeefSimulator:
             self.T0, self.T1 = self.T1, self.T0
 
         # save last step (anyway)
-        self.T_data[-1] = self.T0.reshape(self.shape[1:])
+        self.T_data[-1] = self.T0.reshape(self.space)
         self.T_data.flush()
 
         self.logg("stage", "Finished", )
@@ -431,7 +431,7 @@ class BeefSimulator:
         """
         Returns the 1D index from 3D coordinates
         """
-        return i + self.I * j + self.I * self.J * k
+        return k + j * self.K + i * self.J * self.K
 
     def get_ks(self):
         """
@@ -468,7 +468,7 @@ class BeefSimulator:
         k = (bnd == 6 and [self.K - 1]) or (bnd == 3 and [0]) or range(self.K)
         # just ignore sort? it doesn't break without it
         # TODO: should this be ij-indexing?
-        return np.sort(np.array(self.index_of(*np.meshgrid(i, j, k))).T.reshape(-1))
+        return np.sort(np.array(self.index_of(*np.meshgrid(i, j, k))).T.flatten())
 
     def get_direchet_indices(self, bnd_types):
         uniques = set()
