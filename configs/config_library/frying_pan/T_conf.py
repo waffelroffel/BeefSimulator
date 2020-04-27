@@ -19,7 +19,7 @@ T_c = - c.rho_w * c.cp_w
 
 
 def T_alpha(T, C, shape, xx, yy, zz, t):
-    temp = -c.k_m * np.ones(shape)
+    temp = c.k_m * np.ones(shape)
     # Symmetric B.C.
     temp[-1, :, :] = 1
     temp[:, -1, :] = 1
@@ -27,7 +27,7 @@ def T_alpha(T, C, shape, xx, yy, zz, t):
 
 
 def T_beta(T, C, shape, xx, yy, zz, t):
-    temp = - c.cp_w * c.rho_w * np.ones(shape)
+    temp = c.cp_w * c.rho_w * np.ones(shape)
     # Symmetric B.C.
     temp[-1, :, :] = 0
     temp[:, -1, :] = 0
