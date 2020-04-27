@@ -13,10 +13,13 @@ def plot_scalar_error(id, numerical_data, analytic_f, mesh, t_linscape, dt, t_ju
         numerical = numerical_data[n]
         analytical = analytic_f(None, None, None, *mesh, t)
         MSE.append(np.mean((numerical-analytical)**2))
-    plt.plot(tt, MSE)
-    plt.xlabel("t")
-    plt.ylabel("error")
+    plt.plot(tt, MSE, color='k')
+    plt.xlabel(r"t")
+    plt.ylabel(r"Error")
     plt.title(f'{id}: error in t')
+    plt.grid()
+    plt.gcf()
+    # plt.savefig(fname=f'data/verify_decoupled_{id}.pdf', format='pdf')
     plt.show()
 
 
