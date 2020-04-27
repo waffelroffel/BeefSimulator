@@ -39,7 +39,7 @@ def C_beta(T, C, shape, xx, yy, zz, t):
 
 
 def C_gamma(T, C, shape, xx, yy, zz, t):
-    temp = np.ones(shape)
+    temp = -np.ones(shape)
     # No flux through bottom
     temp[:, :, 0] = 0
     # Symmetric B.C.

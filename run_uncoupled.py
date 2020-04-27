@@ -10,7 +10,7 @@ if __name__ == "__main__":
     print("Started at:", start, "\n")
     bs = BeefSimulator(conf, T_conf, C_conf)
 
-    bs.solver()
+    bs.solver_uncoupled()
     end = datetime.datetime.now()
     print("Convection oven - Started at:", start, "\tFinished at:", end)
     print("Total elapsed time:", end - start)

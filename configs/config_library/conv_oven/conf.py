@@ -10,7 +10,7 @@ logging = {
     "final": False  # print the final state of T
 }
 
-dh = 3e-3
+dh = 1e-3
 dt = 1e-4
 
 # -1: only the last step is saved

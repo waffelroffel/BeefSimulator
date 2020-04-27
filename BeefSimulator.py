@@ -109,7 +109,8 @@ class BeefSimulator:
         self.b_C = np.zeros(self.num_nodes)
 
     def setup_mesh(self, conf, T_conf, C_conf):
-        xx, yy, zz = np.meshgrid(self.x, self.y, self.z, indexing='ij') #TODO: NB!! Changed indexing 26. april
+        # TODO: NB!! Changed indexing 26. april
+        xx, yy, zz = np.meshgrid(self.x, self.y, self.z, indexing='ij')
         self.ii = [self.T0, self.C0, self.space, xx, yy, zz, self.t[0]]
 
     def setup_files(self, conf, T_conf, C_conf):
@@ -221,6 +222,40 @@ class BeefSimulator:
         self.C_data[-1] = self.C0.reshape(self.shape[1:])
         self.T_data.flush()
         self.C_data.flush()
+
+        self.logg("stage", "Finished", )
+        self.logg("final", f'Final state: {self.T0}')
+
+    def solver_uncoupled(self, method="cd"):
+        """
+        Iterate through from t0 -> tn
+        solve only for temperature
+        """
+        self.logg("stage", "Iterating...", )
+
+        del self.C_data
+        self.set_vars("T")
+
+        for step, t in enumerate(self.t):
+            self.logg("tn", f't: {t:.3f}')
+            # save each "step"
+            if step % self.t_jump == 0:
+                i = int(step / self.t_jump)
+                self.T_data[i] = self.T0.reshape(self.shape[1:])
+                self.T_data.flush()
+
+            self.u = self.uw(self.T0, self.C0, *self.space, self.dh)
+
+            # Update ii
+            self.ii[0] = self.T0
+            self.ii[-1] = t
+
+            self.solve_next(self.T0, self.T1, self.b_T, method)
+            self.T0, self.T1 = self.T1, self.T0
+
+        # save last step (anyway)
+        self.T_data[-1] = self.T0.reshape(self.shape[1:])
+        self.T_data.flush()
 
         self.logg("stage", "Finished", )
         self.logg("final", f'Final state: {self.T0}')
@@ -432,7 +467,8 @@ class BeefSimulator:
         j = (bnd == 5 and [self.J - 1]) or (bnd == 2 and [0]) or range(self.J)
         k = (bnd == 6 and [self.K - 1]) or (bnd == 3 and [0]) or range(self.K)
         # just ignore sort? it doesn't break without it
-        return np.sort(np.array(self.index_of(*np.meshgrid(i, j, k))).T.reshape(-1)) #TODO: should this be ij-indexing?
+        # TODO: should this be ij-indexing?
+        return np.sort(np.array(self.index_of(*np.meshgrid(i, j, k))).T.reshape(-1))
 
     def get_direchet_indices(self, bnd_types):
         uniques = set()
