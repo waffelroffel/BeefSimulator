@@ -8,8 +8,6 @@ Eksperter i Team - Matematikk innen anvendelser - Team 2
 
 ### 1. Setup the configs
 
-_Currently only Temperature is set to work_
-
 A template on the different config files can be found in config/
 
 Only need to touch these three files:
@@ -20,25 +18,23 @@ Only need to touch these three files:
 
 **Geometry of the beef**: [conf.py](configs/conf.py)
 
-- recommended to keep logging unchanged
-- keep dt at least 100 times less than dh
-- no need to touch the last conf dictionary
-
 **PDE and boundary conditions for Temperature**: [T_conf.py](configs/T_conf.py)
+
+**PDE and boundary conditions for Concentration**: [T_conf.py](configs/C_conf.py)
 
 Governed by the two equations:
 
-- pde: ![pde](https://render.githubusercontent.com/render/math?math=a%20%5Cfrac%7BdT%7D%7Bdt%7D%20%3D%20b%20%5Cnabla%5E2%20T%20%2B%20c%20%5Cnabla%20T)
-- boundary: ![bnd](https://render.githubusercontent.com/render/math?math=%5Calpha%20%5Cnabla%20T%20%2B%20%5Cbeta%20T%20%3D%20%5Cgamma)
+- pde: ![pde](https://render.githubusercontent.com/render/math?math=%5Ca%20%5Cfrac%7BdT%7D%7Bdt%7D%20%3D%20b%20%5Cnabla%5E2%20T%20%2B%20c%20%5Ctextbf%7Bu%7D%20%5Cnabla%20T)
+- boundary: ![bnd](https://render.githubusercontent.com/render/math?math=%5Calpha%20%5Cnabla%20T%20%2B%20%5Cbeta%20%5Ctextbf%7Bu%7D%20T%20%3D%20%5Cgamma)
 - (currently missing u_w in pde and boundary, will update later)
 
 Notes:
 
-- If **alpha** is set to 0 or a list/array of 0, then **bnd_types** must be ["d", "d", "d", "d", "d", "d"]
-- If **alpha** is non-zero, then **bnd_types** must be []
-- Keep uw (water velocity ) as 1 for now
-- a, b, c, alpha, beta and gamma can be scalar, vector or function that returns scalar or array
-- no need to touch the last conf dictionary
+- a, b, c: must be scalars
+- alpha, beta and gamma can be scalar, vector or function that returns scalar or array
+- **u**: is a vector for the water velocity
+
+A example with descriptions of the configuration files can be found under _configs/example_.
 
 ---
 
@@ -53,7 +49,7 @@ from configs.C_conf import C_conf
 from configs.conf import conf
 
 bs = BeefSimulator(conf, T_conf, C_conf) # initialize a BeefSimulator with the given configs, will save the header data in data/"folder_name"/header.json
-bs.solve_all() # iterate all time steps for Temperature and save the temperature data in data/"folder_name"/T.dat
+bs.solver() # iterate all time steps for Temperature and Concentration and save the data in data/"folder_name"/
 ```
 
 ---
@@ -87,8 +83,10 @@ The plots are saved in the same directory as the data is stored as pdf files. Yo
 To plot from precomputed results:
 
 ```python
-bp = Plotter(name="path to folder inside data/")
-bp.show_heat_map2(0.0, "T", x=0.5)
+bp = Plotter(name="path to data folder")
+bp.show_heat_map2(0.0, "T", X=0.5) # cross section at x=0.5 at t=0
+bp.show_heat_map2(0.0, "T", X=[0.5]) # cross section in 3D
+bp.show_heat_map2(0.0, "T", X=[0.5, 0.4]) # multiple cross sections
 ```
 
 Folder must contain:
@@ -97,4 +95,4 @@ Folder must contain:
 - _T.dat_
 - _C.dat_
 
-**tl;dr**: run [test.py](test.py) (will show a plot for each tenth of the time range specified in [conf.py](configs/conf.py))
+**tl;dr**: run [test_example.py](test_example.py) (will show a plot for each tenth of the time range specified in [example/conf.py](configs/example/conf.py))

@@ -1,7 +1,5 @@
 import numpy as np
-import constants as c
 from auxillary_functions import u_w
-from auxillary_functions import f_func
 
 mu = 0.01
 
@@ -33,9 +31,12 @@ def C_gamma(T, C, shape, xx, yy, zz, t):
     return 20
 
 
+# only needs to be defined one time.
+# either in T_conf or C_conf
+# T_conf takes priority
 def C_uw(T, C, I, J, K, dh):
     u = u_w(T.reshape((I, J, K)), C.reshape((I, J, K)), dh)
-    return np.zeros_like(u.reshape((3, -1)).T)
+    return u.reshape((3, -1)).T
 
 
 C_bnd_types = ["d", "d", "d", "d", "d", "d"]
