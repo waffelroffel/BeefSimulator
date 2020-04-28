@@ -35,8 +35,8 @@ class Plotter:
         else:
             self.load_from_class(beefsim)
 
-        levels_T = np.linspace(self.vmin_T, self.vmax_T, 65)
-        levels_C = np.linspace(self.vmin_C, self.vmax_C, 65)
+        levels_T = np.linspace(self.vmin_T, self.vmax_T, 91)
+        levels_C = np.linspace(self.vmin_C, self.vmax_C, 102)
         self.LEVELS = {"T": levels_T, "C": levels_C}
         self.name = name
         self.save_fig = save_fig
@@ -84,10 +84,11 @@ class Plotter:
             temp_path, dtype="float64", mode="r", shape=shape)
         self.C_data = np.memmap(
             cons_path, dtype="float64", mode="r", shape=shape)
+
         self.vmin_T = 0
-        self.vmax_T = np.max(self.T_data)
-        self.vmin_C = 0
-        self.vmax_C = np.max(self.C_data)
+        self.vmax_T = 90
+        self.vmin_C = 0.42
+        self.vmax_C = 0.76
 
     def show_heat_map2(self, id, T, X=[], Y=[], Z=[]):
         U = self.T_data if id == "T" else self.C_data
@@ -123,21 +124,28 @@ class Plotter:
 
         init_3d(fig, axes)
         axes[0].text2D(
-            0.5, 0.95, f'{self.TYPES[id]} distribution @ $t=$ {t: .3g}', transform=axes[0].transAxes)
+            0.5, 0.90, f'{self.TYPES[id]} distribution at $t=$ {t: .3g}s', transform=axes[0].transAxes, fontsize=11)
 
         if (not Y and not Z):
             axes[0].view_init(15, - 107)
+            axes[0].set_xticks(X)
         elif (not X and not Z):
             axes[0].view_init(15, - 16)
+            axes[0].set_yticks(Y)
         elif (not X and not Y):
             axes[0].view_init(12, - 30)
+            axes[0].set_zticks(Z)
 
-        axes[0].set_xlim3d(self.x[0] if not X else X[0],
-                           self.x[-1] if not X else X[-1])
-        axes[0].set_ylim3d(self.y[0] if not Y else Y[0],
-                           self.y[-1] if not Y else Y[-1])
-        axes[0].set_zlim3d(self.z[0] if not Z else Z[0],
-                           self.z[-1] if not Z else Z[-1])
+        axes[0].set_xlabel('x [m]', fontsize=14)
+        axes[0].set_ylabel('y [m]', fontsize=14)
+        axes[0].set_zlabel('z [m]', fontsize=14)
+
+        axes[0].set_xlim3d(self.x[0] if not X else min(X),
+                           self.x[-1] if not X else max(X))
+        axes[0].set_ylim3d(self.y[0] if not Y else min(Y),
+                           self.y[-1] if not Y else max(Y))
+        axes[0].set_zlim3d(self.z[0] if not Z else min(Z),
+                           self.z[-1] if not Z else max(Z))
 
         for x, i in self.index_h(X):
             cs.append(axes[0].contourf(U[n, i, :, :], yz, zy,
@@ -157,7 +165,8 @@ class Plotter:
             filename = self.name.joinpath(
                 f'{self.TYPES[id]}_{coordlab}_t={t:.3g}.pdf')
             plt.savefig(filename)
-        plt.show()
+        else:
+            plt.show()
 
     def singlecross(self, U, t, n, x, d, axis, id):
         yz, zy = np.meshgrid(self.y, self.z, indexing="ij")
@@ -172,7 +181,7 @@ class Plotter:
 
         axes.append(fig.add_subplot(1, 1, 1))
         plt.title(
-            f'{self.TYPES[id]} distribution @ ${axis}={x:.3g}$ and $t =$ {t:.3g}')
+            f'{self.TYPES[id]} distribution at ${axis}={x:.3g}$ and $t =$ {t:.3g}s')
         if axis == "x":
             cs = [axes[0].contourf(yz, zy, U[n, d, :, :],
                                    levels=self.LEVELS[id], cmap=self.CMAPS[id])]
@@ -232,5 +241,5 @@ class Plotter:
 
     def set_latex(self, usetex):
         # Latex font rendering
-        rc("font", **{"family": "serif", "serif": ["Palatino"]})
+        rc("font", **{"family": "serif", "serif": ["Computer Modern Roman"]})
         rc("text", usetex=usetex)
