@@ -54,9 +54,9 @@ class Plotter:
         self.dh = beefsim.dh
         # TODO: not guaranteed to get min max from first timestep
         # np.min(beefsim.T0), np.max(beefsim.T0)
-        self.vmin_T, self.vmax_T = 12, 14
+        self.vmin_T, self.vmax_T = 15, 25
         # np.min(beefsim.C0), np.max(beefsim.C0)
-        self.vmin_C, self.vmax_C = 10, 50
+        self.vmin_C, self.vmax_C = 15, 25
 
     def load_from_file(self, path: Path):
         if not isinstance(path, Path):
@@ -84,7 +84,6 @@ class Plotter:
             temp_path, dtype="float64", mode="r", shape=shape)
         self.C_data = np.memmap(
             cons_path, dtype="float64", mode="r", shape=shape)
-
         self.vmin_T = 0
         self.vmax_T = 90
         self.vmin_C = 0.42
