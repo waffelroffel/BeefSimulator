@@ -304,15 +304,15 @@ class BeefSimulator:
         C_u_b = np.array([C2_x, C1_x, C2_y, C1_y, C2_z, C1_z]).transpose()
 
         _alpha = self.alpha(self.ii)
-        _alpha[self.direchets] = 1  # dummy
-        C4 = 2 * self.dh / _alpha
+        _alpha[self.direchets] = 1  # removes runtimeerror true_divide
+        C4_bnd = 2 * self.dh / _alpha[self.boundaries[:, 0]]
 
         d0, d1, d2, d3, d4, d5, d6 = [-C3, C1_x, C1_y, C1_z, C2_x, C2_y, C2_z]
         #toc = time.perf_counter()
         # --------------- modify the boundaries ---------------
         prod = af.dotND(
             self.boundaries[:, 1:], (C_u_d0*u)[self.boundaries[:, 0]], axis=1)
-        d0[self.boundaries[:, 0]] -= prod * C4[self.boundaries[:, 0]] * \
+        d0[self.boundaries[:, 0]] -= prod * C4_bnd * \
             self.beta(self.ii)[self.boundaries[:, 0]]
 
         k0, k1, k2, k3, k4, k5, k6 = self.ks
@@ -349,7 +349,7 @@ class BeefSimulator:
         prod = af.dotND(
             self.boundaries[:, 1:], C_u_b[self.boundaries[:, 0]], axis=1)
 
-        b_U[self.boundaries[:, 0]] = prod * C4[self.boundaries[:, 0]] * \
+        b_U[self.boundaries[:, 0]] = prod * C4_bnd * \
             self.gamma(self.ii)[self.boundaries[:, 0]]
         #tac = time.perf_counter()
         self.logg("Ab", f'A = {A}')
