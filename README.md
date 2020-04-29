@@ -33,6 +33,7 @@ Notes:
 - a, b, c: must be scalars
 - alpha, beta and gamma can be scalar, vector or function that returns scalar or array
 - **u**: is a vector for the water velocity
+- the positive direction is defined to be inward into the cube -> gamma must then be set accordingly
 
 A example with descriptions of the configuration files can be found under _configs/example_.
 
