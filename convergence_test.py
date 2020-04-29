@@ -12,7 +12,8 @@ from configs.config_library.convergence_test.T_conf import alp, Lx, Ly, Lz, T
 def find_single_dataset_abs_diff( data: np.array, analytical_sol, meshg: np.array, time: float ) -> float:
     analytical_data = analytical_sol( meshg[0], meshg[1], meshg[2], time )
     # Frobenius matrix norm
-    return abs(np.linalg.norm(data - analytical_data))
+    return np.mean((data-analytical_data)**2)
+    # return abs(np.linalg.norm(data - analytical_data))
 
 
 def get_data_from_foldername( foldername: str, time: float ):
